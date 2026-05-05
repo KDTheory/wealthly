@@ -45,6 +45,21 @@ def _run_lightweight_migrations() -> None:
             "    ALTER TABLE transactions ADD CONSTRAINT uq_account_external_id UNIQUE (account_id, external_id); "
             "  END IF; "
             "END $$;",
+            # Liability enrichment for the Finary-style detail view
+            "ALTER TABLE liabilities ADD COLUMN IF NOT EXISTS down_payment DOUBLE PRECISION",
+            "ALTER TABLE liabilities ADD COLUMN IF NOT EXISTS insurance_rate DOUBLE PRECISION",
+            "ALTER TABLE liabilities ADD COLUMN IF NOT EXISTS application_fees DOUBLE PRECISION",
+            "ALTER TABLE liabilities ADD COLUMN IF NOT EXISTS ownership_pct DOUBLE PRECISION DEFAULT 100.0",
+            "ALTER TABLE liabilities ADD COLUMN IF NOT EXISTS duration_months INTEGER",
+            "ALTER TABLE liabilities ADD COLUMN IF NOT EXISTS start_date DATE",
+            "ALTER TABLE liabilities ADD COLUMN IF NOT EXISTS linked_asset_id VARCHAR",
+            # FK constraint after the column exists
+            "DO $$ BEGIN "
+            "  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_liability_linked_asset') THEN "
+            "    ALTER TABLE liabilities ADD CONSTRAINT fk_liability_linked_asset "
+            "      FOREIGN KEY (linked_asset_id) REFERENCES assets(id) ON DELETE SET NULL; "
+            "  END IF; "
+            "END $$;",
         ]
     with engine.begin() as conn:
         for stmt in statements:

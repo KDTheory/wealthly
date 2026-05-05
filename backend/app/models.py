@@ -188,22 +188,38 @@ class Asset(Base):
 
 
 class Liability(Base):
-    """A loan: mortgage, consumer credit, auto loan, etc."""
+    """A loan: mortgage, consumer credit, auto loan, etc.
+
+    Enriched fields (added 2026-05-05) drive the Finary-style detail view:
+    amortization schedule, mensualité breakdown (capital / intérêts /
+    assurance), %-remboursé, coût total. They're all optional — legacy
+    rows still render, just without the breakdown.
+    """
     __tablename__ = "liabilities"
 
     id = Column(String, primary_key=True, default=_uuid)
     type = Column(String, nullable=False)  # mortgage | consumer_loan | auto_loan | other_loan
     name = Column(String, nullable=False)
-    initial_capital = Column(Float, nullable=False, default=0.0)
-    remaining_capital = Column(Float, nullable=False, default=0.0)
-    monthly_payment = Column(Float, nullable=False, default=0.0)
-    interest_rate = Column(Float, nullable=False, default=0.0)
+    initial_capital = Column(Float, nullable=False, default=0.0)   # original principal
+    remaining_capital = Column(Float, nullable=False, default=0.0) # current outstanding
+    monthly_payment = Column(Float, nullable=False, default=0.0)   # full mensualité (P+I+A)
+    interest_rate = Column(Float, nullable=False, default=0.0)     # annual rate %
     end_date = Column(Date, nullable=True)
     notes = Column(Text, nullable=True, default="")
+
+    # Enriched
+    down_payment = Column(Float, nullable=True)            # apport
+    insurance_rate = Column(Float, nullable=True)          # annual % of initial capital
+    application_fees = Column(Float, nullable=True)        # frais de dossier (one-shot)
+    ownership_pct = Column(Float, nullable=True, default=100.0)  # détention de l'emprunt
+    duration_months = Column(Integer, nullable=True)       # total duration
+    start_date = Column(Date, nullable=True)               # first echéance
+    linked_asset_id = Column(String, ForeignKey("assets.id", ondelete="SET NULL"), nullable=True)
 
     household_id = Column(String, ForeignKey("households.id", ondelete="CASCADE"), nullable=False)
     household = relationship("Household", back_populates="liabilities")
     members = relationship("Member", secondary=liability_members, back_populates="liabilities")
+    linked_asset = relationship("Asset", foreign_keys=[linked_asset_id])
 
 
 class Category(Base):

@@ -186,6 +186,14 @@ class LiabilityBase(BaseModel):
     interest_rate: float = 0.0
     end_date: Optional[date] = None
     notes: Optional[str] = ""
+    # Enriched fields — all optional, legacy loans still load fine
+    down_payment: Optional[float] = None
+    insurance_rate: Optional[float] = None
+    application_fees: Optional[float] = None
+    ownership_pct: Optional[float] = 100.0
+    duration_months: Optional[int] = None
+    start_date: Optional[date] = None
+    linked_asset_id: Optional[str] = None
 
 
 class LiabilityCreate(LiabilityBase):
@@ -202,6 +210,13 @@ class LiabilityUpdate(BaseModel):
     end_date: Optional[date] = None
     notes: Optional[str] = None
     member_ids: Optional[List[str]] = None
+    down_payment: Optional[float] = None
+    insurance_rate: Optional[float] = None
+    application_fees: Optional[float] = None
+    ownership_pct: Optional[float] = None
+    duration_months: Optional[int] = None
+    start_date: Optional[date] = None
+    linked_asset_id: Optional[str] = None
 
 
 class LiabilityOut(LiabilityBase):

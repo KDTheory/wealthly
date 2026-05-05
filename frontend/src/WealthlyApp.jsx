@@ -503,6 +503,13 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     endDate: l.end_date,
     notes: l.notes || '',
     memberIds: l.member_ids || [],
+    downPayment: l.down_payment ?? null,
+    insuranceRate: l.insurance_rate ?? null,
+    applicationFees: l.application_fees ?? null,
+    ownershipPct: l.ownership_pct ?? 100,
+    durationMonths: l.duration_months ?? null,
+    startDate: l.start_date || null,
+    linkedAssetId: l.linked_asset_id || null,
   });
   const liaToApi = (l) => ({
     type: l.type,
@@ -514,6 +521,13 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     end_date: l.endDate || null,
     notes: l.notes || '',
     member_ids: l.memberIds || [],
+    down_payment: l.downPayment !== '' && l.downPayment != null ? parseFloat(l.downPayment) : null,
+    insurance_rate: l.insuranceRate !== '' && l.insuranceRate != null ? parseFloat(l.insuranceRate) : null,
+    application_fees: l.applicationFees !== '' && l.applicationFees != null ? parseFloat(l.applicationFees) : null,
+    ownership_pct: l.ownershipPct !== '' && l.ownershipPct != null ? parseFloat(l.ownershipPct) : 100,
+    duration_months: l.durationMonths !== '' && l.durationMonths != null ? parseInt(l.durationMonths, 10) : null,
+    start_date: l.startDate || null,
+    linked_asset_id: l.linkedAssetId || null,
   });
   // Goals
   const goalFromApi = (g) => ({
@@ -2789,6 +2803,7 @@ function GoalEditor({ goal, onSave, onCancel, onDelete }) {
 function Wealth({ assets, liabilities, members, activeMemberId, visibleAssets, visibleLiabilities, saveAsset, deleteAsset, saveLiability, deleteLiability, memberShare, fmt, wealthHistory = [] }) {
   const [editingAsset, setEditingAsset] = useState(null);
   const [editingLia, setEditingLia] = useState(null);
+  const [viewingLia, setViewingLia] = useState(null);
 
   const assetsByType = useMemo(() => {
     const groups = {};
@@ -3020,7 +3035,7 @@ function Wealth({ assets, liabilities, members, activeMemberId, visibleAssets, v
       <section className="card">
         <div className="card-header">
           <h3><CreditCard size={16}/> Prêts en cours</h3>
-          <button className="secondary-btn" onClick={() => setEditingLia({ id: null, type: 'mortgage', name: '', initialCapital: 0, remainingCapital: 0, monthlyPayment: 0, interestRate: 0, endDate: '', memberIds: activeMemberId !== 'all' ? [activeMemberId] : [], notes: '' })}>
+          <button className="secondary-btn" onClick={() => setEditingLia({ id: null, type: 'mortgage', name: '', initialCapital: '', remainingCapital: '', monthlyPayment: '', interestRate: '', endDate: '', memberIds: activeMemberId !== 'all' ? [activeMemberId] : [], notes: '', downPayment: '', insuranceRate: '', applicationFees: '', ownershipPct: 100, durationMonths: '', startDate: '', linkedAssetId: '' })}>
             <Plus size={14}/> Ajouter
           </button>
         </div>
@@ -3034,14 +3049,14 @@ function Wealth({ assets, liabilities, members, activeMemberId, visibleAssets, v
               const owners = (l.memberIds || []).map(id => members.find(m => m.id === id)?.name).filter(Boolean).join(' & ');
               const progress = l.initialCapital > 0 ? ((l.initialCapital - l.remainingCapital) / l.initialCapital) * 100 : 0;
               return (
-                <div key={l.id} className="liability-card-v2">
+                <div key={l.id} className="liability-card-v2 clickable" onClick={() => setViewingLia(l)}>
                   <div className="lia-header">
                     <div className="lia-icon" style={{ background: type.color + '22', color: type.color }}><Icon size={14}/></div>
                     <div className="lia-name-block">
                       <span className="lia-name">{l.name}</span>
                       <span className="lia-type">{type.name}</span>
                     </div>
-                    <div className="lia-actions">
+                    <div className="lia-actions" onClick={(e) => e.stopPropagation()}>
                       <button className="icon-btn-sm" onClick={() => setEditingLia(l)}><Edit3 size={13}/></button>
                       <button className="icon-btn-sm" onClick={() => deleteLiability(l.id)}><Trash2 size={13}/></button>
                     </div>
@@ -3067,7 +3082,8 @@ function Wealth({ assets, liabilities, members, activeMemberId, visibleAssets, v
       </section>
 
       {editingAsset && <AssetEditor asset={editingAsset} members={members} onSave={(a) => { saveAsset(a); setEditingAsset(null); }} onCancel={() => setEditingAsset(null)}/>}
-      {editingLia && <LiabilityEditor liability={editingLia} members={members} onSave={(l) => { saveLiability(l); setEditingLia(null); }} onCancel={() => setEditingLia(null)}/>}
+      {editingLia && <LiabilityEditor liability={editingLia} members={members} assets={assets} onSave={(l) => { saveLiability(l); setEditingLia(null); }} onCancel={() => setEditingLia(null)}/>}
+      {viewingLia && <LiabilityDetail liability={viewingLia} assets={assets} members={members} memberShare={memberShare} fmt={fmt} onEdit={() => { setEditingLia(viewingLia); setViewingLia(null); }} onClose={() => setViewingLia(null)}/>}
     </div>
   );
 }
@@ -3128,67 +3144,390 @@ function AssetEditor({ asset, members, onSave, onCancel }) {
   );
 }
 
-function LiabilityEditor({ liability, members, onSave, onCancel }) {
-  const [draft, setDraft] = useState(liability);
-  const handleSave = () => {
-    if (!draft.name) { alert('Donnez un nom'); return; }
-    if (!draft.memberIds || draft.memberIds.length === 0) { alert('Assignez à au moins un membre'); return; }
-    onSave(draft);
-  };
+// ============================================================================
+// LIABILITY WIZARD (5 steps — inspired by Finary)
+// ============================================================================
+const LIABILITY_STEPS = [
+  { key: 'main',    label: 'Infos principales' },
+  { key: 'specs',   label: 'Caractéristiques' },
+  { key: 'duration',label: 'Durée' },
+  { key: 'fees',    label: 'Frais & détention' },
+  { key: 'linked',  label: 'Actifs liés' },
+];
+
+function LiabilityEditor({ liability, members, assets = [], onSave, onCancel }) {
+  const [draft, setDraft] = useState({
+    ...liability,
+    initialCapital: liability.initialCapital ?? '',
+    remainingCapital: liability.remainingCapital ?? '',
+    monthlyPayment: liability.monthlyPayment ?? '',
+    interestRate: liability.interestRate ?? '',
+    downPayment: liability.downPayment ?? '',
+    insuranceRate: liability.insuranceRate ?? '',
+    applicationFees: liability.applicationFees ?? '',
+    ownershipPct: liability.ownershipPct ?? 100,
+    durationMonths: liability.durationMonths ?? '',
+    startDate: liability.startDate || '',
+    linkedAssetId: liability.linkedAssetId || '',
+  });
+  const [stepIdx, setStepIdx] = useState(0);
+  const step = LIABILITY_STEPS[stepIdx].key;
+
+  const set = (k, v) => setDraft({ ...draft, [k]: v });
   const toggleMember = (mid) => {
     const ids = draft.memberIds || [];
-    setDraft({ ...draft, memberIds: ids.includes(mid) ? ids.filter(i => i !== mid) : [...ids, mid] });
+    set('memberIds', ids.includes(mid) ? ids.filter(i => i !== mid) : [...ids, mid]);
   };
+
+  const canSave = draft.name && (draft.memberIds || []).length > 0;
+  const submit = () => {
+    if (!canSave) { alert('Renseigne au moins un nom et un emprunteur.'); return; }
+    onSave(draft);
+  };
+
   return (
     <div className="modal-backdrop" onClick={onCancel}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal modal--wizard" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>{liability.id ? 'Modifier le prêt' : 'Nouveau prêt'}</h2>
+          <h2>{liability.id ? 'Modifier l\'emprunt' : 'Ajouter un emprunt'}</h2>
           <button className="icon-btn-sm" onClick={onCancel}><X size={16}/></button>
         </div>
-        <div className="modal-body">
-          <label><span>Type</span>
-            <select value={draft.type} onChange={(e) => setDraft({ ...draft, type: e.target.value })}>
-              {LIABILITY_TYPES.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-            </select>
-          </label>
-          <label><span>Intitulé</span>
-            <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="ex: Crédit immo Paris"/>
-          </label>
-          <div className="field-row">
-            <label><span>Capital initial (€)</span>
-              <input type="number" value={draft.initialCapital} onChange={(e) => setDraft({ ...draft, initialCapital: e.target.value })} step="any"/>
-            </label>
-            <label><span>Restant dû (€)</span>
-              <input type="number" value={draft.remainingCapital} onChange={(e) => setDraft({ ...draft, remainingCapital: e.target.value })} step="any"/>
-            </label>
-          </div>
-          <div className="field-row">
-            <label><span>Mensualité (€)</span>
-              <input type="number" value={draft.monthlyPayment} onChange={(e) => setDraft({ ...draft, monthlyPayment: e.target.value })} step="any"/>
-            </label>
-            <label><span>Taux annuel (%)</span>
-              <input type="number" value={draft.interestRate} onChange={(e) => setDraft({ ...draft, interestRate: e.target.value })} step="0.01"/>
-            </label>
-          </div>
-          <label><span>Date de fin</span>
-            <input type="date" value={draft.endDate || ''} onChange={(e) => setDraft({ ...draft, endDate: e.target.value })}/>
-          </label>
-          <label><span>Emprunteurs</span>
-            <div className="member-checks">
-              {members.map(m => (
-                <label key={m.id} className={`member-check ${(draft.memberIds || []).includes(m.id) ? 'active' : ''}`} style={{ borderColor: (draft.memberIds || []).includes(m.id) ? m.color : undefined }}>
-                  <input type="checkbox" checked={(draft.memberIds || []).includes(m.id)} onChange={() => toggleMember(m.id)}/>
-                  <span className="member-avatar" style={{ background: m.color }}>{m.name.charAt(0).toUpperCase()}</span>
-                  <span>{m.name}</span>
+        <div className="wizard-body">
+          <nav className="wizard-steps">
+            {LIABILITY_STEPS.map((s, i) => (
+              <button
+                key={s.key}
+                className={`wizard-step ${i === stepIdx ? 'active' : ''} ${i < stepIdx ? 'done' : ''}`}
+                onClick={() => setStepIdx(i)}
+              >
+                <span className="wizard-step-num">{i + 1}</span>
+                <span className="wizard-step-label">{s.label}</span>
+              </button>
+            ))}
+          </nav>
+          <div className="wizard-pane">
+            {step === 'main' && (
+              <>
+                <label><span>Nom</span>
+                  <input value={draft.name} onChange={(e) => set('name', e.target.value)} placeholder="Emprunt RP, Auto, …" autoFocus/>
                 </label>
-              ))}
-            </div>
-          </label>
+                <label><span>Type</span>
+                  <select value={draft.type} onChange={(e) => set('type', e.target.value)}>
+                    {LIABILITY_TYPES.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </select>
+                </label>
+                <div className="field-row">
+                  <label><span>Montant emprunté (€)</span>
+                    <input type="number" value={draft.initialCapital} onChange={(e) => set('initialCapital', e.target.value)} step="any"/>
+                  </label>
+                  <label><span>Apport (€) <em>optionnel</em></span>
+                    <input type="number" value={draft.downPayment} onChange={(e) => set('downPayment', e.target.value)} step="any"/>
+                  </label>
+                </div>
+                <label><span>Emprunteurs</span>
+                  <div className="member-checks">
+                    {members.map(m => (
+                      <label key={m.id} className={`member-check ${(draft.memberIds || []).includes(m.id) ? 'active' : ''}`} style={{ borderColor: (draft.memberIds || []).includes(m.id) ? m.color : undefined }}>
+                        <input type="checkbox" checked={(draft.memberIds || []).includes(m.id)} onChange={() => toggleMember(m.id)}/>
+                        <span className="member-avatar" style={{ background: m.color }}>{m.name.charAt(0).toUpperCase()}</span>
+                        <span>{m.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </label>
+              </>
+            )}
+
+            {step === 'specs' && (
+              <>
+                <div className="field-row">
+                  <label><span>Mensualité totale (€)</span>
+                    <input type="number" value={draft.monthlyPayment} onChange={(e) => set('monthlyPayment', e.target.value)} step="any"/>
+                  </label>
+                  <label><span>Taux d'intérêt (%)</span>
+                    <input type="number" value={draft.interestRate} onChange={(e) => set('interestRate', e.target.value)} step="0.01"/>
+                  </label>
+                </div>
+                <label><span>Taux d'assurance (%) <em>optionnel</em></span>
+                  <input type="number" value={draft.insuranceRate} onChange={(e) => set('insuranceRate', e.target.value)} step="0.01"/>
+                </label>
+                <label><span>Capital restant dû (€)</span>
+                  <input type="number" value={draft.remainingCapital} onChange={(e) => set('remainingCapital', e.target.value)} step="any"/>
+                </label>
+              </>
+            )}
+
+            {step === 'duration' && (
+              <>
+                <div className="field-row">
+                  <label><span>Date de première échéance</span>
+                    <input type="date" value={draft.startDate || ''} onChange={(e) => set('startDate', e.target.value)}/>
+                  </label>
+                  <label><span>Durée totale (mois)</span>
+                    <input type="number" value={draft.durationMonths} onChange={(e) => set('durationMonths', e.target.value)} placeholder="240"/>
+                  </label>
+                </div>
+                <label><span>Date de fin</span>
+                  <input type="date" value={draft.endDate || ''} onChange={(e) => set('endDate', e.target.value)}/>
+                </label>
+                <div className="settings-info">
+                  <Lightbulb size={14}/>
+                  <span>Tu peux soit saisir la durée totale, soit la date de fin. Wealthly utilise les deux pour calculer le calendrier d'amortissement.</span>
+                </div>
+              </>
+            )}
+
+            {step === 'fees' && (
+              <>
+                <div className="field-row">
+                  <label><span>Frais de dossier (€) <em>optionnel</em></span>
+                    <input type="number" value={draft.applicationFees} onChange={(e) => set('applicationFees', e.target.value)} step="any"/>
+                  </label>
+                  <label><span>Détention de l'emprunt (%) <em>optionnel</em></span>
+                    <input type="number" value={draft.ownershipPct} onChange={(e) => set('ownershipPct', e.target.value)} min="0" max="100" step="0.1"/>
+                  </label>
+                </div>
+                <label><span>Notes</span>
+                  <textarea rows={3} value={draft.notes || ''} onChange={(e) => set('notes', e.target.value)}/>
+                </label>
+              </>
+            )}
+
+            {step === 'linked' && (
+              <>
+                <label><span>Actif lié <em>optionnel</em></span>
+                  <select value={draft.linkedAssetId || ''} onChange={(e) => set('linkedAssetId', e.target.value)}>
+                    <option value="">— Aucun —</option>
+                    {assets.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                  </select>
+                </label>
+                <div className="settings-info">
+                  <Lightbulb size={14}/>
+                  <span>Lier un emprunt à un actif (ex: ton crédit immobilier à ta résidence principale) permet à Wealthly de croiser les deux dans tes vues Patrimoine.</span>
+                </div>
+              </>
+            )}
+          </div>
         </div>
-        <div className="modal-footer">
+        <div className="modal-footer wizard-footer">
           <button className="secondary-btn" onClick={onCancel}>Annuler</button>
-          <button className="primary-btn" onClick={handleSave}><Check size={14}/> Enregistrer</button>
+          <div style={{ flex: 1 }}/>
+          {stepIdx > 0 && <button className="secondary-btn" onClick={() => setStepIdx(stepIdx - 1)}><ChevronLeft size={14}/> Retour</button>}
+          {stepIdx < LIABILITY_STEPS.length - 1 ? (
+            <button className="primary-btn" onClick={() => setStepIdx(stepIdx + 1)}>Suivant <ChevronRight size={14}/></button>
+          ) : (
+            <button className="primary-btn" onClick={submit} disabled={!canSave}><Check size={14}/> Enregistrer</button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// LOAN AMORTIZATION + DETAIL VIEW
+// ============================================================================
+
+/**
+ * Compute a fixed-rate annuity amortization schedule.
+ *
+ * Returns one row per month: { idx, date, capital, interest, insurance,
+ * payment, remaining }. The last row's `remaining` should be ~0.
+ *
+ * Inputs:
+ *  - principal   : initial capital (€)
+ *  - annualRate  : annual interest rate in % (e.g. 1.25 → 1.25%)
+ *  - durationM   : total duration in months
+ *  - insuranceRate : annual insurance rate in % of initial principal
+ *  - startDate   : ISO date string for the first payment (used to label rows)
+ *  - paymentOverride : optional fixed monthly payment (capital + interest);
+ *                       used if provided so the UI can match the value the
+ *                       user actually pays — otherwise computed from formula.
+ */
+function buildAmortization({ principal, annualRate, durationM, insuranceRate, startDate, paymentOverride }) {
+  const P = parseFloat(principal) || 0;
+  const n = parseInt(durationM, 10) || 0;
+  const r = (parseFloat(annualRate) || 0) / 100 / 12;
+  const ins = ((parseFloat(insuranceRate) || 0) / 100 / 12) * P;
+  if (P <= 0 || n <= 0) return [];
+
+  const monthlyKap = paymentOverride
+    ? Math.max(0, parseFloat(paymentOverride) - ins)
+    : (r > 0 ? P * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1) : P / n);
+
+  let remaining = P;
+  const start = startDate ? new Date(startDate) : new Date();
+  const rows = [];
+  for (let i = 0; i < n; i++) {
+    const interest = remaining * r;
+    let capital = monthlyKap - interest;
+    if (capital > remaining) capital = remaining;
+    remaining = Math.max(0, remaining - capital);
+    const d = new Date(start.getFullYear(), start.getMonth() + i, start.getDate());
+    rows.push({
+      idx: i + 1,
+      date: d.toISOString().slice(0, 10),
+      capital,
+      interest,
+      insurance: ins,
+      payment: capital + interest + ins,
+      remaining,
+    });
+  }
+  return rows;
+}
+
+function LiabilityDetail({ liability, assets, members, memberShare, fmt, onEdit, onClose }) {
+  const l = liability;
+  const schedule = useMemo(() => buildAmortization({
+    principal: l.initialCapital,
+    annualRate: l.interestRate,
+    durationM: l.durationMonths,
+    insuranceRate: l.insuranceRate,
+    startDate: l.startDate,
+    paymentOverride: l.monthlyPayment,
+  }), [l]);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const paidRows = schedule.filter(r => r.date <= today);
+  const remainingRows = schedule.filter(r => r.date > today);
+  const totalCost = schedule.reduce((s, r) => s + r.payment, 0) + (parseFloat(l.applicationFees) || 0);
+  const totalCapitalPaid = paidRows.reduce((s, r) => s + r.capital, 0);
+  const totalInterestPaid = paidRows.reduce((s, r) => s + r.interest, 0);
+  const totalInsurancePaid = paidRows.reduce((s, r) => s + r.insurance, 0);
+  const totalPaid = totalCapitalPaid + totalInterestPaid + totalInsurancePaid;
+  const totalRemaining = remainingRows.reduce((s, r) => s + r.payment, 0);
+  const computedRemaining = remainingRows.length > 0 ? remainingRows[0].remaining + remainingRows[0].capital : 0;
+  const remainingCapital = parseFloat(l.remainingCapital) > 0 ? parseFloat(l.remainingCapital) : computedRemaining;
+  const principal = parseFloat(l.initialCapital) || 0;
+  const pctRepaid = principal > 0 ? Math.min(100, ((principal - remainingCapital) / principal) * 100) : 0;
+  const linkedAsset = l.linkedAssetId ? assets.find(a => a.id === l.linkedAssetId) : null;
+  const owners = (l.memberIds || []).map(id => members.find(m => m.id === id)?.name).filter(Boolean).join(' & ');
+
+  // Mensualité breakdown — on prend la première échéance non payée si dispo,
+  // sinon la première
+  const ref = remainingRows[0] || schedule[0] || null;
+
+  const chartData = schedule.map(r => ({
+    date: r.date,
+    remaining: Math.round(r.remaining),
+    paid: Math.round(principal - r.remaining),
+  }));
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal modal--detail" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <ChevronLeft size={18} style={{ cursor: 'pointer' }} onClick={onClose}/>
+            <h2>{l.name}</h2>
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button className="secondary-btn" onClick={onEdit}><Edit3 size={13}/> Modifier</button>
+            <button className="icon-btn-sm" onClick={onClose}><X size={16}/></button>
+          </div>
+        </div>
+
+        <div className="loan-detail-body">
+          <div className="loan-detail-top">
+            <div className="loan-amort-block">
+              <div className="loan-amort-period">
+                {l.startDate ? formatDate(l.startDate, { format: 'short' }) : '—'}
+                {' → '}
+                {l.endDate ? formatDate(l.endDate, { format: 'short' }) : '—'}
+              </div>
+              <div className="loan-amort-value">{fmt(remainingCapital)}</div>
+              <div className="loan-amort-meta">capital restant dû</div>
+              {schedule.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <AreaChart data={chartData} margin={{ left: 0, right: 8, top: 10, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="amort-fill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.4}/>
+                        <stop offset="100%" stopColor="var(--primary)" stopOpacity={0.02}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false}/>
+                    <XAxis dataKey="date" tickFormatter={(d) => d.slice(0, 4)} stroke="var(--text-tertiary)" fontSize={11} interval={Math.max(0, Math.floor(schedule.length / 8))}/>
+                    <YAxis tickFormatter={(v) => formatCurrency(v, { compact: true })} stroke="var(--text-tertiary)" fontSize={11}/>
+                    <Tooltip
+                      formatter={(v) => fmt(v)}
+                      labelFormatter={(d) => formatDate(d, { format: 'monthYear' })}
+                      contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
+                    />
+                    <Area type="monotone" dataKey="remaining" name="Capital restant" stroke="var(--primary)" strokeWidth={2} fill="url(#amort-fill)"/>
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="empty-mini">
+                  <BarChart3 size={20}/>
+                  <p>Renseigne le capital, le taux et la durée pour voir la courbe d'amortissement.</p>
+                </div>
+              )}
+            </div>
+
+            <aside className="loan-monthly-card">
+              <div className="loan-monthly-label">MENSUALITÉ</div>
+              <div className="loan-monthly-value">{fmt(parseFloat(l.monthlyPayment) || (ref?.payment ?? 0))}</div>
+              <div className="loan-monthly-sub">par mois</div>
+              {ref && (
+                <div className="loan-monthly-breakdown">
+                  <div><span className="dot dot-cap"/>Capital</div><div>{fmt(ref.capital)}</div>
+                  <div><span className="dot dot-int"/>Intérêts</div><div>{fmt(ref.interest)}</div>
+                  <div><span className="dot dot-ins"/>Assurance</div><div>{fmt(ref.insurance)}</div>
+                </div>
+              )}
+              <div className="loan-monthly-stats">
+                <div><span>Échéances payées</span><strong>{paidRows.length}</strong></div>
+                <div><span>Échéances restantes</span><strong>{remainingRows.length}</strong></div>
+                <div><span>Date de fin</span><strong>{l.endDate ? formatDate(l.endDate, { format: 'monthYear' }) : '—'}</strong></div>
+              </div>
+              <div className="loan-pct-pill">Tu as remboursé {pctRepaid.toFixed(0)} % du capital du prêt</div>
+            </aside>
+          </div>
+
+          <h3 className="loan-section-title">Synthèse</h3>
+          <div className="loan-summary-grid">
+            <div className="loan-summary-card">
+              <div className="loan-summary-label">COÛT TOTAL DE L'EMPRUNT</div>
+              <div className="loan-summary-value">{fmt(totalCost)}</div>
+              <div className="loan-summary-rows">
+                <div><span>Capital</span><span>{fmt(principal)}</span></div>
+                <div><span>Intérêts et assurance</span><span>{fmt(totalCost - principal - (parseFloat(l.applicationFees) || 0))}</span></div>
+                <div><span>Frais de dossier</span><span>{l.applicationFees ? fmt(parseFloat(l.applicationFees)) : '—'}</span></div>
+              </div>
+            </div>
+
+            <div className="loan-summary-card">
+              <div className="loan-summary-label">TOTAL REMBOURSÉ</div>
+              <div className="loan-summary-value">{fmt(totalPaid)}</div>
+              <div className="loan-summary-rows">
+                <div><span>Capital</span><span>{fmt(totalCapitalPaid)}</span></div>
+                <div><span>Intérêts</span><span>{fmt(totalInterestPaid)}</span></div>
+                <div><span>Assurance</span><span>{fmt(totalInsurancePaid)}</span></div>
+              </div>
+            </div>
+
+            <div className="loan-summary-card">
+              <div className="loan-summary-label">CAPITAL RESTANT DÛ</div>
+              <div className="loan-summary-value">{fmt(remainingCapital)}</div>
+              <div className="loan-summary-rows">
+                <div><span>Reste à rembourser</span><span>{fmt(totalRemaining)}</span></div>
+                <div><span>Reste à rembourser (%)</span><span>{(100 - pctRepaid).toFixed(0)} %</span></div>
+              </div>
+            </div>
+          </div>
+
+          {(linkedAsset || owners) && (
+            <div className="loan-meta-row">
+              {linkedAsset && (
+                <div className="loan-meta-pill"><Home size={14}/> Lié à <strong>{linkedAsset.name}</strong></div>
+              )}
+              {owners && (
+                <div className="loan-meta-pill"><Users size={14}/> {owners}</div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -4193,17 +4532,20 @@ function Styles({ theme }) {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* HEADER */
-.app-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(12px); background: ${dark ? 'rgba(20, 24, 33, 0.85)' : 'rgba(255, 255, 255, 0.85)'}; gap: 12px; flex-wrap: wrap; }
+.app-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); background: ${dark ? 'rgba(12, 13, 16, 0.78)' : 'rgba(247, 245, 239, 0.82)'}; gap: 12px; flex-wrap: wrap; }
 .brand { display: flex; align-items: center; gap: 12px; cursor: pointer; }
 .brand:hover { opacity: 0.85; }
 .brand-mark { width: 38px; height: 38px; border-radius: 6px; background: var(--primary-soft); border: 1px solid ${dark ? 'rgba(197, 165, 114, 0.35)' : 'rgba(160, 133, 85, 0.3)'}; display: flex; align-items: center; justify-content: center; color: var(--primary); box-shadow: none; }
 .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
 .brand-name { font-size: 17px; font-weight: 700; letter-spacing: -0.025em; }
 .brand-tagline { font-size: 10px; color: var(--text-tertiary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 1px; }
-.main-nav { display: flex; gap: 2px; background: var(--bg-subtle); padding: 4px; border-radius: 12px; overflow-x: auto; }
-.main-nav button { display: inline-flex; align-items: center; gap: 5px; padding: 7px 12px; border: none; background: transparent; color: var(--text-secondary); font-size: 13px; font-weight: 500; border-radius: 8px; cursor: pointer; transition: all 0.15s; font-family: inherit; white-space: nowrap; }
+.main-nav { display: flex; gap: 2px; background: var(--bg-subtle); padding: 4px; border-radius: 10px; overflow-x: auto; border: 1px solid var(--border-light); }
+.main-nav button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: none; background: transparent; color: var(--text-secondary); font-size: 13px; font-weight: 500; border-radius: 7px; cursor: pointer; transition: color 0.18s, background 0.18s; font-family: inherit; white-space: nowrap; letter-spacing: -0.01em; }
+.main-nav button svg { color: var(--text-tertiary); transition: color 0.18s; }
 .main-nav button:hover { background: var(--bg-card); color: var(--text-primary); }
-.main-nav button.active { background: var(--bg-card); color: var(--primary); box-shadow: var(--shadow-sm); }
+.main-nav button:hover svg { color: var(--text-secondary); }
+.main-nav button.active { background: var(--bg-card); color: var(--primary); box-shadow: 0 1px 0 0 var(--border-light), inset 0 0 0 1px var(--border); font-weight: 600; }
+.main-nav button.active svg { color: var(--primary); }
 .nav-alert-dot { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px; padding: 0 5px; margin-left: 4px; border-radius: 8px; background: var(--danger); color: white; font-size: 10px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
 .header-actions { display: flex; align-items: center; gap: 8px; }
 .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; background: var(--bg-subtle); border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; transition: all 0.15s; }
@@ -4729,6 +5071,64 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 /* MODAL */
 .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; backdrop-filter: blur(4px); }
 .modal { background: var(--bg-card); border-radius: 16px; max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-xl); border: 1px solid var(--border); }
+.modal--wizard { max-width: 720px; }
+.modal--detail { max-width: 1100px; }
+
+/* Wizard layout */
+.wizard-body { display: grid; grid-template-columns: 220px 1fr; min-height: 360px; }
+.wizard-steps { display: flex; flex-direction: column; gap: 2px; padding: 16px 12px; border-right: 1px solid var(--border); background: var(--bg-subtle); }
+.wizard-step { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: none; background: transparent; cursor: pointer; border-radius: 8px; font-family: inherit; font-size: 13px; color: var(--text-secondary); text-align: left; transition: background 0.15s, color 0.15s; }
+.wizard-step:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+.wizard-step.active { background: var(--bg-card); color: var(--text-primary); font-weight: 600; box-shadow: var(--shadow-sm); }
+.wizard-step.done { color: var(--text-primary); }
+.wizard-step-num { width: 22px; height: 22px; border-radius: 50%; background: var(--bg-page); border: 1px solid var(--border); color: var(--text-tertiary); font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.wizard-step.active .wizard-step-num { background: var(--primary); color: var(--bg-page); border-color: var(--primary); }
+.wizard-step.done .wizard-step-num { background: var(--primary-soft); color: var(--primary); border-color: var(--primary-soft); }
+.wizard-pane { padding: 24px 28px; display: flex; flex-direction: column; gap: 14px; }
+.wizard-pane label > span em { font-style: normal; font-weight: 400; color: var(--text-tertiary); margin-left: 6px; font-size: 11px; }
+.wizard-footer { gap: 8px; align-items: center; }
+
+/* Loan detail */
+.liability-card-v2.clickable { cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+.liability-card-v2.clickable:hover { border-color: var(--primary); background: var(--bg-card-hover); }
+.loan-detail-body { padding: 24px 28px; display: flex; flex-direction: column; gap: 24px; }
+.loan-detail-top { display: grid; grid-template-columns: 1fr 320px; gap: 24px; }
+.loan-amort-block { display: flex; flex-direction: column; gap: 4px; }
+.loan-amort-period { font-size: 11px; color: var(--text-tertiary); letter-spacing: 0.04em; text-transform: uppercase; }
+.loan-amort-value { font-size: 38px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.loan-amort-meta { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
+
+.loan-monthly-card { background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+.loan-monthly-label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); }
+.loan-monthly-value { font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.loan-monthly-sub { font-size: 12px; color: var(--text-tertiary); margin-top: -6px; }
+.loan-monthly-breakdown { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 12px 0; border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); font-size: 13px; }
+.loan-monthly-breakdown div { display: flex; align-items: center; gap: 8px; }
+.loan-monthly-breakdown div:nth-child(even) { justify-content: flex-end; font-variant-numeric: tabular-nums; font-weight: 500; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot-cap { background: var(--primary); }
+.dot-int { background: var(--info); }
+.dot-ins { background: var(--purple); }
+.loan-monthly-stats { display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
+.loan-monthly-stats > div { display: flex; justify-content: space-between; }
+.loan-monthly-stats span { color: var(--text-tertiary); }
+.loan-monthly-stats strong { font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.loan-pct-pill { font-size: 11px; padding: 8px 12px; border-radius: 999px; background: var(--primary-soft); color: var(--primary-text); text-align: center; border: 1px solid var(--primary-soft); }
+
+.loan-section-title { font-size: 16px; font-weight: 600; color: var(--text-primary); margin: 0; }
+.loan-summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.loan-summary-card { padding: 18px; border-radius: 12px; background: var(--bg-subtle); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+.loan-summary-label { font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); }
+.loan-summary-value { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.loan-summary-rows { display: flex; flex-direction: column; gap: 4px; font-size: 12px; padding-top: 6px; border-top: 1px solid var(--border-light); }
+.loan-summary-rows > div { display: flex; justify-content: space-between; }
+.loan-summary-rows span:first-child { color: var(--text-tertiary); }
+.loan-summary-rows span:last-child { font-variant-numeric: tabular-nums; }
+
+.loan-meta-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.loan-meta-pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: var(--bg-subtle); border: 1px solid var(--border); font-size: 12px; color: var(--text-secondary); }
+.loan-meta-pill strong { color: var(--text-primary); }
+
 .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--border); }
 .modal-header h2 { font-size: 18px; font-weight: 700; margin: 0; }
 .modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }

@@ -99,6 +99,13 @@ def _liability_to_out(l: Liability) -> dict:
         "notes": l.notes or "",
         "household_id": l.household_id,
         "member_ids": [m.id for m in l.members],
+        "down_payment": l.down_payment,
+        "insurance_rate": l.insurance_rate,
+        "application_fees": l.application_fees,
+        "ownership_pct": l.ownership_pct,
+        "duration_months": l.duration_months,
+        "start_date": l.start_date,
+        "linked_asset_id": l.linked_asset_id,
     }
 
 
