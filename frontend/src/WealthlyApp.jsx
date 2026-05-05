@@ -1547,16 +1547,18 @@ function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, this
   // Allocation donut: liquidités + actifs par classe
   const allocationData = useMemo(() => {
     const classes = {};
-    if (liquidWealth > 0) classes['Liquidités'] = { value: liquidWealth, color: '#3b82f6' };
+    if (liquidWealth > 0) classes['Liquidités'] = { value: liquidWealth, color: 'var(--color-w-asset-cash)' };
     visibleAssets.forEach(a => {
       const cls = ASSET_CLASS_MAP[a.type]?.class || 'Divers';
-      const color = ASSET_CLASS_MAP[a.type]?.color || '#6b7280';
+      const color = ASSET_CLASS_MAP[a.type]?.color || '#8a8a93';
       const val = (parseFloat(a.currentValue) || 0) * memberShare(a);
       if (!classes[cls]) classes[cls] = { value: 0, color };
       classes[cls].value += val;
     });
     return Object.entries(classes).filter(([, d]) => d.value > 0).map(([name, d]) => ({ name, ...d }));
   }, [liquidWealth, visibleAssets, memberShare]);
+
+  const allocationTotal = allocationData.reduce((s, d) => s + d.value, 0);
 
   // Performance: % change vs 1 month ago and 3 months ago
   const perf = useMemo(() => {
@@ -1574,7 +1576,6 @@ function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, this
   const liquidityRatio = netWorth > 0 ? (liquidWealth / netWorth) * 100 : null;
   const debtRatio = (assetsValue + liquidWealth) > 0 ? (liabilitiesValue / (assetsValue + liquidWealth)) * 100 : null;
 
-  // Streak: consecutive months with positive net
   const streak = useMemo(() => {
     let count = 0;
     for (let i = monthlyEvolution.length - 1; i >= 0; i--) {
@@ -1584,7 +1585,6 @@ function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, this
     return count;
   }, [monthlyEvolution]);
 
-  // Top categories this month
   const topCategoriesThisMonth = useMemo(() => {
     return Object.entries(categoryAnalysis)
       .filter(([catId, data]) => data.current > 0)
@@ -1599,17 +1599,17 @@ function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, this
 
   if (visibleAccounts.length === 0 && visibleAssets.length === 0 && visibleLiabilities.length === 0) {
     return (
-      <div className="empty-state">
-        <div className="empty-illustration">
-          <div className="empty-circle"><Sparkles size={28}/></div>
+      <div className="w-redesign min-h-[60vh] flex flex-col items-center justify-center text-center px-6">
+        <div className="w-14 h-14 rounded-full bg-[var(--color-w-accent-soft)] flex items-center justify-center mb-5 text-[var(--color-w-accent)]">
+          <Sparkles size={24}/>
         </div>
-        <h1>{activeMember ? `Bonjour ${activeMember.name} 👋` : 'Bienvenue !'}</h1>
-        <p className="empty-lead">Aucune donnée pour l'instant. Importez votre premier CSV ou ajoutez un actif pour commencer.</p>
-        <div className="empty-actions">
-          <button className="primary-btn-large" onClick={() => setView('import')}>
-            <Upload size={16}/> Importer un CSV
+        <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-w-text)] mb-2">{activeMember ? `Bonjour ${activeMember.name}` : 'Bienvenue'}</h1>
+        <p className="text-[var(--color-w-muted)] max-w-md mb-6">Aucune donnée pour l'instant. Importez votre premier CSV ou ajoutez un actif pour commencer.</p>
+        <div className="flex gap-3">
+          <button onClick={() => setView('import')} className="inline-flex items-center gap-2 px-4 h-10 rounded-[var(--radius-w-md)] bg-[var(--color-w-accent)] text-[#0a0a0c] font-medium hover:bg-[var(--color-w-accent-hover)] transition-colors">
+            <Upload size={15}/> Importer un CSV
           </button>
-          <button className="secondary-btn" onClick={() => setView('wealth')}>
+          <button onClick={() => setView('wealth')} className="inline-flex items-center gap-2 px-4 h-10 rounded-[var(--radius-w-md)] border border-[var(--color-w-border-strong)] text-[var(--color-w-text)] hover:bg-[var(--color-w-surface-2)] transition-colors">
             <Plus size={14}/> Ajouter un actif
           </button>
         </div>
@@ -1625,77 +1625,132 @@ function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, this
     return 'Bonsoir';
   })();
 
+  const dateLong = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const m1Positive = perf.m1 === null ? null : perf.m1 >= 0;
+
+  // Card primitives — Tailwind classes referencing the design tokens.
+  const cardCls = 'bg-[var(--color-w-surface)] border border-[var(--color-w-border)] rounded-[var(--radius-w-lg)]';
+  const labelCls = 'text-[11px] uppercase tracking-[0.08em] text-[var(--color-w-muted)] font-medium';
+
   return (
-    <div className="dashboard">
-      <div className="resume-header">
+    <div className="w-redesign font-sans">
+      {/* Header */}
+      <div className="flex items-end justify-between flex-wrap gap-4 mb-7">
         <div>
-          <h1 className="page-title">Résumé{activeMember ? ` — ${activeMember.name}` : ''}</h1>
-          <p className="page-subtitle">Votre patrimoine à date · {new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+          <p className={labelCls + ' mb-2'}>{greeting}{activeMember ? ` · ${activeMember.name}` : ''}</p>
+          <h1 className="text-[28px] leading-tight font-semibold tracking-tight text-[var(--color-w-text)]">Patrimoine</h1>
+          <p className="text-sm text-[var(--color-w-faint)] mt-1">{dateLong}</p>
         </div>
-        {streak >= 2 && <div className="streak-badge"><Zap size={14}/> {streak} mois positifs d'affilée</div>}
+        {streak >= 2 && (
+          <div className="inline-flex items-center gap-2 px-3 h-8 rounded-full border border-[var(--color-w-border)] bg-[var(--color-w-surface)] text-xs text-[var(--color-w-text)]">
+            <Zap size={13} className="text-[var(--color-w-accent)]"/>
+            <span className="text-[var(--color-w-muted)]">{streak} mois positifs d'affilée</span>
+          </div>
+        )}
       </div>
 
-      <section className="hero-kpis">
-        {/* Card 1 — Patrimoine net (primary) */}
-        <div className="kpi-card kpi-card--primary">
-          <div className="kpi-card-label">Patrimoine net</div>
-          <div className="kpi-card-value"><AnimatedNumber value={netWorth} format={(v) => fmt(v)}/></div>
-          <div className="kpi-card-sub">
-            {liquidWealth > 0 && <span className="kpi-card-sub-item"><span className="kpi-dot" style={{ background: '#3b82f6' }}/>{fmt(liquidWealth)} liquidités</span>}
-            {assetsValue > 0 && <span className="kpi-card-sub-item"><span className="kpi-dot" style={{ background: '#10b981' }}/>{fmt(assetsValue)} actifs</span>}
-            {liabilitiesValue > 0 && <span className="kpi-card-sub-item"><span className="kpi-dot" style={{ background: '#ef4444' }}/>−{fmt(liabilitiesValue)} dettes</span>}
+      {/* Hero KPIs — 4 cards, primary spans 2 cols */}
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+        {/* Card 1 — Patrimoine net (primary, 2 cols) */}
+        <div className={`${cardCls} lg:col-span-2 p-6 relative overflow-hidden`}>
+          <div className={labelCls}>Patrimoine net</div>
+          <div className="text-[40px] leading-[1.1] font-semibold tracking-tight w-num text-[var(--color-w-text)] mt-3">
+            <AnimatedNumber value={netWorth} format={(v) => fmt(v)}/>
+          </div>
+          <div className="flex flex-wrap gap-x-6 gap-y-2 mt-5 text-[13px] text-[var(--color-w-muted)]">
+            {liquidWealth > 0 && (
+              <span className="inline-flex items-center gap-2">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-w-asset-cash)]"/>
+                <span className="w-num text-[var(--color-w-text)]">{fmt(liquidWealth)}</span>
+                <span>liquidités</span>
+              </span>
+            )}
+            {assetsValue > 0 && (
+              <span className="inline-flex items-center gap-2">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-w-asset-equity)]"/>
+                <span className="w-num text-[var(--color-w-text)]">{fmt(assetsValue)}</span>
+                <span>actifs</span>
+              </span>
+            )}
+            {liabilitiesValue > 0 && (
+              <span className="inline-flex items-center gap-2">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-w-danger)]"/>
+                <span className="w-num text-[var(--color-w-text)]">−{fmt(liabilitiesValue)}</span>
+                <span>dettes</span>
+              </span>
+            )}
           </div>
         </div>
 
         {/* Card 2 — Performance 1 mois */}
-        <div className={`kpi-card ${perf.m1 === null ? '' : perf.m1 >= 0 ? 'kpi-card--positive' : 'kpi-card--negative'}`}>
-          <div className="kpi-card-label">Performance 1 mois</div>
-          <div className="kpi-card-value">
+        <div className={`${cardCls} p-6`}>
+          <div className="flex items-start justify-between">
+            <div className={labelCls}>Performance 1 mois</div>
+            <div className={m1Positive === null ? 'text-[var(--color-w-faint)]' : m1Positive ? 'text-[var(--color-w-accent)]' : 'text-[var(--color-w-danger)]'}>
+              {m1Positive === null ? <Activity size={16}/> : m1Positive ? <TrendingUp size={16}/> : <TrendingDown size={16}/>}
+            </div>
+          </div>
+          <div className={`text-[28px] leading-tight font-semibold w-num mt-3 ${m1Positive === null ? 'text-[var(--color-w-text)]' : m1Positive ? 'text-[var(--color-w-accent)]' : 'text-[var(--color-w-danger)]'}`}>
             {perf.m1 !== null ? `${perf.m1 >= 0 ? '+' : ''}${perf.m1.toFixed(2)}%` : '—'}
           </div>
-          {perf.m3 !== null && <div className="kpi-card-sub"><span className="kpi-card-sub-item">3 mois : {perf.m3 >= 0 ? '+' : ''}{perf.m3.toFixed(1)}%</span></div>}
-          <div className="kpi-card-icon">{perf.m1 === null ? <Activity size={18}/> : perf.m1 >= 0 ? <TrendingUp size={18}/> : <TrendingDown size={18}/>}</div>
+          {perf.m3 !== null && (
+            <div className="text-xs text-[var(--color-w-muted)] mt-3">3 mois&nbsp;: <span className="w-num text-[var(--color-w-text)]">{perf.m3 >= 0 ? '+' : ''}{perf.m3.toFixed(1)}%</span></div>
+          )}
         </div>
 
-        {/* Card 3 — Taux de liquidité */}
-        <div className="kpi-card">
-          <div className="kpi-card-label">Taux de liquidité</div>
-          <div className="kpi-card-value">{liquidityRatio !== null ? `${liquidityRatio.toFixed(1)}%` : '—'}</div>
-          <div className="kpi-card-sub"><span className="kpi-card-sub-item">des actifs sont disponibles</span></div>
-          <div className="kpi-card-icon" style={{ background: 'var(--primary-soft)', color: 'var(--primary)' }}><Wallet size={18}/></div>
-        </div>
-
-        {/* Card 4 — Ratio dette / Capacité d'épargne */}
+        {/* Card 3 — Liquidité OU Épargne du mois (selon présence dettes) */}
         {liabilitiesValue > 0 ? (
-          <div className={`kpi-card ${debtRatio > 40 ? 'kpi-card--negative' : ''}`}>
-            <div className="kpi-card-label">Ratio dette/actifs</div>
-            <div className="kpi-card-value">{debtRatio !== null ? `${debtRatio.toFixed(1)}%` : '—'}</div>
-            <div className="kpi-card-sub"><span className="kpi-card-sub-item">{debtRatio < 30 ? '✅ Sain' : debtRatio < 50 ? '⚠️ Surveillé' : '🔴 Élevé'}</span></div>
-            <div className="kpi-card-icon" style={{ background: 'var(--danger-soft)', color: 'var(--danger-text)' }}><CreditCard size={18}/></div>
+          <div className={`${cardCls} p-6`}>
+            <div className="flex items-start justify-between">
+              <div className={labelCls}>Ratio dette / actifs</div>
+              <CreditCard size={16} className="text-[var(--color-w-faint)]"/>
+            </div>
+            <div className="text-[28px] leading-tight font-semibold w-num mt-3 text-[var(--color-w-text)]">
+              {debtRatio !== null ? `${debtRatio.toFixed(1)}%` : '—'}
+            </div>
+            <div className="text-xs mt-3">
+              {debtRatio === null ? null : debtRatio < 30 ? (
+                <span className="text-[var(--color-w-accent)]">Sain</span>
+              ) : debtRatio < 50 ? (
+                <span className="text-[var(--color-w-warning)]">Surveillé</span>
+              ) : (
+                <span className="text-[var(--color-w-danger)]">Élevé</span>
+              )}
+            </div>
           </div>
         ) : (
-          <div className="kpi-card kpi-card--positive">
-            <div className="kpi-card-label">Épargne du mois</div>
-            <div className="kpi-card-value"><AnimatedNumber value={thisMonthStats.net} format={(v) => fmt(v, { sign: true })}/></div>
-            {thisMonthStats.income > 0 && <div className="kpi-card-sub"><span className="kpi-card-sub-item">Taux : {((thisMonthStats.net / thisMonthStats.income) * 100).toFixed(0)}% des revenus</span></div>}
-            <div className="kpi-card-icon" style={{ background: 'var(--success-soft)', color: 'var(--success-text)' }}><PiggyBank size={18}/></div>
+          <div className={`${cardCls} p-6`}>
+            <div className="flex items-start justify-between">
+              <div className={labelCls}>Épargne du mois</div>
+              <PiggyBank size={16} className="text-[var(--color-w-accent)]"/>
+            </div>
+            <div className={`text-[28px] leading-tight font-semibold w-num mt-3 ${thisMonthStats.net >= 0 ? 'text-[var(--color-w-accent)]' : 'text-[var(--color-w-danger)]'}`}>
+              <AnimatedNumber value={thisMonthStats.net} format={(v) => fmt(v, { sign: true })}/>
+            </div>
+            {thisMonthStats.income > 0 && (
+              <div className="text-xs text-[var(--color-w-muted)] mt-3">Taux&nbsp;: <span className="w-num text-[var(--color-w-text)]">{((thisMonthStats.net / thisMonthStats.income) * 100).toFixed(0)}%</span> des revenus</div>
+            )}
           </div>
         )}
       </section>
 
+      {/* Anomalies — alert strip */}
       {anomalies.length > 0 && (
-        <section className="card alert-card">
-          <div className="card-header">
-            <h3><AlertTriangle size={16} style={{ color: '#f59e0b' }}/> Anomalies détectées</h3>
-            <span className="card-meta">vs moyenne 3 derniers mois</span>
+        <section className={`${cardCls} p-5 mb-5 border-l-2 border-l-[var(--color-w-warning)]`}>
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle size={15} className="text-[var(--color-w-warning)]"/>
+            <h3 className="text-sm font-semibold text-[var(--color-w-text)]">Anomalies détectées</h3>
+            <span className="text-xs text-[var(--color-w-faint)] ml-auto">vs moyenne 3 derniers mois</span>
           </div>
-          <div className="anomalies-list">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {anomalies.slice(0, 3).map(a => (
-              <div key={a.categoryId} className="anomaly-item">
-                <span className="anomaly-icon" style={{ background: (a.color || '#999') + '22', color: a.color }}>{a.icon}</span>
-                <div className="anomaly-text">
-                  <strong>{a.name}</strong>
-                  <span>{fmt(a.current)} vs {fmt(a.avg)} habituel · <strong style={{ color: '#dc2626' }}>×{a.ratio.toFixed(1)}</strong></span>
+              <div key={a.categoryId} className="flex items-center gap-3 p-3 rounded-[var(--radius-w-md)] bg-[var(--color-w-surface-2)]">
+                <span className="w-8 h-8 flex items-center justify-center rounded-[var(--radius-w-sm)] text-base" style={{ background: (a.color || '#999') + '22', color: a.color }}>{a.icon}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium text-[var(--color-w-text)] truncate">{a.name}</div>
+                  <div className="text-xs text-[var(--color-w-muted)] w-num">
+                    {fmt(a.current)} vs {fmt(a.avg)} <span className="text-[var(--color-w-danger)] font-semibold">×{a.ratio.toFixed(1)}</span>
+                  </div>
                 </div>
               </div>
             ))}
@@ -1703,109 +1758,143 @@ function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, this
         </section>
       )}
 
-      <section className="card chart-card">
-        <div className="card-header">
-          <h3>Évolution des liquidités</h3>
-          <span className="card-meta">{last12Months.length} derniers mois</span>
+      {/* Net worth chart */}
+      <section className={`${cardCls} p-6 mb-5`}>
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-sm font-semibold text-[var(--color-w-text)]">Évolution des liquidités</h3>
+          <span className="text-xs text-[var(--color-w-faint)]">{last12Months.length} derniers mois</span>
         </div>
         {last12Months.length > 1 ? (
           <ResponsiveContainer width="100%" height={260}>
             <AreaChart data={last12Months} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <defs>
-                <linearGradient id="balanceGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.4}/>
-                  <stop offset="100%" stopColor="#3b82f6" stopOpacity={0}/>
+                <linearGradient id="balanceGradV2" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--color-w-accent)" stopOpacity={0.28}/>
+                  <stop offset="100%" stopColor="var(--color-w-accent)" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false}/>
-              <XAxis dataKey="month" tickFormatter={(m) => formatDate(m + '-01', { format: 'monthYear' })} stroke="var(--text-tertiary)" fontSize={11}/>
-              <YAxis tickFormatter={(v) => formatCurrency(v, { compact: true })} stroke="var(--text-tertiary)" fontSize={11}/>
-              <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }} formatter={(v) => formatCurrency(v)} labelFormatter={(m) => formatDate(m + '-01', { format: 'long' })}/>
-              <Area type="monotone" dataKey="balance" stroke="#3b82f6" strokeWidth={2.5} fill="url(#balanceGrad)"/>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-w-border)" vertical={false}/>
+              <XAxis dataKey="month" tickFormatter={(m) => formatDate(m + '-01', { format: 'monthYear' })} stroke="var(--color-w-faint)" fontSize={11} tickLine={false} axisLine={false}/>
+              <YAxis tickFormatter={(v) => formatCurrency(v, { compact: true })} stroke="var(--color-w-faint)" fontSize={11} tickLine={false} axisLine={false} width={55}/>
+              <Tooltip
+                contentStyle={{ background: 'var(--color-w-surface-2)', border: '1px solid var(--color-w-border-strong)', borderRadius: 10, fontSize: 12, color: 'var(--color-w-text)' }}
+                cursor={{ stroke: 'var(--color-w-border-strong)', strokeWidth: 1 }}
+                formatter={(v) => formatCurrency(v)}
+                labelFormatter={(m) => formatDate(m + '-01', { format: 'long' })}
+              />
+              <Area type="monotone" dataKey="balance" stroke="var(--color-w-accent)" strokeWidth={2} fill="url(#balanceGradV2)"/>
             </AreaChart>
           </ResponsiveContainer>
-        ) : <div className="chart-empty"><Activity size={28}/><span>Importez plus de mois pour voir la tendance</span></div>}
+        ) : (
+          <div className="h-[200px] flex flex-col items-center justify-center gap-3 text-[var(--color-w-faint)]">
+            <Activity size={26}/>
+            <span className="text-sm">Importez plus de mois pour voir la tendance</span>
+          </div>
+        )}
       </section>
 
-      <div className="dashboard-grid">
-        {wealthComposition.length > 0 && (
-          <section className="card">
-            <div className="card-header"><h3>Composition</h3></div>
-            <div className="composition-row">
-              <ResponsiveContainer width="55%" height={170}>
-                <PieChart>
-                  <Pie data={wealthComposition} dataKey="value" cx="50%" cy="50%" innerRadius={42} outerRadius={70} paddingAngle={3}>
-                    {wealthComposition.map((d, i) => <Cell key={i} fill={d.color}/>)}
-                  </Pie>
-                  <Tooltip formatter={(v) => formatCurrency(v)}/>
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="legend-list">
-                {wealthComposition.map(d => (
-                  <div key={d.name} className="legend-item">
-                    <span className="legend-dot" style={{ background: d.color }}/>
-                    <div>
-                      <div className="legend-name">{d.name}</div>
-                      <div className="legend-value">{fmt(d.value)}</div>
+      {/* Two-col grid: composition + top expenses */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+        {allocationData.length > 0 && (
+          <section className={`${cardCls} p-6`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-[var(--color-w-text)]">Composition</h3>
+              <button onClick={() => setView('wealth')} className="text-xs text-[var(--color-w-muted)] hover:text-[var(--color-w-text)] inline-flex items-center gap-1 transition-colors">
+                Détails <ChevronRight size={12}/>
+              </button>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="shrink-0 relative">
+                <ResponsiveContainer width={170} height={170}>
+                  <PieChart>
+                    <Pie data={allocationData} dataKey="value" cx="50%" cy="50%" innerRadius={56} outerRadius={80} paddingAngle={2} stroke="none">
+                      {allocationData.map((d, i) => <Cell key={i} fill={d.color}/>)}
+                    </Pie>
+                    <Tooltip contentStyle={{ background: 'var(--color-w-surface-2)', border: '1px solid var(--color-w-border-strong)', borderRadius: 10, fontSize: 12, color: 'var(--color-w-text)' }} formatter={(v) => formatCurrency(v)}/>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-[10px] uppercase tracking-wider text-[var(--color-w-muted)]">Total</span>
+                  <span className="text-sm font-semibold w-num text-[var(--color-w-text)]">{fmt(allocationTotal)}</span>
+                </div>
+              </div>
+              <div className="flex-1 min-w-0 space-y-2">
+                {allocationData.map(d => {
+                  const pct = allocationTotal > 0 ? (d.value / allocationTotal) * 100 : 0;
+                  return (
+                    <div key={d.name} className="flex items-center gap-3 text-sm">
+                      <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ background: d.color }}/>
+                      <span className="text-[var(--color-w-text)] flex-1 truncate">{d.name}</span>
+                      <span className="text-xs text-[var(--color-w-muted)] w-num">{pct.toFixed(0)}%</span>
+                      <span className="w-num text-[var(--color-w-text)] tabular-nums">{fmt(d.value)}</span>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </section>
         )}
 
         {topCategoriesThisMonth.length > 0 && (
-          <section className="card">
-            <div className="card-header">
-              <h3>Top dépenses du mois</h3>
-              <button className="link-btn" onClick={() => setView('monthly')}>Voir tout <ChevronRight size={12}/></button>
+          <section className={`${cardCls} p-6`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-[var(--color-w-text)]">Top dépenses du mois</h3>
+              <button onClick={() => setView('monthly')} className="text-xs text-[var(--color-w-muted)] hover:text-[var(--color-w-text)] inline-flex items-center gap-1 transition-colors">
+                Voir tout <ChevronRight size={12}/>
+              </button>
             </div>
-            <div className="cat-breakdown">
+            <div className="space-y-3">
               {topCategoriesThisMonth.map(cat => {
                 const max = topCategoriesThisMonth[0].current;
                 const pct = (cat.current / max) * 100;
                 return (
-                  <div key={cat.id} className="cat-row">
-                    <div className="cat-info">
-                      <span className="cat-icon" style={{ background: (cat.color || '#999') + '22' }}>{cat.icon}</span>
-                      <span className="cat-name">{cat.name}</span>
-                      <div className="cat-amounts">
-                        <span className="cat-amount">{fmt(cat.current)}</span>
-                        {Math.abs(cat.change) > 5 && (
-                          <span className={`cat-change ${cat.change > 0 ? 'up' : 'down'}`}>
-                            {cat.change > 0 ? <ArrowUp size={9}/> : <ArrowDown size={9}/>}
-                            {Math.abs(cat.change).toFixed(0)}%
-                          </span>
-                        )}
-                      </div>
+                  <div key={cat.id}>
+                    <div className="flex items-center gap-3 mb-1.5">
+                      <span className="w-7 h-7 rounded-[var(--radius-w-sm)] flex items-center justify-center text-sm shrink-0" style={{ background: (cat.color || '#999') + '22' }}>{cat.icon}</span>
+                      <span className="text-sm text-[var(--color-w-text)] flex-1 truncate">{cat.name}</span>
+                      {Math.abs(cat.change) > 5 && (
+                        <span className={`text-[10px] font-medium inline-flex items-center gap-0.5 ${cat.change > 0 ? 'text-[var(--color-w-danger)]' : 'text-[var(--color-w-accent)]'}`}>
+                          {cat.change > 0 ? <ArrowUp size={9}/> : <ArrowDown size={9}/>}
+                          {Math.abs(cat.change).toFixed(0)}%
+                        </span>
+                      )}
+                      <span className="text-sm w-num text-[var(--color-w-text)]">{fmt(cat.current)}</span>
                     </div>
-                    <div className="cat-bar"><div className="cat-bar-fill" style={{ width: `${pct}%`, background: cat.color }}/></div>
+                    <div className="h-1 rounded-full bg-[var(--color-w-surface-3)] overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${pct}%`, background: cat.color }}/>
+                    </div>
                   </div>
                 );
               })}
             </div>
           </section>
         )}
+      </div>
 
+      {/* Two-col grid: accounts + recent transactions */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
         {visibleAccounts.length > 0 && (
-          <section className="card">
-            <div className="card-header"><h3>Comptes</h3><span className="card-meta">{visibleAccounts.length}</span></div>
-            <div className="accounts-list">
+          <section className={`${cardCls} p-6`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-[var(--color-w-text)]">Comptes</h3>
+              <span className="text-xs text-[var(--color-w-faint)]">{visibleAccounts.length}</span>
+            </div>
+            <div className="divide-y divide-[var(--color-w-border)]">
               {visibleAccounts.map(a => {
                 const ownerNames = (a.memberIds || []).map(id => members.find(m => m.id === id)?.name).filter(Boolean).join(' & ');
                 const sharedBalance = (accountBalances[a.id] || 0) * memberShare(a);
                 const isJoint = a.memberIds && a.memberIds.length > 1;
+                const ownerColor = isJoint ? 'var(--color-w-asset-pension)' : (members.find(m => m.id === a.memberIds?.[0])?.color || 'var(--color-w-muted)');
                 return (
-                  <div key={a.id} className="account-row">
-                    <div className="acc-icon" style={{ background: isJoint ? '#8b5cf6' : (members.find(m => m.id === a.memberIds?.[0])?.color || '#888') }}>
-                      {isJoint ? <Users size={13}/> : (a.bank?.charAt(0) || '🏦')}
+                  <div key={a.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                    <div className="w-9 h-9 rounded-[var(--radius-w-sm)] flex items-center justify-center text-xs font-semibold text-white shrink-0" style={{ background: ownerColor }}>
+                      {isJoint ? <Users size={13}/> : (a.bank?.charAt(0)?.toUpperCase() || '·')}
                     </div>
-                    <div className="acc-info">
-                      <div className="acc-name">{a.name}</div>
-                      <div className="acc-bank">{a.bank} · {ownerNames}{isJoint ? ' · joint' : ''}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm text-[var(--color-w-text)] truncate">{a.name}</div>
+                      <div className="text-xs text-[var(--color-w-muted)] truncate">{a.bank} · {ownerNames}{isJoint ? ' · joint' : ''}</div>
                     </div>
-                    <div className={`acc-balance ${sharedBalance < 0 ? 'negative' : ''}`}>{fmt(sharedBalance)}</div>
+                    <div className={`text-sm w-num ${sharedBalance < 0 ? 'text-[var(--color-w-danger)]' : 'text-[var(--color-w-text)]'}`}>{fmt(sharedBalance)}</div>
                   </div>
                 );
               })}
@@ -1814,44 +1903,53 @@ function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, this
         )}
 
         {recentTx.length > 0 && (
-          <section className="card">
-            <div className="card-header">
-              <h3>Activité récente</h3>
-              <button className="link-btn" onClick={() => setView('transactions')}>Voir tout <ChevronRight size={12}/></button>
+          <section className={`${cardCls} p-6`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-[var(--color-w-text)]">Activité récente</h3>
+              <button onClick={() => setView('transactions')} className="text-xs text-[var(--color-w-muted)] hover:text-[var(--color-w-text)] inline-flex items-center gap-1 transition-colors">
+                Voir tout <ChevronRight size={12}/>
+              </button>
             </div>
-            <div className="recent-tx">
+            <div className="divide-y divide-[var(--color-w-border)]">
               {recentTx.map(tx => {
                 const cat = categories.find(c => c.id === tx.categoryId);
                 const acc = visibleAccounts.find(a => a.id === tx.accountId);
                 return (
-                  <div key={tx.id} className="tx-row-mini">
-                    <div className="tx-cat-icon" style={{ background: (cat?.color || '#999') + '22', color: cat?.color || '#666' }}>{cat?.icon || '?'}</div>
-                    <div className="tx-mini-info">
-                      <div className="tx-mini-label">{tx.label || 'Sans libellé'}</div>
-                      <div className="tx-mini-meta">{formatDate(tx.date)} · {acc?.name}</div>
+                  <div key={tx.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                    <div className="w-9 h-9 rounded-[var(--radius-w-sm)] flex items-center justify-center text-sm shrink-0" style={{ background: (cat?.color || '#888') + '22', color: cat?.color || '#888' }}>{cat?.icon || '·'}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm text-[var(--color-w-text)] truncate">{tx.label || 'Sans libellé'}</div>
+                      <div className="text-xs text-[var(--color-w-muted)] truncate">{formatDate(tx.date)} · {acc?.name}</div>
                     </div>
-                    <div className={`tx-mini-amount ${tx.amount >= 0 ? 'positive' : ''}`}>{fmt(tx.amount, { sign: true })}</div>
+                    <div className={`text-sm w-num ${tx.amount >= 0 ? 'text-[var(--color-w-accent)]' : 'text-[var(--color-w-text)]'}`}>{fmt(tx.amount, { sign: true })}</div>
                   </div>
                 );
               })}
             </div>
           </section>
         )}
-
-        {achievements.length > 0 && (
-          <section className="card">
-            <div className="card-header"><h3><Award size={16}/> Vos succès</h3><span className="card-meta">{achievements.length}/{ACHIEVEMENT_DEFS.length}</span></div>
-            <div className="achievements-grid">
-              {ACHIEVEMENT_DEFS.filter(a => achievements.includes(a.id)).slice(0, 6).map(a => (
-                <div key={a.id} className="achievement-badge unlocked" title={a.description}>
-                  <span className="ach-icon">{a.icon}</span>
-                  <span className="ach-name">{a.name}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
       </div>
+
+      {/* Achievements — discreet footer */}
+      {achievements.length > 0 && (
+        <section className={`${cardCls} p-6`}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Award size={15} className="text-[var(--color-w-accent)]"/>
+              <h3 className="text-sm font-semibold text-[var(--color-w-text)]">Vos succès</h3>
+            </div>
+            <span className="text-xs text-[var(--color-w-faint)]">{achievements.length}/{ACHIEVEMENT_DEFS.length}</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {ACHIEVEMENT_DEFS.filter(a => achievements.includes(a.id)).slice(0, 8).map(a => (
+              <div key={a.id} title={a.description} className="inline-flex items-center gap-2 px-3 h-8 rounded-full bg-[var(--color-w-surface-2)] border border-[var(--color-w-border)] text-xs text-[var(--color-w-text)]">
+                <span>{a.icon}</span>
+                <span>{a.name}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
