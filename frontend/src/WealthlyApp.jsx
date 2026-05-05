@@ -1208,7 +1208,7 @@ export default function WealthlyApp() {
         </div>
         <nav className="main-nav">
           <button onClick={() => setView('dashboard')} className={view === 'dashboard' ? 'active' : ''}><Activity size={14}/> <span>Résumé</span></button>
-          <button onClick={() => setView('monthly')} className={view === 'monthly' ? 'active' : ''}><Calendar size={14}/> <span>Trésorerie</span></button>
+          <button onClick={() => setView('monthly')} className={view === 'monthly' ? 'active' : ''}><Calendar size={14}/> <span>Suivi mensuel</span></button>
           <button onClick={() => setView('budgets')} className={view === 'budgets' ? 'active' : ''}>
             <Target size={14}/> <span>Budgets</span>
             {budgetsOverCount > 0 && (
@@ -2140,8 +2140,8 @@ function Monthly({ transactions, accounts, categories, recurringIds, recurringGr
     <div className="monthly-view">
       <div className="monthly-header">
         <div>
-          <h1 className="page-title">Trésorerie</h1>
-          <p className="page-subtitle">Flux de trésorerie · charges fixes auto-détectées · analyse approfondie</p>
+          <h1 className="page-title">Suivi mensuel</h1>
+          <p className="page-subtitle">Revenus, dépenses, charges fixes · cash-flow du mois en cours</p>
         </div>
         <select className="month-selector" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}>
           {availableMonths.map(m => (

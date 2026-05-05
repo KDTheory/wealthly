@@ -40,6 +40,29 @@ export const ABATTEMENT_2025 = {
   max: 14426,
 };
 
+// Crédits d'impôt — taux + plafonds (revenus 2025)
+export const TAX_CREDITS_2025 = {
+  // Frais de garde d'enfant < 6 ans (crèche, assistante maternelle, halte-garderie)
+  childcare: {
+    rate: 0.50,
+    capPerChild: 3500, // dépenses prises en compte par enfant
+  },
+  // Emploi à domicile (CESU): femme de ménage, jardinier, soutien scolaire, etc.
+  homeEmployment: {
+    rate: 0.50,
+    baseCap: 12000,
+    perDependent: 1500, // par personne à charge (enfant, ascendant > 65 ans)
+    maxCap: 15000,
+    // First-year override: 18 000 € la première année d'embauche.
+    // Not implemented — UI assumes "régime de croisière".
+  },
+};
+
+// Plafond global des niches fiscales : 10 000 € par foyer / an.
+// Couvre la plupart des crédits/réductions, dont garde d'enfants et emploi
+// à domicile. Au-delà, tout euro de crédit supplémentaire est perdu.
+export const PLAFOND_NICHES_FISCALES_2025 = 10000;
+
 // ---------- public helpers ----------
 
 /**
@@ -58,25 +81,13 @@ export function abattementSalaire(gross, params = ABATTEMENT_2025) {
  *  - couple marié/pacsé: 2
  *  - + 0.5 for first 2 children
  *  - + 1 per child beyond the second
- *  - parent isolé: +0.5 extra (TODO if needed)
- *
- *  shared = number of children in alternating custody (each counts as half).
  */
-export function computeParts({ household, children = 0, sharedChildren = 0 }) {
+export function computeParts({ household, children = 0 }) {
   const base = household === 'couple' ? 2 : 1;
-  const fullChildren = Math.max(0, children);
+  const c = Math.max(0, children);
   // first 2 children = 0.5 each, each beyond = 1.0
-  const fullPart = Math.min(fullChildren, 2) * 0.5 + Math.max(0, fullChildren - 2) * 1;
-  // shared custody children: each counts for half of the part bonus they'd give
-  const sharedPart = (() => {
-    let acc = 0;
-    for (let i = 0; i < sharedChildren; i++) {
-      const rank = fullChildren + i + 1;
-      acc += rank <= 2 ? 0.25 : 0.5;
-    }
-    return acc;
-  })();
-  return base + fullPart + sharedPart;
+  const childParts = Math.min(c, 2) * 0.5 + Math.max(0, c - 2) * 1;
+  return base + childParts;
 }
 
 /**
@@ -108,6 +119,51 @@ export function marginalRate(income, bareme = BAREME_2025) {
 }
 
 /**
+ * Compute the tax credits and apply the 10 000 € global "niches fiscales"
+ * cap. Returns the per-credit detail + the post-cap total.
+ */
+export function computeTaxCredits({
+  childcareExpenses = 0,
+  youngChildren = 0,
+  cesuExpenses = 0,
+  dependents = 0,
+  config = TAX_CREDITS_2025,
+  globalCap = PLAFOND_NICHES_FISCALES_2025,
+}) {
+  // Garde d'enfants < 6 ans
+  const childcareBaseCap = config.childcare.capPerChild * Math.max(0, youngChildren);
+  const childcareEligible = Math.min(childcareExpenses, childcareBaseCap);
+  const childcareCredit = childcareEligible * config.childcare.rate;
+
+  // Emploi à domicile (CESU)
+  const cesuCap = Math.min(
+    config.homeEmployment.baseCap + dependents * config.homeEmployment.perDependent,
+    config.homeEmployment.maxCap
+  );
+  const cesuEligible = Math.min(cesuExpenses, cesuCap);
+  const cesuCredit = cesuEligible * config.homeEmployment.rate;
+
+  const totalRaw = childcareCredit + cesuCredit;
+  const total = Math.min(totalRaw, globalCap);
+  const cappedByGlobal = totalRaw > globalCap;
+
+  return {
+    childcareCredit,
+    childcareEligible,
+    childcareBaseCap,
+    childcareCappedSpec: childcareExpenses > childcareBaseCap,
+    cesuCredit,
+    cesuEligible,
+    cesuCap,
+    cesuCappedSpec: cesuExpenses > cesuCap,
+    totalRaw,
+    total,
+    cappedByGlobal,
+    globalCap,
+  };
+}
+
+/**
  * Compute final income tax (revenu net imposable -> impôt dû).
  *
  * Steps:
@@ -116,18 +172,20 @@ export function marginalRate(income, bareme = BAREME_2025) {
  *  3. plafond du quotient familial: cap the gain from extra half-parts
  *     vs. the household's reference (1 part for single, 2 for couple).
  *  4. décote on low taxes
- *  5. effective + marginal rates for display
+ *  5. crédits d'impôt (capped specifically + plafond global niches)
  */
 export function computeTax({
   netTaxableIncome,
   household = 'single',
   children = 0,
-  sharedChildren = 0,
+  childcareExpenses = 0,
+  youngChildren = 0,
+  cesuExpenses = 0,
   bareme = BAREME_2025,
   plafond = PLAFOND_DEMI_PART_2025,
   decote = DECOTE_2025,
 }) {
-  const parts = computeParts({ household, children, sharedChildren });
+  const parts = computeParts({ household, children });
   const referenceParts = household === 'couple' ? 2 : 1;
   const extraHalfParts = Math.max(0, (parts - referenceParts) * 2);
 
@@ -154,7 +212,16 @@ export function computeTax({
   if (taxAfterPlafond > 0 && taxAfterPlafond < threshold) {
     decoteAmount = Math.max(0, base - taxAfterPlafond * decote.taux);
   }
-  const finalTax = Math.max(0, taxAfterPlafond - decoteAmount);
+  const taxBeforeCredits = Math.max(0, taxAfterPlafond - decoteAmount);
+
+  // 5 — crédits d'impôt
+  const credits = computeTaxCredits({
+    childcareExpenses,
+    youngChildren,
+    cesuExpenses,
+    dependents: children,
+  });
+  const finalTax = Math.max(0, taxBeforeCredits - credits.total);
 
   return {
     parts,
@@ -167,6 +234,8 @@ export function computeTax({
     plafondLimit: maxAllowedSaving,
     taxAfterPlafond,
     decoteAmount,
+    taxBeforeCredits,
+    credits,
     finalTax,
     effectiveRate: netTaxableIncome > 0 ? finalTax / netTaxableIncome : 0,
     marginalRate: marginalRate(incomePerPart, bareme),
