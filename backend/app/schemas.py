@@ -301,3 +301,21 @@ class RuleCreate(BaseModel):
 class RuleOut(RuleCreate):
     id: str
     model_config = ConfigDict(from_attributes=True)
+
+
+# ============================================================================
+# WEALTH SNAPSHOTS
+# ============================================================================
+
+class WealthSnapshotCreate(BaseModel):
+    month: str  # 'YYYY-MM'
+    net_worth: float
+    liquid_wealth: float
+    assets_value: float
+    liabilities_value: float
+
+
+class WealthSnapshotOut(WealthSnapshotCreate):
+    id: str
+    captured_at: datetime
+    model_config = ConfigDict(from_attributes=True)

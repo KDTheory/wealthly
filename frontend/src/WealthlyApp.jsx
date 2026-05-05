@@ -671,6 +671,49 @@ export default function WealthlyApp() {
   const liabilitiesValue = useMemo(() => visibleLiabilities.reduce((sum, l) => sum + (parseFloat(l.remainingCapital) || 0) * memberShare(l), 0), [visibleLiabilities, memberShare]);
   const netWorth = liquidWealth + assetsValue - liabilitiesValue;
 
+  // ---- Wealth snapshots (patrimoine history) ----
+  const [wealthHistory, setWealthHistory] = useState([]);
+  const lastSnapshotKeyRef = useRef(null);
+
+  // Load snapshot history once on mount.
+  useEffect(() => {
+    let cancelled = false;
+    api.wealthSnapshots.list().then((rows) => {
+      if (!cancelled && Array.isArray(rows)) setWealthHistory(rows);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  // Auto-upsert the current month's snapshot whenever the net-worth math
+  // resolves to a meaningful value. Gated by a ref so we don't spam the
+  // backend on every re-render — we only re-post if the month or the
+  // computed totals changed materially.
+  useEffect(() => {
+    if (!Number.isFinite(netWorth)) return;
+    if (liquidWealth === 0 && assetsValue === 0 && liabilitiesValue === 0) return;
+    const now = new Date();
+    const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    // Round to 1 € so micro-fluctuations don't trigger noisy POSTs.
+    const key = `${month}|${Math.round(netWorth)}|${Math.round(liquidWealth)}|${Math.round(assetsValue)}|${Math.round(liabilitiesValue)}`;
+    if (lastSnapshotKeyRef.current === key) return;
+    lastSnapshotKeyRef.current = key;
+    const handle = setTimeout(() => {
+      api.wealthSnapshots.upsert({
+        month,
+        net_worth: Number(netWorth.toFixed(2)),
+        liquid_wealth: Number(liquidWealth.toFixed(2)),
+        assets_value: Number(assetsValue.toFixed(2)),
+        liabilities_value: Number(liabilitiesValue.toFixed(2)),
+      }).then((row) => {
+        setWealthHistory((prev) => {
+          const others = prev.filter((s) => s.month !== row.month);
+          return [...others, row].sort((a, b) => a.month.localeCompare(b.month));
+        });
+      }).catch(() => {});
+    }, 1500); // debounce — wait for any settling re-renders before posting
+    return () => clearTimeout(handle);
+  }, [netWorth, liquidWealth, assetsValue, liabilitiesValue]);
+
   const recurringData = useMemo(() => detectRecurring(visibleTransactions, recurringOverrides), [visibleTransactions, recurringOverrides]);
   const recurringIds = recurringData.recurringIds;
   const recurringGroups = recurringData.recurringGroups;
@@ -1251,6 +1294,7 @@ export default function WealthlyApp() {
             saveAsset={saveAsset} deleteAsset={deleteAsset}
             saveLiability={saveLiability} deleteLiability={deleteLiability}
             memberShare={memberShare} fmt={fmt}
+            wealthHistory={wealthHistory}
           />
         )}
         {view === 'transactions' && (
@@ -2700,7 +2744,7 @@ function GoalEditor({ goal, onSave, onCancel, onDelete }) {
 // ============================================================================
 // WEALTH (Assets + Liabilities)
 // ============================================================================
-function Wealth({ assets, liabilities, members, activeMemberId, visibleAssets, visibleLiabilities, saveAsset, deleteAsset, saveLiability, deleteLiability, memberShare, fmt }) {
+function Wealth({ assets, liabilities, members, activeMemberId, visibleAssets, visibleLiabilities, saveAsset, deleteAsset, saveLiability, deleteLiability, memberShare, fmt, wealthHistory = [] }) {
   const [editingAsset, setEditingAsset] = useState(null);
   const [editingLia, setEditingLia] = useState(null);
 
@@ -2747,6 +2791,39 @@ function Wealth({ assets, liabilities, members, activeMemberId, visibleAssets, v
           <p className="page-subtitle">Actifs · passifs · allocation par classe · indicateurs gestion privée</p>
         </div>
       </div>
+
+      {/* Patrimoine history — only shown once we have at least 2 snapshots */}
+      {wealthHistory.length >= 2 && (
+        <section className="card chart-card">
+          <div className="card-header">
+            <h3>Évolution du patrimoine net</h3>
+            <span className="card-meta">{wealthHistory.length} mois · snapshot mensuel automatique</span>
+          </div>
+          <ResponsiveContainer width="100%" height={240}>
+            <AreaChart data={wealthHistory} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="netWorthGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.3}/>
+                  <stop offset="100%" stopColor="var(--primary)" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false}/>
+              <XAxis dataKey="month" tickFormatter={(m) => formatDate(m + '-01', { format: 'monthYear' })} stroke="var(--text-tertiary)" fontSize={11} tickLine={false} axisLine={false}/>
+              <YAxis tickFormatter={(v) => formatCurrency(v, { compact: true })} stroke="var(--text-tertiary)" fontSize={11} tickLine={false} axisLine={false} width={55}/>
+              <Tooltip
+                contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 12, color: 'var(--text-primary)' }}
+                cursor={{ stroke: 'var(--border-strong)', strokeWidth: 1 }}
+                formatter={(v, key) => {
+                  const labels = { net_worth: 'Patrimoine net', liquid_wealth: 'Liquidités', assets_value: 'Actifs', liabilities_value: 'Dettes' };
+                  return [formatCurrency(v), labels[key] || key];
+                }}
+                labelFormatter={(m) => formatDate(m + '-01', { format: 'long' })}
+              />
+              <Area type="monotone" dataKey="net_worth" stroke="var(--primary)" strokeWidth={2} fill="url(#netWorthGrad)"/>
+            </AreaChart>
+          </ResponsiveContainer>
+        </section>
+      )}
 
       {/* Private wealth KPI strip */}
       {totalAssets > 0 && (

@@ -279,3 +279,34 @@ class Achievement(Base):
     __table_args__ = (
         UniqueConstraint("household_id", "achievement_slug", name="uq_household_achievement"),
     )
+
+
+class WealthSnapshot(Base):
+    """Monthly snapshot of household net worth.
+
+    One row per (household, year-month). Lets the frontend render a real
+    patrimoine evolution curve — without it, the only history available
+    came from bank-account balances rolled forward from transactions,
+    which excluded assets / liabilities valued in the wealth tab.
+
+    The frontend POSTs a snapshot on first load each month (idempotent —
+    upserts on the unique constraint), so the timeline is always current.
+    """
+    __tablename__ = "wealth_snapshots"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    month = Column(String, nullable=False)  # 'YYYY-MM'
+    captured_at = Column(DateTime, default=datetime.utcnow)
+
+    # All values in EUR, household-level (sum across members).
+    net_worth = Column(Float, nullable=False, default=0.0)
+    liquid_wealth = Column(Float, nullable=False, default=0.0)
+    assets_value = Column(Float, nullable=False, default=0.0)
+    liabilities_value = Column(Float, nullable=False, default=0.0)
+
+    household_id = Column(String, ForeignKey("households.id", ondelete="CASCADE"), nullable=False)
+    household = relationship("Household")
+
+    __table_args__ = (
+        UniqueConstraint("household_id", "month", name="uq_household_snapshot_month"),
+    )

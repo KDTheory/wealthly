@@ -125,6 +125,13 @@ export const liabilities = {
   delete: (id) => del(`/liabilities/${id}`),
 };
 
+// Monthly net-worth snapshots (patrimoine history)
+export const wealthSnapshots = {
+  list: () => get('/wealth/snapshots'),
+  upsert: (payload) => post('/wealth/snapshots', payload),
+  delete: (id) => del(`/wealth/snapshots/${id}`),
+};
+
 // ============================================================================
 // CATEGORIES, BUDGETS, GOALS, ACHIEVEMENTS, RULES
 // ============================================================================

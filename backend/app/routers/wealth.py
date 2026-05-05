@@ -6,10 +6,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import User, Asset, Liability, Member
+from app.models import User, Asset, Liability, Member, WealthSnapshot
 from app.schemas import (
     AssetCreate, AssetUpdate, AssetOut,
     LiabilityCreate, LiabilityUpdate, LiabilityOut,
+    WealthSnapshotCreate, WealthSnapshotOut,
 )
 from app.auth import get_current_user
 
@@ -147,3 +148,68 @@ def delete_liability(lia_id: str, db: Session = Depends(get_db), user: User = De
         raise HTTPException(status_code=404, detail="Prêt non trouvé")
     db.delete(lia)
     db.commit()
+
+
+# ============================================================================
+# WEALTH SNAPSHOTS — monthly net-worth history
+# ============================================================================
+
+@router.get("/wealth/snapshots", response_model=List[WealthSnapshotOut])
+def list_snapshots(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Return all snapshots for this household, oldest first."""
+    rows = (
+        db.query(WealthSnapshot)
+        .filter(WealthSnapshot.household_id == user.household_id)
+        .order_by(WealthSnapshot.month.asc())
+        .all()
+    )
+    return rows
+
+
+@router.post("/wealth/snapshots", response_model=WealthSnapshotOut, status_code=201)
+def upsert_snapshot(
+    payload: WealthSnapshotCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Create or replace this household's snapshot for the given month.
+
+    Idempotent — the frontend calls this on first load each month, so a
+    matching (household, month) row is overwritten with the latest values
+    rather than duplicated.
+    """
+    existing = (
+        db.query(WealthSnapshot)
+        .filter(
+            WealthSnapshot.household_id == user.household_id,
+            WealthSnapshot.month == payload.month,
+        )
+        .first()
+    )
+    if existing:
+        existing.net_worth = payload.net_worth
+        existing.liquid_wealth = payload.liquid_wealth
+        existing.assets_value = payload.assets_value
+        existing.liabilities_value = payload.liabilities_value
+        from datetime import datetime as _dt
+        existing.captured_at = _dt.utcnow()
+        db.commit()
+        db.refresh(existing)
+        return existing
+
+    snap = WealthSnapshot(household_id=user.household_id, **payload.model_dump())
+    db.add(snap)
+    db.commit()
+    db.refresh(snap)
+    return snap
+
+
+@router.delete("/wealth/snapshots/{snap_id}", status_code=204)
+def delete_snapshot(snap_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    snap = db.query(WealthSnapshot).filter(
+        WealthSnapshot.id == snap_id,
+        WealthSnapshot.household_id == user.household_id,
+    ).first()
+    if snap:
+        db.delete(snap)
+        db.commit()
