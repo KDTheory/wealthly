@@ -1,0 +1,104 @@
+/* ============================================================================
+ * Wealthly — Design System (Tailwind v4 + custom tokens)
+ *
+ * Visual direction: Finary + Linear + private banking. Sober, premium, dark-first.
+ * Tokens are exposed as CSS variables AND as Tailwind theme colors,
+ * so utilities like `bg-w-surface` / `text-w-muted` work out of the box.
+ *
+ * Preflight is intentionally NOT loaded — the existing CSS-in-JS in
+ * WealthlyApp.jsx still owns global resets. We only add tokens + utilities.
+ * Once the redesign migrates a page fully to Tailwind, that page can opt in.
+ * ============================================================================ */
+
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@theme {
+  /* Surfaces */
+  --color-w-bg: #0a0a0c;
+  --color-w-surface: #121217;
+  --color-w-surface-2: #181820;
+  --color-w-surface-3: #1f1f29;
+
+  /* Borders */
+  --color-w-border: #1f1f27;
+  --color-w-border-strong: #2a2a35;
+
+  /* Text */
+  --color-w-text: #ececef;
+  --color-w-muted: #8a8a93;
+  --color-w-faint: #585862;
+
+  /* Accent — Finary-style sober green/teal */
+  --color-w-accent: #00d09c;
+  --color-w-accent-hover: #00b88a;
+  --color-w-accent-soft: rgba(0, 208, 156, 0.12);
+
+  /* Semantic */
+  --color-w-success: #00d09c;
+  --color-w-danger: #f87171;
+  --color-w-warning: #f5b544;
+  --color-w-info: #6aa6ff;
+
+  /* Asset class palette (sober, desaturated) */
+  --color-w-asset-realestate: #d97757;
+  --color-w-asset-equity: #6aa6ff;
+  --color-w-asset-bond: #8b9bb4;
+  --color-w-asset-crypto: #f5b544;
+  --color-w-asset-cash: #00d09c;
+  --color-w-asset-pension: #b48cff;
+  --color-w-asset-other: #8a8a93;
+
+  /* Radius */
+  --radius-w-sm: 6px;
+  --radius-w-md: 10px;
+  --radius-w-lg: 14px;
+  --radius-w-xl: 20px;
+
+  /* Shadows — very subtle, premium */
+  --shadow-w-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-w-md: 0 4px 12px rgba(0, 0, 0, 0.32);
+  --shadow-w-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
+  --shadow-w-glow-accent: 0 0 0 1px rgba(0, 208, 156, 0.2), 0 8px 24px rgba(0, 208, 156, 0.12);
+
+  /* Typography */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Number / data display — tabular figures for clean column alignment */
+  --font-feature-settings-numeric: "tnum" 1, "cv11" 1;
+}
+
+/* Light mode overrides — same token names, different values.
+   Activated by the existing `data-theme="light"` attribute on <html>. */
+:root[data-theme="light"] {
+  --color-w-bg: #fafaf8;
+  --color-w-surface: #ffffff;
+  --color-w-surface-2: #f5f5f2;
+  --color-w-surface-3: #ececea;
+
+  --color-w-border: #e8e8e3;
+  --color-w-border-strong: #d4d4cf;
+
+  --color-w-text: #0a0a0c;
+  --color-w-muted: #6a6a73;
+  --color-w-faint: #a0a0a8;
+
+  --color-w-accent: #00a884;
+  --color-w-accent-hover: #008e70;
+  --color-w-accent-soft: rgba(0, 168, 132, 0.1);
+
+  --color-w-asset-bond: #6b7a93;
+
+  --shadow-w-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-w-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-w-lg: 0 12px 32px rgba(0, 0, 0, 0.08);
+}
+
+/* Tabular numerals for any element marked with .w-num — used for KPIs,
+   amounts, and tables so digits align in columns. */
+.w-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "cv11" 1;
+}
