@@ -3085,19 +3085,50 @@ function GoalEditor({ goal, onSave, onCancel, onDelete }) {
 // ============================================================================
 // WEALTH (Assets + Liabilities)
 // ============================================================================
+// Map of wealth sub-views to the asset types they include.
+// 'all' shows everything (the current Patrimoine page); others narrow the
+// view to a Finary-style class detail.
+const WEALTH_SUBVIEWS = [
+  { key: 'all',         label: 'Tout',         types: null,                                icon: BarChart3 },
+  { key: 'real_estate', label: 'Immobilier',   types: ['real_estate'],                     icon: Home },
+  { key: 'equities',    label: 'Actions & Fonds', types: ['pea', 'stocks'],                icon: Landmark },
+  { key: 'crypto',      label: 'Crypto',       types: ['crypto'],                          icon: Bitcoin },
+  { key: 'savings',     label: 'Épargne',      types: ['savings_account', 'life_insurance'], icon: PiggyBank },
+  { key: 'retirement',  label: 'Retraite',     types: ['per'],                             icon: Target },
+  { key: 'liabilities', label: 'Emprunts',     types: [],                                  icon: CreditCard },
+  { key: 'other',       label: 'Autres actifs', types: ['other_asset'],                    icon: Coins },
+];
+
 function Wealth({ assets, liabilities, members, activeMemberId, visibleAssets, visibleLiabilities, saveAsset, deleteAsset, saveLiability, deleteLiability, memberShare, fmt, wealthHistory = [] }) {
   const [editingAsset, setEditingAsset] = useState(null);
   const [editingLia, setEditingLia] = useState(null);
   const [viewingLia, setViewingLia] = useState(null);
+  const [subview, setSubview] = useState('all');
+  const [showAddPicker, setShowAddPicker] = useState(false);
+
+  const currentSub = WEALTH_SUBVIEWS.find(s => s.key === subview) || WEALTH_SUBVIEWS[0];
+  const isAll = subview === 'all';
+  const isLiabilitiesOnly = subview === 'liabilities';
+
+  // Apply the subview filter to assets
+  const filteredAssets = useMemo(() => {
+    if (isAll || isLiabilitiesOnly) return visibleAssets;
+    if (!currentSub.types) return visibleAssets;
+    return visibleAssets.filter(a => currentSub.types.includes(a.type));
+  }, [visibleAssets, currentSub.types, isAll, isLiabilitiesOnly]);
+  const filteredLiabilities = isAll || isLiabilitiesOnly ? visibleLiabilities : [];
 
   const assetsByType = useMemo(() => {
     const groups = {};
-    visibleAssets.forEach(a => {
+    filteredAssets.forEach(a => {
       if (!groups[a.type]) groups[a.type] = [];
       groups[a.type].push(a);
     });
     return groups;
-  }, [visibleAssets]);
+  }, [filteredAssets]);
+
+  const subviewTotal = filteredAssets.reduce((s, a) => s + (parseFloat(a.currentValue) || 0) * memberShare(a), 0);
+  const subviewLiabTotal = filteredLiabilities.reduce((s, l) => s + (parseFloat(l.remainingCapital) || 0) * memberShare(l), 0);
 
   const totalAssets = visibleAssets.reduce((s, a) => s + (parseFloat(a.currentValue) || 0) * memberShare(a), 0);
   const totalLiabilities = visibleLiabilities.reduce((s, l) => s + (parseFloat(l.remainingCapital) || 0) * memberShare(l), 0);
@@ -3132,17 +3163,54 @@ function Wealth({ assets, liabilities, members, activeMemberId, visibleAssets, v
           <h1 className="page-title">Patrimoine</h1>
           <p className="page-subtitle">Actifs · passifs · allocation par classe · indicateurs gestion privée</p>
         </div>
+        <button className="primary-btn" onClick={() => setShowAddPicker(true)}><Plus size={14}/> Compléter mon patrimoine</button>
       </div>
 
+      <nav className="wealth-subnav">
+        {WEALTH_SUBVIEWS.map(s => {
+          const Icon = s.icon;
+          let count = 0;
+          if (s.key === 'all') count = visibleAssets.length + visibleLiabilities.length;
+          else if (s.key === 'liabilities') count = visibleLiabilities.length;
+          else if (s.types) count = visibleAssets.filter(a => s.types.includes(a.type)).length;
+          return (
+            <button
+              key={s.key}
+              className={`wealth-subnav-btn ${subview === s.key ? 'active' : ''}`}
+              onClick={() => setSubview(s.key)}
+            >
+              <Icon size={14}/>
+              <span>{s.label}</span>
+              {count > 0 && <span className="wealth-subnav-count">{count}</span>}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Subview header (when not 'all') */}
+      {!isAll && (
+        <section className="card subview-hero">
+          <div className="subview-hero-info">
+            <div className="subview-hero-label">{currentSub.label}</div>
+            <div className="subview-hero-value">{fmt(isLiabilitiesOnly ? subviewLiabTotal : subviewTotal)}</div>
+            <div className="subview-hero-meta">
+              {isLiabilitiesOnly
+                ? `${filteredLiabilities.length} prêt${filteredLiabilities.length > 1 ? 's' : ''} · ${fmt(visibleLiabilities.reduce((s, l) => s + (parseFloat(l.monthlyPayment) || 0) * memberShare(l), 0))} / mois`
+                : `${filteredAssets.length} actif${filteredAssets.length > 1 ? 's' : ''} · ${totalAssets > 0 ? ((subviewTotal / totalAssets) * 100).toFixed(0) : 0}% du patrimoine`}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Patrimoine history with brut / net / financier toggle */}
-      {wealthHistory.length >= 1 && (
+      {isAll && wealthHistory.length >= 1 && (
         <section className="card chart-card">
           <NetWorthChart snapshots={wealthHistory} fmt={fmt}/>
         </section>
       )}
 
       {/* Private wealth KPI strip */}
-      {totalAssets > 0 && (
+      {isAll && totalAssets > 0 && (
         <section className="wealth-kpis">
           <div className="wk-card">
             <div className="wk-label">Actif net</div>
@@ -3173,8 +3241,8 @@ function Wealth({ assets, liabilities, members, activeMemberId, visibleAssets, v
         </section>
       )}
 
-      {/* Asset class allocation */}
-      {classAllocation.length > 0 && (
+      {/* Asset class allocation — only on 'all' */}
+      {isAll && classAllocation.length > 0 && (
         <section className="card allocation-card">
           <div className="card-header"><h3><BarChart3 size={16}/> Allocation par classe d'actifs</h3></div>
           <div className="allocation-body">
@@ -3200,36 +3268,39 @@ function Wealth({ assets, liabilities, members, activeMemberId, visibleAssets, v
         </section>
       )}
 
-      <section className="wealth-summary">
-        <div className="ws-card positive">
-          <div className="ws-icon"><Landmark size={20}/></div>
-          <div className="ws-content">
-            <div className="ws-label">Total actifs</div>
-            <div className="ws-value"><AnimatedNumber value={totalAssets} format={(v) => fmt(v)}/></div>
-            <div className="ws-meta">{visibleAssets.length} actif{visibleAssets.length > 1 ? 's' : ''}</div>
+      {isAll && (
+        <section className="wealth-summary">
+          <div className="ws-card positive">
+            <div className="ws-icon"><Landmark size={20}/></div>
+            <div className="ws-content">
+              <div className="ws-label">Total actifs</div>
+              <div className="ws-value"><AnimatedNumber value={totalAssets} format={(v) => fmt(v)}/></div>
+              <div className="ws-meta">{visibleAssets.length} actif{visibleAssets.length > 1 ? 's' : ''}</div>
+            </div>
           </div>
-        </div>
-        <div className="ws-card negative">
-          <div className="ws-icon"><CreditCard size={20}/></div>
-          <div className="ws-content">
-            <div className="ws-label">Total passifs</div>
-            <div className="ws-value"><AnimatedNumber value={totalLiabilities} format={(v) => fmt(v)}/></div>
-            <div className="ws-meta">{visibleLiabilities.length} prêt{visibleLiabilities.length > 1 ? 's' : ''}</div>
+          <div className="ws-card negative">
+            <div className="ws-icon"><CreditCard size={20}/></div>
+            <div className="ws-content">
+              <div className="ws-label">Total passifs</div>
+              <div className="ws-value"><AnimatedNumber value={totalLiabilities} format={(v) => fmt(v)}/></div>
+              <div className="ws-meta">{visibleLiabilities.length} prêt{visibleLiabilities.length > 1 ? 's' : ''}</div>
+            </div>
           </div>
-        </div>
-        <div className="ws-card net">
-          <div className="ws-icon"><Sparkles size={20}/></div>
-          <div className="ws-content">
-            <div className="ws-label">Patrimoine (hors liquidités)</div>
-            <div className="ws-value"><AnimatedNumber value={totalAssets - totalLiabilities} format={(v) => fmt(v)}/></div>
+          <div className="ws-card net">
+            <div className="ws-icon"><Sparkles size={20}/></div>
+            <div className="ws-content">
+              <div className="ws-label">Patrimoine (hors liquidités)</div>
+              <div className="ws-value"><AnimatedNumber value={totalAssets - totalLiabilities} format={(v) => fmt(v)}/></div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
+      {!isLiabilitiesOnly && (
       <section className="card">
         <div className="card-header">
-          <h3><Wallet size={16}/> Actifs</h3>
-          <button className="secondary-btn" onClick={() => setEditingAsset({ id: null, type: 'real_estate', name: '', currentValue: 0, memberIds: activeMemberId !== 'all' ? [activeMemberId] : [], notes: '', updatedAt: new Date().toISOString() })}>
+          <h3><Wallet size={16}/> {isAll ? 'Actifs' : currentSub.label}</h3>
+          <button className="secondary-btn" onClick={() => setEditingAsset({ id: null, type: currentSub.types?.[0] || 'real_estate', name: '', currentValue: 0, memberIds: activeMemberId !== 'all' ? [activeMemberId] : [], notes: '', updatedAt: new Date().toISOString() })}>
             <Plus size={14}/> Ajouter
           </button>
         </div>
@@ -3290,7 +3361,9 @@ function Wealth({ assets, liabilities, members, activeMemberId, visibleAssets, v
           })
         )}
       </section>
+      )}
 
+      {(isAll || isLiabilitiesOnly) && (
       <section className="card">
         <div className="card-header">
           <h3><CreditCard size={16}/> Prêts en cours</h3>
@@ -3339,10 +3412,65 @@ function Wealth({ assets, liabilities, members, activeMemberId, visibleAssets, v
           </div>
         )}
       </section>
+      )}
 
       {editingAsset && <AssetEditor asset={editingAsset} members={members} onSave={(a) => { saveAsset(a); setEditingAsset(null); }} onCancel={() => setEditingAsset(null)}/>}
       {editingLia && <LiabilityEditor liability={editingLia} members={members} assets={assets} onSave={(l) => { saveLiability(l); setEditingLia(null); }} onCancel={() => setEditingLia(null)}/>}
       {viewingLia && <LiabilityDetail liability={viewingLia} assets={assets} members={members} memberShare={memberShare} fmt={fmt} onEdit={() => { setEditingLia(viewingLia); setViewingLia(null); }} onClose={() => setViewingLia(null)}/>}
+      {showAddPicker && (
+        <CompletePatrimoinePicker
+          onClose={() => setShowAddPicker(false)}
+          onPickAsset={(typeId) => {
+            setShowAddPicker(false);
+            setEditingAsset({ id: null, type: typeId, name: '', currentValue: 0, memberIds: activeMemberId !== 'all' ? [activeMemberId] : [], notes: '', updatedAt: new Date().toISOString() });
+          }}
+          onPickLiability={() => {
+            setShowAddPicker(false);
+            setEditingLia({ id: null, type: 'mortgage', name: '', initialCapital: '', remainingCapital: '', monthlyPayment: '', interestRate: '', endDate: '', memberIds: activeMemberId !== 'all' ? [activeMemberId] : [], notes: '', downPayment: '', insuranceRate: '', applicationFees: '', ownershipPct: 100, durationMonths: '', startDate: '', linkedAssetId: '' });
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function CompletePatrimoinePicker({ onClose, onPickAsset, onPickLiability }) {
+  const [filter, setFilter] = useState('');
+  const items = [
+    ...ASSET_TYPES.map(t => ({ kind: 'asset', id: t.id, name: t.name, description: t.description, icon: t.icon, color: t.color })),
+    { kind: 'liability', id: 'mortgage', name: 'Crédit / Emprunt', description: 'Crédit immo, conso, auto…', icon: CreditCard, color: '#7c2d12' },
+  ];
+  const filtered = items.filter(i => i.name.toLowerCase().includes(filter.toLowerCase()) || i.description.toLowerCase().includes(filter.toLowerCase()));
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal modal--wizard" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Compléter mon patrimoine</h2>
+          <button className="icon-btn-sm" onClick={onClose}><X size={16}/></button>
+        </div>
+        <div className="modal-body">
+          <label>
+            <span>Rechercher</span>
+            <input autoFocus type="text" placeholder="Immobilier, PEA, Crypto, Crédit…" value={filter} onChange={(e) => setFilter(e.target.value)}/>
+          </label>
+          <div className="patrimoine-picker-grid">
+            {filtered.map((it, i) => {
+              const Icon = it.icon;
+              const onClick = () => it.kind === 'asset' ? onPickAsset(it.id) : onPickLiability();
+              return (
+                <button key={i} className="patrimoine-picker-card" onClick={onClick}>
+                  <div className="ppc-icon" style={{ background: it.color + '22', color: it.color }}><Icon size={20}/></div>
+                  <div className="ppc-text">
+                    <div className="ppc-name">{it.name}</div>
+                    <div className="ppc-desc">{it.description}</div>
+                  </div>
+                </button>
+              );
+            })}
+            {filtered.length === 0 && <p style={{ color: 'var(--text-tertiary)', textAlign: 'center', padding: 24 }}>Aucun résultat.</p>}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -5573,6 +5701,34 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .cashflow-cat-amount { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .cashflow-cat-amount.positive { color: var(--success); }
 .cashflow-cat-amount.negative { color: var(--danger); }
+
+/* Patrimoine sub-nav */
+.wealth-subnav { display: flex; gap: 4px; padding: 4px; background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: 10px; overflow-x: auto; }
+.wealth-subnav-btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border: none; background: transparent; color: var(--text-secondary); font-size: 13px; font-weight: 500; border-radius: 7px; cursor: pointer; transition: color 0.18s, background 0.18s; font-family: inherit; white-space: nowrap; letter-spacing: -0.01em; }
+.wealth-subnav-btn svg { color: var(--text-tertiary); transition: color 0.18s; }
+.wealth-subnav-btn:hover { background: var(--bg-card); color: var(--text-primary); }
+.wealth-subnav-btn:hover svg { color: var(--text-secondary); }
+.wealth-subnav-btn.active { background: var(--bg-card); color: var(--primary); box-shadow: 0 1px 0 0 var(--border-light), inset 0 0 0 1px var(--border); font-weight: 600; }
+.wealth-subnav-btn.active svg { color: var(--primary); }
+.wealth-subnav-count { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; font-size: 10.5px; background: var(--bg-subtle); color: var(--text-tertiary); font-weight: 600; }
+.wealth-subnav-btn.active .wealth-subnav-count { background: var(--primary-soft); color: var(--primary); }
+
+.subview-hero { display: flex; align-items: center; justify-content: space-between; }
+.subview-hero-info { display: flex; flex-direction: column; gap: 4px; }
+.subview-hero-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
+.subview-hero-value { font-size: 32px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.subview-hero-meta { font-size: 12px; color: var(--text-secondary); }
+
+/* Compléter mon patrimoine picker */
+.patrimoine-picker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; max-height: 420px; overflow-y: auto; padding-right: 4px; }
+.patrimoine-picker-card { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 12px; background: var(--bg-subtle); border: 1px solid var(--border); cursor: pointer; text-align: left; font-family: inherit; transition: border-color 0.15s, background 0.15s; }
+.patrimoine-picker-card:hover { border-color: var(--primary); background: var(--bg-card-hover); }
+.ppc-icon { width: 40px; height: 40px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ppc-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ppc-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.ppc-desc { font-size: 11px; color: var(--text-tertiary); }
+@media (max-width: 700px) { .patrimoine-picker-grid { grid-template-columns: 1fr; } }
+
 
 
 
