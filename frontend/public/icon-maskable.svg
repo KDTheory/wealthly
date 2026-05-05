@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Maskable icon: keep meaningful content within the central 80% safe zone (52..460).
+       Outer 10% margin can be cropped by Android into circle, squircle, etc. -->
+  <rect width="512" height="512" fill="#0c0d10"/>
+  <rect x="148" y="148" width="216" height="216" rx="24" fill="none" stroke="#c5a572" stroke-width="16"/>
+  <path d="M186 212 L226 308 L256 240 L286 308 L326 212" fill="none" stroke="#c5a572" stroke-width="16" stroke-linecap="square" stroke-linejoin="miter"/>
+</svg>

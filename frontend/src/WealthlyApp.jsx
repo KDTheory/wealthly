@@ -4172,6 +4172,153 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .toast-error { border-color: var(--danger); }
 .toast-content { font-size: 13px; font-weight: 600; }
 @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+/* ============================================================================
+ * MOBILE RESPONSIVE — bottom nav, full-screen modals, table compression
+ * Single breakpoint at 760px covers phones + most small tablets in portrait.
+ * ============================================================================ */
+@media (max-width: 760px) {
+  /* Header: compact, single row, hide tagline */
+  .app-header { padding: 10px 14px; gap: 8px; flex-wrap: nowrap; }
+  .brand { gap: 10px; min-width: 0; }
+  .brand-tagline { display: none; }
+  .brand-name { font-size: 15px; }
+  .brand-mark { width: 32px; height: 32px; }
+  .header-actions { gap: 4px; flex-shrink: 0; }
+  .icon-btn { width: 32px; height: 32px; }
+
+  /* Page content: extra bottom padding to clear the bottom nav */
+  .content { padding: 16px 14px calc(96px + env(safe-area-inset-bottom, 0px)); }
+  .page-title { font-size: 22px; }
+  .monthly-header h1 { font-size: 22px; }
+
+  /* Member bar shrinks */
+  .member-bar { padding: 10px 14px 0; }
+  .member-tab { padding: 6px 12px; font-size: 12px; }
+  .member-context { font-size: 11px; padding: 8px 0; }
+
+  /* Main nav becomes a fixed bottom tab bar (native-app feel) */
+  .main-nav {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 90;
+    display: flex;
+    justify-content: space-around;
+    background: ${dark ? 'rgba(21, 23, 28, 0.94)' : 'rgba(255, 255, 255, 0.95)'};
+    backdrop-filter: blur(14px);
+    border-top: 1px solid var(--border);
+    border-radius: 0;
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+    overflow-x: visible;
+    gap: 0;
+  }
+  .main-nav button {
+    flex: 1;
+    flex-direction: column;
+    gap: 3px;
+    padding: 6px 4px;
+    font-size: 10px;
+    font-weight: 500;
+    border-radius: 6px;
+    color: var(--text-tertiary);
+    min-width: 0;
+    background: transparent;
+  }
+  .main-nav button svg { width: 18px; height: 18px; }
+  .main-nav button span { font-size: 10px; line-height: 1.1; white-space: nowrap; }
+  .main-nav button:hover { background: transparent; color: var(--text-secondary); }
+  .main-nav button.active { background: transparent; color: var(--primary); box-shadow: none; }
+
+  /* Cards: less padding */
+  .card { padding: 18px; border-radius: 10px; }
+  .kpi-card { padding: 18px; border-radius: 10px; }
+  .kpi-card-value { font-size: 24px; }
+  .kpi-card--primary .kpi-card-value { font-size: 28px; }
+  .card-header { margin-bottom: 14px; }
+
+  /* Hero KPIs already collapse via existing rule. Tighten gaps. */
+  .hero-kpis { gap: 10px; }
+  .dashboard-grid { grid-template-columns: 1fr; gap: 12px; }
+  .dashboard { gap: 16px; }
+
+  /* Trésorerie / Wealth grids stack */
+  .monthly-kpis { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .mk-card { padding: 12px 14px; gap: 10px; }
+  .mk-icon { width: 32px; height: 32px; }
+  .mk-value { font-size: 17px; }
+  .wealth-kpis { grid-template-columns: 1fr 1fr; }
+  .wealth-summary { grid-template-columns: 1fr; }
+  .ws-card { padding: 14px 16px; gap: 12px; }
+  .ws-value { font-size: 19px; }
+  .budget-summary { grid-template-columns: 1fr; }
+  .ratio-cards { grid-template-columns: 1fr; }
+  .projection-grid { grid-template-columns: 1fr; }
+
+  /* Allocation donut + legend stack */
+  .allocation-body { flex-direction: column; gap: 16px; }
+  .composition-row { flex-direction: column; gap: 16px; }
+  .legend-list { padding-left: 0; width: 100%; }
+
+  /* Modals slide up from the bottom on mobile, full width */
+  .modal-backdrop { padding: 0; align-items: flex-end; }
+  .modal {
+    max-width: 100%;
+    max-height: 92vh;
+    border-radius: 14px 14px 0 0;
+    border-bottom: none;
+  }
+  .modal-header { padding: 16px 18px; }
+  .modal-body { padding: 16px 18px; }
+  .modal-footer { padding: 14px 18px; }
+
+  /* Transactions table → card-style rows on mobile */
+  .tx-table { border-radius: 10px; }
+  .tx-header { display: none; }
+  .tx-row {
+    grid-template-columns: 1fr auto;
+    gap: 4px 10px;
+    padding: 12px 14px;
+    align-items: start;
+  }
+  .tx-row .td-date { grid-column: 1 / -1; font-size: 10px; order: 1; margin-bottom: 2px; }
+  .tx-row .td-label { grid-column: 1; order: 2; min-width: 0; }
+  .tx-row .td-cat, .tx-row .td-acc { grid-column: 1; order: 3; font-size: 11px; }
+  .tx-row .td-amount { grid-column: 2; order: 2; font-size: 14px; align-self: center; }
+  .tx-row .td-actions { grid-column: 1 / -1; order: 4; justify-content: flex-end; margin-top: 4px; }
+
+  /* Filters bar: stack and smaller */
+  .filters-bar { padding: 10px; gap: 6px; }
+  .search-box { min-width: 0; flex: 1 1 100%; order: -1; }
+  .result-count { display: none; }
+
+  /* Onboarding: tighter padding */
+  .onboarding { padding: 16px 12px; }
+  .onboarding-card { padding: 24px 20px; border-radius: 14px; }
+  .onboarding-step-content h1 { font-size: 22px; }
+  .onboarding-step-content h2 { font-size: 19px; }
+  .onboarding-features-grid { grid-template-columns: 1fr; }
+
+  /* Import flow: tighter */
+  .import-flow { padding: 18px; border-radius: 12px; }
+  .upload-zone { padding: 32px 16px; }
+
+  /* Buttons: full-width primary CTAs feel native on mobile */
+  .primary-btn-large { width: 100%; justify-content: center; }
+  .empty-actions .primary-btn-large { width: auto; }
+  .flow-actions { flex-wrap: wrap; }
+
+  /* Toast spans full width minus padding */
+  .toast { left: 12px; right: 12px; top: 12px; max-width: none; }
+}
+
+/* Very narrow phones — extra tightening */
+@media (max-width: 380px) {
+  .monthly-kpis { grid-template-columns: 1fr; }
+  .wealth-kpis { grid-template-columns: 1fr; }
+  .main-nav button span { display: none; }
+  .main-nav button svg { width: 20px; height: 20px; }
+  .main-nav button { padding: 8px 4px; }
+}
 `;
   return <style>{css}</style>;
 }
