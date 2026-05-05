@@ -61,8 +61,13 @@ const DEFAULT_RULES = [
   { pattern: /carrefour|leclerc|lidl|auchan|monoprix|franprix|intermarch|casino|super u|biocoop|naturalia/i, categoryId: 'groceries' },
   { pattern: /uber eats|deliveroo|just eat|mcdonald|burger king|kfc|subway|starbucks|paul |brioche dor|krispy kreme/i, categoryId: 'restaurants' },
   { pattern: /restaurant|brasserie|bistrot|pizzeria|sushi|kebab|tacos/i, categoryId: 'restaurants' },
-  { pattern: /netflix|spotify|disney|prime video|deezer|apple\.com\/bill|youtube premium|canal\+|salto|amazon prime/i, categoryId: 'subscriptions' },
-  { pattern: /icloud|google one|dropbox|microsoft 365|adobe|github|comit.o/i, categoryId: 'subscriptions' },
+  // Abonnements — streaming, gym, app stores, outils (volontairement large)
+  { pattern: /netflix|spotify|disney|prime video|deezer|youtube|canal\+|salto|paramount|hbo|apple tv|apple music|soundcloud|tidal|qobuz|napster|molotov|olarc/i, categoryId: 'subscriptions' },
+  { pattern: /apple\.com\/bill|app store|appstore|itunes|google play|playstore|google\*|microsoft store|xbox|playstation|nintendo|steam|epic games|ea games|ubisoft/i, categoryId: 'subscriptions' },
+  { pattern: /icloud|google one|dropbox|microsoft 365|office 365|adobe|github|notion|linear|canva|figma|evernote|lastpass|1password|nordvpn|expressvpn|surfshark|proton /i, categoryId: 'subscriptions' },
+  { pattern: /basic-?fit|basic fit|fitness park|anytime fitness|on air fitness|l'orange bleue|neoness|magic form|keepcool|club med gym|elancia|gigafit|cmg sports/i, categoryId: 'subscriptions' },
+  { pattern: /hellofresh|hello fresh|quitoque|gousto|kitchen daily|frichti|abonnement/i, categoryId: 'subscriptions' },
+  { pattern: /le monde|le figaro|liberation|mediapart|les echos|l.equipe|la croix|le point|nouvel obs|lemag/i, categoryId: 'subscriptions' },
   { pattern: /sfr|orange|free mobile|bouygues|red by sfr|sosh|prixtel/i, categoryId: 'utilities' },
   { pattern: /edf |engie|total energies|enedis|grdf|veolia|suez/i, categoryId: 'utilities' },
   { pattern: /loyer|location|fonciere|syndic|charges copro/i, categoryId: 'housing' },
@@ -414,6 +419,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   const [budgets, setBudgets] = useState({});
   const [recurringOverrides, setRecurringOverrides] = useState({});
   const [goals, setGoals] = useState([]);
+  const [fixedCharges, setFixedCharges] = useState([]);
   const [hideAmounts, setHideAmounts] = useState(false);
   const [toast, setToast] = useState(null);
   const [confettiActive, setConfettiActive] = useState(false);
@@ -547,11 +553,12 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
       setCategories(DEFAULT_CATEGORIES);
       setBudgets(d.budgets);
       setGoals(d.goals);
+      setFixedCharges([]);
       setCustomRules(d.customRules);
       return;
     }
     try {
-      const [memList, accList, txList, astList, liaList, catList, budList, goalList, ruleList] = await Promise.all([
+      const [memList, accList, txList, astList, liaList, catList, budList, goalList, ruleList, fcList] = await Promise.all([
         api.members.list(),
         api.accounts.list(),
         api.transactions.list(),
@@ -561,6 +568,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
         api.budgets.list(),
         api.goals.list(),
         api.rules.list(),
+        api.fixedCharges.list().catch(() => []),
       ]);
       setMembers(memList);
       setAccounts(accList.map(accountFromApi));
@@ -574,6 +582,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
       (budList || []).forEach(b => { budDict[b.category_slug] = b.amount; });
       setBudgets(budDict);
       setGoals((goalList || []).map(goalFromApi));
+      setFixedCharges(fcList || []);
       // Custom rules
       setCustomRules((ruleList || []).map(r => ({ pattern: r.pattern, categoryId: r.category_slug, source: r.source, _id: r.id })));
     } catch (err) {
@@ -1115,6 +1124,33 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     } catch (err) { showToast('Erreur : ' + err.message, 'error'); }
   };
 
+  const saveFixedCharge = async (charge) => {
+    try {
+      const payload = {
+        name: charge.name,
+        amount: parseFloat(charge.amount) || 0,
+        day_of_month: charge.day_of_month || null,
+        category_slug: charge.category_slug || null,
+        start_month: charge.start_month || null,
+        end_month: charge.end_month || null,
+        notes: charge.notes || '',
+        member_ids: charge.member_ids || [],
+      };
+      let saved;
+      if (charge.id) saved = await api.fixedCharges.update(charge.id, payload);
+      else saved = await api.fixedCharges.create(payload);
+      setFixedCharges(prev => charge.id ? prev.map(f => f.id === charge.id ? saved : f) : [...prev, saved]);
+    } catch (err) { showToast('Erreur : ' + err.message, 'error'); }
+  };
+
+  const deleteFixedCharge = async (id) => {
+    if (!confirm('Supprimer cette charge fixe ?')) return;
+    try {
+      await api.fixedCharges.delete(id);
+      setFixedCharges(prev => prev.filter(f => f.id !== id));
+    } catch (err) { showToast('Erreur : ' + err.message, 'error'); }
+  };
+
   const exportData = () => {
     // Export current frontend state as JSON (matches v2 backup format)
     const data = {
@@ -1287,23 +1323,13 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
         )}
         {view === 'monthly' && (
           <Monthly
-            transactions={visibleTransactions} accounts={accounts} categories={categories}
+            transactions={visibleTransactions} accounts={accounts} categories={categories} members={members}
             recurringIds={recurringIds} recurringGroups={recurringGroups}
             monthlyEvolution={monthlyEvolution} thisMonthStats={thisMonthStats}
-            cashflowProjection={cashflowProjection} anomalies={anomalies}
+            anomalies={anomalies}
             categoryAnalysis={categoryAnalysis}
-            toggleRecurring={toggleRecurring} memberShare={memberShare}
-            currentMonth={currentMonth} fmt={fmt}
-          />
-        )}
-        {view === 'analysis' && (
-          <Monthly
-            transactions={visibleTransactions} accounts={accounts} categories={categories}
-            recurringIds={recurringIds} recurringGroups={recurringGroups}
-            monthlyEvolution={monthlyEvolution} thisMonthStats={thisMonthStats}
-            cashflowProjection={cashflowProjection} anomalies={anomalies}
-            categoryAnalysis={categoryAnalysis}
-            toggleRecurring={toggleRecurring} memberShare={memberShare}
+            fixedCharges={fixedCharges} saveFixedCharge={saveFixedCharge} deleteFixedCharge={deleteFixedCharge}
+            memberShare={memberShare}
             currentMonth={currentMonth} fmt={fmt}
           />
         )}
@@ -2036,45 +2062,52 @@ function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, this
 // ============================================================================
 // MONTHLY (Suivi Mensuel)
 // ============================================================================
-function Monthly({ transactions, accounts, categories, recurringIds, recurringGroups, monthlyEvolution, thisMonthStats, cashflowProjection, anomalies, categoryAnalysis, toggleRecurring, memberShare, currentMonth, fmt }) {
+function Monthly({ transactions, accounts, categories, members, recurringIds, recurringGroups, monthlyEvolution, thisMonthStats, anomalies, categoryAnalysis, fixedCharges, saveFixedCharge, deleteFixedCharge, memberShare, currentMonth, fmt }) {
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
-  const [selectedCat, setSelectedCat] = useState('all');
+  const [editingCharge, setEditingCharge] = useState(null);
 
-  const availableMonths = useMemo(() => monthlyEvolution.map(m => m.month).sort((a, b) => b.localeCompare(a)), [monthlyEvolution]);
+  const availableMonths = useMemo(() => {
+    const set = new Set(monthlyEvolution.map(m => m.month));
+    set.add(currentMonth);
+    return Array.from(set).sort((a, b) => b.localeCompare(a));
+  }, [monthlyEvolution, currentMonth]);
   const monthData = useMemo(() => monthlyEvolution.find(m => m.month === selectedMonth) || { income: 0, expenses: 0, net: 0, fixed: 0, variable: 0, savings: 0 }, [monthlyEvolution, selectedMonth]);
   const isCurrentMonth = selectedMonth === currentMonth;
 
-  // Filter recurring groups that are likely to be active
-  const activeRecurring = useMemo(() => {
-    return recurringGroups
-      .filter(rg => {
-        const lastDate = new Date(rg.lastDate);
-        const now = new Date();
-        const monthsAgo = (now.getFullYear() - lastDate.getFullYear()) * 12 + (now.getMonth() - lastDate.getMonth());
-        return monthsAgo <= 2;
-      })
-      .map(rg => {
-        const acc = accounts.find(a => a.id === rg.accountId);
-        const share = acc ? memberShare(acc) : 1;
-        return { ...rg, sharedAmount: rg.avgAmount * share };
-      })
-      .sort((a, b) => Math.abs(b.sharedAmount) - Math.abs(a.sharedAmount));
-  }, [recurringGroups, accounts, memberShare]);
+  // Active fixed charges for the selected month (start_month <= selectedMonth <= end_month)
+  const activeFixedCharges = useMemo(() => {
+    return (fixedCharges || []).filter(fc => {
+      if (fc.start_month && selectedMonth < fc.start_month) return false;
+      if (fc.end_month && selectedMonth > fc.end_month) return false;
+      return true;
+    });
+  }, [fixedCharges, selectedMonth]);
 
-  const totalFixedMonthly = activeRecurring.reduce((s, r) => s + r.sharedAmount, 0);
+  const totalFixedCharges = activeFixedCharges.reduce((s, fc) => s + (fc.amount || 0), 0);
 
-  // Fixed expenses calendar
-  const calendarItems = useMemo(() => {
-    const items = activeRecurring.map(rg => ({
-      day: rg.avgDay,
-      label: rg.label,
-      amount: rg.sharedAmount,
-      categoryId: rg.categoryId,
-    })).sort((a, b) => a.day - b.day);
-    return items;
-  }, [activeRecurring]);
+  // Group fixed charges by category for the detail card
+  const fixedByCategory = useMemo(() => {
+    const groups = {};
+    activeFixedCharges.forEach(fc => {
+      const slug = fc.category_slug || 'other';
+      const cat = categories.find(c => c.slug === slug || c.id === slug);
+      if (!groups[slug]) groups[slug] = { category: cat, slug, total: 0, items: [] };
+      groups[slug].total += fc.amount || 0;
+      groups[slug].items.push(fc);
+    });
+    return Object.values(groups).sort((a, b) => b.total - a.total);
+  }, [activeFixedCharges, categories]);
 
-  // Selected month transactions for breakdown
+  // Subscriptions = fixed charges with the subscriptions category, surfaced separately
+  // to encourage spotting potential savings.
+  const subscriptionCharges = useMemo(() => {
+    return activeFixedCharges
+      .filter(fc => (fc.category_slug || '').toLowerCase() === 'subscriptions')
+      .sort((a, b) => (b.amount || 0) - (a.amount || 0));
+  }, [activeFixedCharges]);
+  const subscriptionsTotal = subscriptionCharges.reduce((s, fc) => s + (fc.amount || 0), 0);
+
+  // Selected month transactions, used for variable spend computation
   const monthTransactions = useMemo(() => {
     return transactions.filter(t => monthKey(t.date) === selectedMonth)
       .map(t => {
@@ -2084,37 +2117,18 @@ function Monthly({ transactions, accounts, categories, recurringIds, recurringGr
       });
   }, [transactions, selectedMonth, accounts, recurringIds, memberShare]);
 
-  const fixedSpent = monthTransactions.filter(t => t.amount < 0 && t.isRecurring).reduce((s, t) => s + Math.abs(t.sharedAmount), 0);
-  const variableSpent = monthTransactions.filter(t => t.amount < 0 && !t.isRecurring).reduce((s, t) => s + Math.abs(t.sharedAmount), 0);
+  // Variable spend = all expenses NOT covered by a fixed charge.
+  // We use detected-recurring as a proxy here; once a charge fixe is registered
+  // explicitly, the user can mark its txs as recurring to keep them out.
+  const variableSpent = monthTransactions
+    .filter(t => t.amount < 0 && !t.isRecurring)
+    .reduce((s, t) => s + Math.abs(t.sharedAmount), 0);
+
+  // Hero numbers
+  const restToLive = Math.max(0, monthData.income - totalFixedCharges);
+  const restAvailable = restToLive - variableSpent;
+  const restPct = restToLive > 0 ? Math.min(100, (variableSpent / restToLive) * 100) : 0;
   const savingsRate = monthData.income > 0 ? (monthData.net / monthData.income) * 100 : null;
-
-  // For Analyse approfondie section
-  const catTimeData = useMemo(() => {
-    const data = {};
-    transactions.forEach(t => {
-      if (t.amount >= 0) return;
-      if (selectedCat !== 'all' && t.categoryId !== selectedCat) return;
-      const acc = accounts.find(a => a.id === t.accountId);
-      const share = acc ? memberShare(acc) : 1;
-      const m = monthKey(t.date);
-      data[m] = (data[m] || 0) + Math.abs(t.amount) * share;
-    });
-    return Object.entries(data).map(([month, amount]) => ({ month, amount })).sort((a, b) => a.month.localeCompare(b.month));
-  }, [transactions, selectedCat, accounts, memberShare]);
-
-  const topMerchants = useMemo(() => {
-    const m = {};
-    transactions.forEach(t => {
-      if (t.amount >= 0) return;
-      const acc = accounts.find(a => a.id === t.accountId);
-      const share = acc ? memberShare(acc) : 1;
-      const key = (t.label || '').slice(0, 30);
-      if (!m[key]) m[key] = { label: key, total: 0, count: 0 };
-      m[key].total += Math.abs(t.amount) * share;
-      m[key].count += 1;
-    });
-    return Object.values(m).sort((a, b) => b.total - a.total).slice(0, 10);
-  }, [transactions, accounts, memberShare]);
 
   // Category comparison (this month vs prev 3-month avg)
   const monthVsAvg = useMemo(() => {
@@ -2129,12 +2143,21 @@ function Monthly({ transactions, accounts, categories, recurringIds, recurringGr
       .slice(0, 10);
   }, [categoryAnalysis, categories]);
 
+  const expenseCategories = categories.filter(c => c.type === 'expense');
+
+  const startEdit = (charge) => {
+    setEditingCharge(charge || {
+      name: '', amount: '', day_of_month: 1, category_slug: 'subscriptions',
+      start_month: selectedMonth, end_month: null, member_ids: [], notes: '',
+    });
+  };
+
   return (
     <div className="monthly-view">
       <div className="monthly-header">
         <div>
           <h1 className="page-title">Suivi mensuel</h1>
-          <p className="page-subtitle">Revenus, dépenses, charges fixes · cash-flow du mois en cours</p>
+          <p className="page-subtitle">Reste à vivre, charges fixes, abonnements</p>
         </div>
         <select className="month-selector" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}>
           {availableMonths.map(m => (
@@ -2143,73 +2166,107 @@ function Monthly({ transactions, accounts, categories, recurringIds, recurringGr
         </select>
       </div>
 
-      {/* Month overview KPIs */}
-      <section className="monthly-kpis">
-        <div className="mk-card income">
-          <div className="mk-icon"><TrendingUp size={18}/></div>
-          <div className="mk-info">
-            <div className="mk-label">Revenus</div>
-            <div className="mk-value"><AnimatedNumber value={monthData.income} format={(v) => fmt(v)}/></div>
+      {/* Hero — Reste à vivre */}
+      <section className="card rest-hero">
+        <div className="rest-hero-top">
+          <div>
+            <div className="rest-hero-label">Reste à vivre ce mois</div>
+            <div className={`rest-hero-value ${restToLive >= 0 ? 'positive' : 'negative'}`}>
+              <AnimatedNumber value={restToLive} format={(v) => fmt(v)}/>
+            </div>
+            <div className="rest-hero-formula">
+              {fmt(monthData.income)} de revenus − {fmt(totalFixedCharges)} de charges fixes
+            </div>
+          </div>
+          <div className="rest-hero-stats">
+            <div className="rest-stat">
+              <span className="rest-stat-label">Déjà dépensé en variable</span>
+              <span className="rest-stat-value">{fmt(variableSpent)}</span>
+            </div>
+            <div className="rest-stat">
+              <span className="rest-stat-label">Encore disponible</span>
+              <span className={`rest-stat-value ${restAvailable >= 0 ? 'positive' : 'negative'}`}>{fmt(restAvailable, { sign: true })}</span>
+            </div>
           </div>
         </div>
-        <div className="mk-card fixed">
-          <div className="mk-icon"><Repeat size={18}/></div>
-          <div className="mk-info">
-            <div className="mk-label">Charges fixes</div>
-            <div className="mk-value"><AnimatedNumber value={fixedSpent} format={(v) => fmt(v)}/></div>
-            <div className="mk-meta">{monthData.expenses > 0 ? Math.round((fixedSpent / monthData.expenses) * 100) : 0}% des dépenses</div>
-          </div>
+        <div className="rest-bar">
+          <div className="rest-bar-fill" style={{ width: `${restPct}%`, background: restPct < 80 ? 'var(--success)' : restPct < 100 ? 'var(--warning)' : 'var(--danger)' }}/>
         </div>
-        <div className="mk-card variable">
-          <div className="mk-icon"><Activity size={18}/></div>
-          <div className="mk-info">
-            <div className="mk-label">Dépenses variables</div>
-            <div className="mk-value"><AnimatedNumber value={variableSpent} format={(v) => fmt(v)}/></div>
-            <div className="mk-meta">{monthData.expenses > 0 ? Math.round((variableSpent / monthData.expenses) * 100) : 0}% des dépenses</div>
-          </div>
-        </div>
-        <div className={`mk-card net ${monthData.net >= 0 ? 'positive' : 'negative'}`}>
-          <div className="mk-icon">{monthData.net >= 0 ? <ArrowUp size={18}/> : <ArrowDown size={18}/>}</div>
-          <div className="mk-info">
-            <div className="mk-label">Solde net</div>
-            <div className="mk-value"><AnimatedNumber value={monthData.net} format={(v) => fmt(v, { sign: true })}/></div>
-          </div>
-        </div>
-        <div className={`mk-card savings-rate ${savingsRate === null ? '' : savingsRate >= 20 ? 'positive' : savingsRate >= 10 ? 'neutral' : 'negative'}`}>
-          <div className="mk-icon"><PiggyBank size={18}/></div>
-          <div className="mk-info">
-            <div className="mk-label">Taux d'épargne</div>
-            <div className="mk-value">{savingsRate !== null ? `${savingsRate.toFixed(1)}%` : '—'}</div>
-            <div className="mk-meta">{savingsRate !== null ? (savingsRate >= 20 ? '✓ excellent' : savingsRate >= 10 ? '⚡ correct' : '⚠ faible') : 'Pas de revenus'}</div>
-          </div>
+        <div className="rest-bar-meta">
+          <span>{restPct.toFixed(0)}% du reste à vivre consommé</span>
+          {savingsRate !== null && (
+            <span>Taux d'épargne : <strong className={savingsRate >= 20 ? 'positive' : savingsRate >= 10 ? '' : 'negative'}>{savingsRate.toFixed(1)}%</strong></span>
+          )}
         </div>
       </section>
 
-      {/* Cashflow projection (only for current month) */}
-      {isCurrentMonth && cashflowProjection && (
-        <section className="card projection-card">
-          <div className="card-header">
-            <h3><Zap size={16}/> Projection fin de mois</h3>
-            <span className="card-meta">À J+{cashflowProjection.elapsed}% · {cashflowProjection.daysLeft} jours restants</span>
+      {/* Charges fixes en détail */}
+      <section className="card">
+        <div className="card-header">
+          <h3><Repeat size={16}/> Mes charges fixes</h3>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <span className="card-meta">{activeFixedCharges.length} charge{activeFixedCharges.length > 1 ? 's' : ''} · {fmt(totalFixedCharges)}/mois</span>
+            <button className="secondary-btn" onClick={() => startEdit(null)}><Plus size={14}/> Ajouter</button>
           </div>
-          <div className="projection-grid">
-            <div className="proj-item">
-              <div className="proj-label">Revenus projetés</div>
-              <div className="proj-value positive">{fmt(cashflowProjection.projectedIncome)}</div>
-            </div>
-            <div className="proj-item">
-              <div className="proj-label">Dépenses projetées</div>
-              <div className="proj-value negative">{fmt(cashflowProjection.projectedExpenses)}</div>
-            </div>
-            <div className="proj-item highlight">
-              <div className="proj-label">Solde projeté</div>
-              <div className={`proj-value ${cashflowProjection.projectedNet >= 0 ? 'positive' : 'negative'}`}>
-                {fmt(cashflowProjection.projectedNet, { sign: true })}
+        </div>
+        {activeFixedCharges.length === 0 ? (
+          <div className="empty-mini">
+            <Repeat size={24}/>
+            <p>Ajoute tes charges fixes (loyer, EDF, abonnements, assurances…) pour calculer ton reste à vivre.</p>
+          </div>
+        ) : (
+          <div className="fixed-by-cat">
+            {fixedByCategory.map(group => (
+              <div key={group.slug} className="fixed-cat-group">
+                <div className="fixed-cat-header">
+                  <span className="fixed-cat-icon" style={{ background: (group.category?.color || '#999') + '22', color: group.category?.color }}>
+                    {group.category?.icon || '📌'}
+                  </span>
+                  <span className="fixed-cat-name">{group.category?.name || 'Autres'}</span>
+                  <span className="fixed-cat-total">{fmt(group.total)}</span>
+                </div>
+                <div className="fixed-cat-items">
+                  {group.items.map(it => (
+                    <div key={it.id} className="fixed-item">
+                      <div className="fixed-item-day">{it.day_of_month ? `J${it.day_of_month}` : '—'}</div>
+                      <div className="fixed-item-info">
+                        <strong>{it.name}</strong>
+                        {it.end_month && <span className="fixed-item-meta">stop {it.end_month}</span>}
+                      </div>
+                      <div className="fixed-item-amount">{fmt(it.amount)}</div>
+                      <button className="icon-btn-sm" onClick={() => startEdit(it)} title="Modifier"><Edit3 size={13}/></button>
+                      <button className="icon-btn-sm" onClick={() => deleteFixedCharge(it.id)} title="Supprimer"><Trash2 size={13}/></button>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            ))}
           </div>
-          <div className="proj-bar">
-            <div className="proj-bar-fill" style={{ width: `${cashflowProjection.elapsed}%` }}/>
+        )}
+      </section>
+
+      {/* Subscriptions spotlight — help spot savings */}
+      {subscriptionCharges.length > 0 && (
+        <section className="card">
+          <div className="card-header">
+            <h3><Sparkles size={16}/> Tes abonnements</h3>
+            <span className="card-meta">{subscriptionCharges.length} actif{subscriptionCharges.length > 1 ? 's' : ''} · {fmt(subscriptionsTotal)}/mois · {fmt(subscriptionsTotal * 12)}/an</span>
+          </div>
+          <div className="subs-list">
+            {subscriptionCharges.map(s => (
+              <div key={s.id} className="subs-row">
+                <div className="subs-name">{s.name}</div>
+                <div className="subs-amount">
+                  <span>{fmt(s.amount)}/mois</span>
+                  <span className="subs-yearly">{fmt(s.amount * 12)}/an</span>
+                </div>
+                <button className="icon-btn-sm" onClick={() => startEdit(s)} title="Modifier"><Edit3 size={13}/></button>
+              </div>
+            ))}
+          </div>
+          <div className="settings-info" style={{ marginTop: 12 }}>
+            <Lightbulb size={14}/>
+            <span>Vérifie chaque trimestre les abonnements que tu n'utilises plus — gym, streaming, app store. Souvent 20-30€/mois passent inaperçus.</span>
           </div>
         </section>
       )}
@@ -2218,7 +2275,7 @@ function Monthly({ transactions, accounts, categories, recurringIds, recurringGr
       {isCurrentMonth && anomalies.length > 0 && (
         <section className="card alert-card">
           <div className="card-header">
-            <h3><AlertTriangle size={16} style={{ color: '#f59e0b' }}/> Anomalies détectées</h3>
+            <h3><AlertTriangle size={16} style={{ color: 'var(--warning)' }}/> Anomalies détectées</h3>
           </div>
           <div className="anomalies-list">
             {anomalies.map(a => (
@@ -2235,202 +2292,175 @@ function Monthly({ transactions, accounts, categories, recurringIds, recurringGr
         </section>
       )}
 
-      <div className="monthly-grid">
-        {/* Recurring expenses (fixed charges) */}
-        <section className="card recurring-card">
-          <div className="card-header">
-            <h3><Repeat size={16}/> Charges fixes récurrentes</h3>
-            <span className="card-meta">{activeRecurring.length} détectées · {fmt(Math.abs(totalFixedMonthly))}/mois en moyenne</span>
+      {/* Compact KPIs */}
+      <section className="monthly-kpis">
+        <div className="mk-card income">
+          <div className="mk-icon"><TrendingUp size={18}/></div>
+          <div className="mk-info">
+            <div className="mk-label">Revenus</div>
+            <div className="mk-value"><AnimatedNumber value={monthData.income} format={(v) => fmt(v)}/></div>
           </div>
-          {activeRecurring.length === 0 ? (
-            <div className="empty-mini">
-              <Repeat size={24}/>
-              <p>Importez plus de transactions pour détecter automatiquement vos charges récurrentes</p>
-            </div>
-          ) : (
-            <div className="recurring-list-detailed">
-              {activeRecurring.slice(0, 12).map((rg, idx) => {
-                const cat = categories.find(c => c.id === rg.categoryId);
-                return (
-                  <div key={idx} className="recurring-detailed-item">
-                    <div className="rec-day-badge">
-                      <span className="rec-day-num">{rg.avgDay}</span>
-                      <span className="rec-day-suffix">du mois</span>
-                    </div>
-                    <div className="rec-detailed-info">
-                      <div className="rec-detailed-label">
-                        <span className="rec-icon-mini" style={{ background: (cat?.color || '#999') + '22', color: cat?.color }}>{cat?.icon || '🔁'}</span>
-                        <strong>{rg.label || 'Sans libellé'}</strong>
-                      </div>
-                      <div className="rec-detailed-meta">
-                        <span>{cat?.name}</span>
-                        <span>·</span>
-                        <span>{rg.count}× sur {rg.months} mois</span>
-                      </div>
-                    </div>
-                    <div className="rec-amount-large">{fmt(rg.sharedAmount)}</div>
-                  </div>
-                );
-              })}
-              {activeRecurring.length > 12 && (
-                <div className="recurring-more">+ {activeRecurring.length - 12} autres charges récurrentes</div>
-              )}
-            </div>
-          )}
-        </section>
-
-        {/* Calendar visualization */}
-        {calendarItems.length > 0 && (
-          <section className="card calendar-card">
-            <div className="card-header">
-              <h3><Calendar size={16}/> Calendrier des charges</h3>
-            </div>
-            <div className="calendar-strip">
-              {Array.from({ length: 31 }, (_, i) => i + 1).map(day => {
-                const itemsThisDay = calendarItems.filter(c => c.day === day);
-                const totalThisDay = itemsThisDay.reduce((s, c) => s + Math.abs(c.amount), 0);
-                return (
-                  <div key={day} className={`cal-day ${itemsThisDay.length > 0 ? 'has-items' : ''}`}>
-                    <div className="cal-day-num">{day}</div>
-                    {itemsThisDay.length > 0 && (
-                      <>
-                        <div className="cal-day-dot" style={{ height: `${Math.min(totalThisDay / 30, 24)}px` }}/>
-                        <div className="cal-day-tooltip">
-                          {itemsThisDay.slice(0, 3).map((it, i) => {
-                            const cat = categories.find(c => c.id === it.categoryId);
-                            return <div key={i} className="cal-tooltip-item">{cat?.icon} {it.label} · {fmt(it.amount)}</div>;
-                          })}
-                          {itemsThisDay.length > 3 && <div className="cal-tooltip-more">+ {itemsThisDay.length - 3} autres</div>}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            <div className="calendar-legend">Survolez un jour pour voir le détail · taille = montant</div>
-          </section>
-        )}
-
-        {/* Month vs Average comparison */}
-        <section className="card">
-          <div className="card-header">
-            <h3>Ce mois vs moyenne</h3>
-            <span className="card-meta">moyenne 3 derniers mois</span>
+        </div>
+        <div className="mk-card fixed">
+          <div className="mk-icon"><Repeat size={18}/></div>
+          <div className="mk-info">
+            <div className="mk-label">Charges fixes</div>
+            <div className="mk-value"><AnimatedNumber value={totalFixedCharges} format={(v) => fmt(v)}/></div>
           </div>
-          <div className="month-comparison">
-            {monthVsAvg.length === 0 ? (
-              <div className="empty-mini"><BarChart3 size={24}/><p>Plus de données nécessaires</p></div>
-            ) : (
-              monthVsAvg.map(c => (
-                <div key={c.id} className="comp-row">
-                  <span className="comp-icon" style={{ background: (c.color || '#999') + '22' }}>{c.icon}</span>
-                  <div className="comp-info">
-                    <div className="comp-name">{c.name}</div>
-                    <div className="comp-amounts">
-                      <span className="comp-current">{fmt(c.current)}</span>
-                      <span className="comp-avg">vs {fmt(c.avg)} moy.</span>
-                    </div>
-                  </div>
-                  {Math.abs(c.change) > 5 ? (
-                    <div className={`comp-change ${c.change > 0 ? 'up' : 'down'}`}>
-                      {c.change > 0 ? <ArrowUp size={11}/> : <ArrowDown size={11}/>}
-                      {Math.abs(c.change).toFixed(0)}%
-                    </div>
-                  ) : (
-                    <div className="comp-change stable"><Minus size={11}/> stable</div>
-                  )}
-                </div>
-              ))
-            )}
+        </div>
+        <div className="mk-card variable">
+          <div className="mk-icon"><Activity size={18}/></div>
+          <div className="mk-info">
+            <div className="mk-label">Dépenses variables</div>
+            <div className="mk-value"><AnimatedNumber value={variableSpent} format={(v) => fmt(v)}/></div>
           </div>
-        </section>
+        </div>
+        <div className={`mk-card net ${monthData.net >= 0 ? 'positive' : 'negative'}`}>
+          <div className="mk-icon">{monthData.net >= 0 ? <ArrowUp size={18}/> : <ArrowDown size={18}/>}</div>
+          <div className="mk-info">
+            <div className="mk-label">Solde net</div>
+            <div className="mk-value"><AnimatedNumber value={monthData.net} format={(v) => fmt(v, { sign: true })}/></div>
+          </div>
+        </div>
+      </section>
 
-        {/* Income vs Expenses chart */}
-        <section className="card">
-          <div className="card-header"><h3>Flux mensuel sur 6 mois</h3></div>
-          {monthlyEvolution.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <ComposedChart data={monthlyEvolution.slice(-6)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false}/>
-                <XAxis dataKey="month" tickFormatter={(m) => formatDate(m + '-01', { format: 'monthYear' })} stroke="var(--text-tertiary)" fontSize={11}/>
-                <YAxis tickFormatter={(v) => formatCurrency(v, { compact: true })} stroke="var(--text-tertiary)" fontSize={11}/>
-                <Tooltip formatter={(v) => formatCurrency(v)} contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}/>
-                <Legend wrapperStyle={{ fontSize: 12 }}/>
-                <Bar dataKey="income" name="Revenus" fill="#10b981" radius={[4, 4, 0, 0]}/>
-                <Bar dataKey="expenses" name="Dépenses" fill="#ef4444" radius={[4, 4, 0, 0]}/>
-                <Line type="monotone" dataKey="net" name="Solde net" stroke="#8b5cf6" strokeWidth={2.5} dot={{ r: 4 }}/>
-              </ComposedChart>
-            </ResponsiveContainer>
-          ) : <div className="chart-empty"><BarChart3 size={28}/><span>Pas encore de données</span></div>}
-        </section>
-      </div>
-
-      {/* ── Analyse approfondie ── */}
-      <div className="analyse-section-header">
-        <BarChart3 size={16}/>
-        <h2>Analyse approfondie</h2>
-        <span className="analyse-section-subtitle">Historique complet · Top marchands · Évolution par poste</span>
-      </div>
-
+      {/* Month vs Average comparison */}
       <section className="card">
-        <div className="card-header"><h3>Évolution revenus / dépenses sur 12 mois</h3></div>
+        <div className="card-header">
+          <h3>Ce mois vs moyenne</h3>
+          <span className="card-meta">moyenne 3 derniers mois</span>
+        </div>
+        <div className="month-comparison">
+          {monthVsAvg.length === 0 ? (
+            <div className="empty-mini"><BarChart3 size={24}/><p>Plus de données nécessaires</p></div>
+          ) : (
+            monthVsAvg.map(c => (
+              <div key={c.id} className="comp-row">
+                <span className="comp-icon" style={{ background: (c.color || '#999') + '22' }}>{c.icon}</span>
+                <div className="comp-info">
+                  <div className="comp-name">{c.name}</div>
+                  <div className="comp-amounts">
+                    <span className="comp-current">{fmt(c.current)}</span>
+                    <span className="comp-avg">vs {fmt(c.avg)} moy.</span>
+                  </div>
+                </div>
+                {Math.abs(c.change) > 5 ? (
+                  <div className={`comp-change ${c.change > 0 ? 'up' : 'down'}`}>
+                    {c.change > 0 ? <ArrowUp size={11}/> : <ArrowDown size={11}/>}
+                    {Math.abs(c.change).toFixed(0)}%
+                  </div>
+                ) : (
+                  <div className="comp-change stable"><Minus size={11}/> stable</div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+
+      {/* Income vs Expenses 6 month chart */}
+      <section className="card">
+        <div className="card-header"><h3>Flux mensuel sur 6 mois</h3></div>
         {monthlyEvolution.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={monthlyEvolution.slice(-12)}>
+          <ResponsiveContainer width="100%" height={220}>
+            <ComposedChart data={monthlyEvolution.slice(-6)}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false}/>
               <XAxis dataKey="month" tickFormatter={(m) => formatDate(m + '-01', { format: 'monthYear' })} stroke="var(--text-tertiary)" fontSize={11}/>
               <YAxis tickFormatter={(v) => formatCurrency(v, { compact: true })} stroke="var(--text-tertiary)" fontSize={11}/>
               <Tooltip formatter={(v) => formatCurrency(v)} contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}/>
               <Legend wrapperStyle={{ fontSize: 12 }}/>
-              <Bar dataKey="income" name="Revenus" fill="#10b981" radius={[4, 4, 0, 0]}/>
-              <Bar dataKey="expenses" name="Dépenses" fill="#ef4444" radius={[4, 4, 0, 0]}/>
-            </BarChart>
+              <Bar dataKey="income" name="Revenus" fill="var(--success)" radius={[4, 4, 0, 0]}/>
+              <Bar dataKey="expenses" name="Dépenses" fill="var(--danger)" radius={[4, 4, 0, 0]}/>
+              <Line type="monotone" dataKey="net" name="Solde net" stroke="var(--primary)" strokeWidth={2.5} dot={{ r: 4 }}/>
+            </ComposedChart>
           </ResponsiveContainer>
-        ) : <div className="chart-empty">Pas de données</div>}
+        ) : <div className="chart-empty"><BarChart3 size={28}/><span>Pas encore de données</span></div>}
       </section>
 
-      <div className="dashboard-grid">
-        <section className="card">
-          <div className="card-header"><h3>Top marchands</h3><span className="card-meta">toutes périodes</span></div>
-          {topMerchants.length === 0 ? (
-            <div className="empty-mini"><BarChart3 size={24}/><p>Aucune donnée</p></div>
-          ) : (
-            <div className="merchants-list">
-              {topMerchants.map((m, idx) => (
-                <div key={idx} className="merchant-row">
-                  <div className="merchant-rank">{String(idx + 1).padStart(2, '0')}</div>
-                  <div className="merchant-info">
-                    <div className="merchant-name">{m.label || 'Sans libellé'}</div>
-                    <div className="merchant-meta">{m.count} transaction{m.count > 1 ? 's' : ''}</div>
-                  </div>
-                  <div className="merchant-total">{fmt(m.total)}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+      {editingCharge && (
+        <FixedChargeEditor
+          charge={editingCharge}
+          categories={expenseCategories}
+          members={members}
+          currentMonth={currentMonth}
+          onSave={(c) => { saveFixedCharge(c); setEditingCharge(null); }}
+          onCancel={() => setEditingCharge(null)}
+        />
+      )}
+    </div>
+  );
+}
 
-        <section className="card">
-          <div className="card-header">
-            <h3>Évolution par catégorie</h3>
-            <select value={selectedCat} onChange={(e) => setSelectedCat(e.target.value)}>
-              <option value="all">Toutes dépenses</option>
-              {categories.filter(c => c.type === 'expense').map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+function FixedChargeEditor({ charge, categories, members, currentMonth, onSave, onCancel }) {
+  const [draft, setDraft] = useState({
+    id: charge.id || null,
+    name: charge.name || '',
+    amount: charge.amount ?? '',
+    day_of_month: charge.day_of_month || 1,
+    category_slug: charge.category_slug || 'subscriptions',
+    start_month: charge.start_month || currentMonth,
+    end_month: charge.end_month || '',
+    notes: charge.notes || '',
+    member_ids: charge.member_ids || [],
+  });
+  const submit = () => {
+    if (!draft.name.trim() || !draft.amount) return;
+    onSave({
+      ...draft,
+      amount: parseFloat(draft.amount),
+      end_month: draft.end_month || null,
+    });
+  };
+  return (
+    <div className="modal-backdrop" onClick={onCancel}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>{draft.id ? 'Modifier la charge fixe' : 'Nouvelle charge fixe'}</h2>
+          <button className="icon-btn-sm" onClick={onCancel}><X size={16}/></button>
+        </div>
+        <div className="modal-body">
+          <label><span>Nom</span><input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Loyer, EDF, Netflix…"/></label>
+          <label><span>Montant mensuel (€)</span><input type="number" step="0.01" value={draft.amount} onChange={(e) => setDraft({ ...draft, amount: e.target.value })}/></label>
+          <label><span>Jour du mois</span>
+            <input type="number" min={1} max={31} value={draft.day_of_month} onChange={(e) => setDraft({ ...draft, day_of_month: parseInt(e.target.value, 10) || 1 })}/>
+          </label>
+          <label><span>Catégorie</span>
+            <select value={draft.category_slug} onChange={(e) => setDraft({ ...draft, category_slug: e.target.value })}>
+              {categories.map(c => <option key={c.slug || c.id} value={c.slug || c.id}>{c.icon} {c.name}</option>)}
             </select>
-          </div>
-          {catTimeData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={catTimeData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false}/>
-                <XAxis dataKey="month" tickFormatter={(m) => formatDate(m + '-01', { format: 'monthYear' })} stroke="var(--text-tertiary)" fontSize={11}/>
-                <YAxis tickFormatter={(v) => formatCurrency(v, { compact: true })} stroke="var(--text-tertiary)" fontSize={11}/>
-                <Tooltip formatter={(v) => formatCurrency(v)} contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}/>
-                <Line type="monotone" dataKey="amount" stroke="#8b5cf6" strokeWidth={2.5} dot={{ r: 3 }}/>
-              </LineChart>
-            </ResponsiveContainer>
-          ) : <div className="chart-empty">Aucune donnée</div>}
-        </section>
+          </label>
+          <label><span>Actif depuis</span>
+            <input type="month" value={draft.start_month} onChange={(e) => setDraft({ ...draft, start_month: e.target.value })}/>
+          </label>
+          <label><span>Actif jusqu'à (optionnel)</span>
+            <input type="month" value={draft.end_month} onChange={(e) => setDraft({ ...draft, end_month: e.target.value })}/>
+          </label>
+          {members && members.length > 0 && (
+            <label><span>Membres concernés</span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+                {members.map(m => {
+                  const checked = draft.member_ids.includes(m.id);
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      className={`secondary-btn ${checked ? 'active' : ''}`}
+                      style={{ borderColor: checked ? 'var(--primary)' : undefined }}
+                      onClick={() => setDraft({
+                        ...draft,
+                        member_ids: checked ? draft.member_ids.filter(x => x !== m.id) : [...draft.member_ids, m.id],
+                      })}
+                    >{m.name}</button>
+                  );
+                })}
+              </div>
+            </label>
+          )}
+        </div>
+        <div className="modal-footer">
+          <button className="secondary-btn" onClick={onCancel}>Annuler</button>
+          <button className="primary-btn" onClick={submit}><Check size={14}/> Enregistrer</button>
+        </div>
       </div>
     </div>
   );
@@ -4369,7 +4399,52 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .monthly-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
 .monthly-header h1 { font-size: 28px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.02em; }
 .month-selector { padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); font-size: 13px; font-weight: 600; cursor: pointer; }
-.monthly-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.monthly-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); grid-auto-rows: 1fr; gap: 12px; align-items: stretch; }
+
+/* Reste à vivre — hero */
+.rest-hero { display: flex; flex-direction: column; gap: 18px; }
+.rest-hero-top { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
+.rest-hero-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); margin-bottom: 6px; }
+.rest-hero-value { font-size: 38px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.rest-hero-value.positive { color: var(--success); }
+.rest-hero-value.negative { color: var(--danger); }
+.rest-hero-formula { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+.rest-hero-stats { display: flex; flex-direction: column; gap: 8px; min-width: 220px; align-items: flex-end; }
+.rest-stat { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.rest-stat-label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; }
+.rest-stat-value { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.rest-stat-value.positive { color: var(--success); }
+.rest-stat-value.negative { color: var(--danger); }
+.rest-bar { height: 10px; background: var(--bg-subtle); border-radius: 999px; overflow: hidden; }
+.rest-bar-fill { height: 100%; background: var(--success); border-radius: 999px; transition: width 0.5s ease; }
+.rest-bar-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); }
+.rest-bar-meta .positive { color: var(--success); }
+.rest-bar-meta .negative { color: var(--danger); }
+
+/* Mes charges fixes — par catégorie */
+.fixed-by-cat { display: flex; flex-direction: column; gap: 18px; }
+.fixed-cat-group { display: flex; flex-direction: column; gap: 8px; }
+.fixed-cat-header { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--border-light); }
+.fixed-cat-icon { width: 28px; height: 28px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.fixed-cat-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.fixed-cat-total { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+.fixed-cat-items { display: flex; flex-direction: column; gap: 4px; }
+.fixed-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; background: var(--bg-subtle); border: 1px solid transparent; }
+.fixed-item:hover { border-color: var(--border); }
+.fixed-item-day { width: 38px; font-size: 11px; color: var(--text-tertiary); font-weight: 600; text-align: center; flex-shrink: 0; }
+.fixed-item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.fixed-item-info strong { font-size: 13px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fixed-item-meta { font-size: 11px; color: var(--text-tertiary); }
+.fixed-item-amount { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+
+/* Abonnements spotlight */
+.subs-list { display: flex; flex-direction: column; gap: 6px; }
+.subs-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; background: var(--bg-subtle); border: 1px solid var(--border-light); }
+.subs-name { flex: 1; font-size: 13px; font-weight: 500; color: var(--text-primary); }
+.subs-amount { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.subs-amount > span:first-child { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.subs-yearly { font-size: 11px; color: var(--text-tertiary); }
+
 .mk-card { display: flex; align-items: center; gap: 12px; padding: 16px 18px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-sm); }
 .mk-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .mk-card.income .mk-icon { background: var(--success-soft); color: var(--success-text); }

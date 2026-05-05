@@ -12,7 +12,7 @@ from sqlalchemy import text
 
 from app.config import settings
 from app.database import engine, Base
-from app.routers import auth, members, accounts, transactions, wealth, other, categorize, banks
+from app.routers import auth, members, accounts, transactions, wealth, other, categorize, banks, fixed_charges
 
 logger = logging.getLogger("wealthly")
 
@@ -97,3 +97,4 @@ app.include_router(wealth.router)
 app.include_router(other.router)
 app.include_router(categorize.router)
 app.include_router(banks.router)
+app.include_router(fixed_charges.router)

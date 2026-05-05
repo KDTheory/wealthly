@@ -78,6 +78,7 @@ class Household(Base):
     achievements = relationship("Achievement", back_populates="household", cascade="all, delete-orphan")
     rules = relationship("CategorisationRule", back_populates="household", cascade="all, delete-orphan")
     bank_connections = relationship("BankConnection", back_populates="household", cascade="all, delete-orphan")
+    fixed_charges = relationship("FixedCharge", back_populates="household", cascade="all, delete-orphan")
 
 
 class User(Base):
@@ -399,3 +400,46 @@ class BankAccountLink(Base):
     __table_args__ = (
         UniqueConstraint("connection_id", "external_account_id", name="uq_connection_ext_account"),
     )
+
+
+# Association table — FixedCharge can be assigned to specific household members
+fixed_charge_members = Table(
+    "fixed_charge_members",
+    Base.metadata,
+    Column("fixed_charge_id", String, ForeignKey("fixed_charges.id", ondelete="CASCADE"), primary_key=True),
+    Column("member_id", String, ForeignKey("members.id", ondelete="CASCADE"), primary_key=True),
+)
+
+
+class FixedCharge(Base):
+    """A stable monthly charge defined by the user.
+
+    Unlike auto-detected recurring expenses (which derive from imported
+    transactions), these are explicit and stay constant unless the user
+    edits them. They drive the "Reste à vivre" calculation in Suivi
+    mensuel: revenus - sum(active fixed charges).
+
+    Activity window:
+    - `start_month` (YYYY-MM): the charge is active starting from this
+      month. Defaults to the creation month, so an "added today" charge
+      counts from now.
+    - `end_month` (YYYY-MM, nullable): if set, charge stops being counted
+      after that month. Useful for time-bounded subscriptions.
+    """
+    __tablename__ = "fixed_charges"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    name = Column(String, nullable=False)
+    amount = Column(Float, nullable=False, default=0.0)
+    day_of_month = Column(Integer, nullable=True)  # 1-31 — informational
+    category_slug = Column(String, nullable=True)
+    start_month = Column(String, nullable=False)   # 'YYYY-MM'
+    end_month = Column(String, nullable=True)      # 'YYYY-MM' or null
+    notes = Column(Text, nullable=True, default="")
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    household_id = Column(String, ForeignKey("households.id", ondelete="CASCADE"), nullable=False, index=True)
+    household = relationship("Household", back_populates="fixed_charges")
+    members = relationship("Member", secondary=fixed_charge_members)

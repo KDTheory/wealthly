@@ -183,6 +183,16 @@ export const categorizeAI = {
 };
 
 // ============================================================================
+// FIXED CHARGES (charges fixes stables — loyer, abonnements…)
+// ============================================================================
+export const fixedCharges = {
+  list: () => get('/fixed-charges'),
+  create: (fc) => post('/fixed-charges', fc),
+  update: (id, fc) => put(`/fixed-charges/${id}`, fc),
+  delete: (id) => del(`/fixed-charges/${id}`),
+};
+
+// ============================================================================
 // BANK CONNECTIONS (GoCardless aggregator)
 // ============================================================================
 export const banks = {
