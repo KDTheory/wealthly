@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadialBarChart, RadialBar, ComposedChart } from 'recharts';
-import { Upload, Plus, TrendingUp, TrendingDown, Wallet, Home, Coins, CreditCard, Users, Settings, Search, Download, Trash2, Edit3, Check, X, ChevronRight, ChevronLeft, AlertCircle, AlertTriangle, Repeat, Calendar, ArrowUpDown, Eye, EyeOff, Sparkles, PiggyBank, Bitcoin, Banknote, Landmark, BarChart3, Target, Heart, Sun, Moon, Award, Zap, Activity, ArrowUp, ArrowDown, Minus, PartyPopper, Lightbulb, Bell, ChevronUp, Play, Lock, Unlock, LogOut, Cloud, RefreshCw, FileText, Calculator } from 'lucide-react';
+import { Upload, Plus, TrendingUp, TrendingDown, Wallet, Home, Coins, CreditCard, Users, Settings, Search, Download, Trash2, Edit3, Check, X, ChevronRight, ChevronLeft, AlertCircle, AlertTriangle, Repeat, Calendar, ArrowUpDown, Eye, EyeOff, Sparkles, PiggyBank, Bitcoin, Banknote, Landmark, BarChart3, Target, Heart, Sun, Moon, Award, Zap, Activity, ArrowUp, ArrowDown, Minus, PartyPopper, Lightbulb, Bell, ChevronUp, Play, Lock, Unlock, LogOut, Cloud, RefreshCw, FileText, Calculator, Link2, Unlink } from 'lucide-react';
 import * as api from './api.js';
 import { generateBilanPdf } from './pdfReport.js';
 import TaxSimulator from './TaxSimulator.jsx';
@@ -613,10 +613,25 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
       } else {
         // First-time check: onboarded if at least one member exists
         try {
-          await api.auth.me();
+          const me = await api.auth.me();
           const memList = await api.members.list();
           const hasMembers = memList && memList.length > 0;
           setOnboarded(hasMembers);
+          // Auto bank-sync at most once per day for admins. Best-effort: a
+          // 503 (not configured) or any error is silently swallowed — the
+          // user can still trigger a sync manually from Réglages.
+          if (me && me.is_admin) {
+            const lastSyncKey = `wealthly:lastBankSync:${me.id}`;
+            const last = parseInt(localStorage.getItem(lastSyncKey) || '0', 10);
+            if (Date.now() - last > 86400000) {
+              localStorage.setItem(lastSyncKey, String(Date.now()));
+              api.banks.syncAll().then(async (res) => {
+                if (res && res.inserted > 0) {
+                  await reloadAll();
+                }
+              }).catch(() => {});
+            }
+          }
         } catch {
           setOnboarded(false);
         }
@@ -3498,6 +3513,8 @@ function SettingsView({ members, accounts, accountBalances, saveMember, deleteMe
         </div>
       </section>
 
+      <BankConnectionsSection />
+
       <CustomRulesSection categories={categories} />
 
       {editingMember && <MemberEditor member={editingMember} onSave={(m) => { saveMember(m); setEditingMember(null); }} onCancel={() => setEditingMember(null)}/>}
@@ -3692,6 +3709,249 @@ function CustomRulesSection({ categories }) {
         </span>
       </div>
     </section>
+  );
+}
+
+// ============================================================================
+// BANK CONNECTIONS SECTION (GoCardless)
+// ============================================================================
+function BankConnectionsSection() {
+  const [connections, setConnections] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [unavailable, setUnavailable] = useState(false);
+  const [picker, setPicker] = useState(false);
+  const [syncingId, setSyncingId] = useState(null);
+  const [syncMessage, setSyncMessage] = useState(null);
+
+  const reload = async () => {
+    setLoading(true);
+    try {
+      const list = await api.banks.listConnections();
+      setConnections(list || []);
+      setUnavailable(false);
+    } catch (e) {
+      // 503 = backend not configured, hide the section gracefully
+      if (e.message && e.message.includes('non configurées')) {
+        setUnavailable(true);
+      } else {
+        setSyncMessage({ kind: 'error', text: e.message });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { reload(); }, []);
+
+  const handleSync = async (id) => {
+    setSyncingId(id);
+    setSyncMessage(null);
+    try {
+      const res = await api.banks.sync(id);
+      setSyncMessage({
+        kind: res.error ? 'warn' : 'ok',
+        text: res.error
+          ? `${res.inserted} nouvelles · ${res.skipped} ignorées · erreur : ${res.error}`
+          : `${res.inserted} nouvelles transaction${res.inserted > 1 ? 's' : ''}, ${res.skipped} ignorée${res.skipped > 1 ? 's' : ''}`,
+      });
+      await reload();
+    } catch (e) {
+      setSyncMessage({ kind: 'error', text: e.message });
+    } finally {
+      setSyncingId(null);
+    }
+  };
+
+  const handleDelete = async (id, name) => {
+    if (!confirm(`Déconnecter ${name} ? Les transactions importées sont conservées.`)) return;
+    try {
+      await api.banks.delete(id);
+      await reload();
+    } catch (e) {
+      setSyncMessage({ kind: 'error', text: e.message });
+    }
+  };
+
+  if (unavailable) {
+    return (
+      <section className="card">
+        <div className="card-header"><h3><Link2 size={16}/> Connexions bancaires</h3></div>
+        <div className="settings-info">
+          <Lightbulb size={14}/>
+          <span>
+            La synchronisation bancaire automatique n'est pas activée sur ce backend. Configure
+            <code style={{ margin: '0 4px' }}>GOCARDLESS_SECRET_ID</code> et
+            <code style={{ margin: '0 4px' }}>GOCARDLESS_SECRET_KEY</code> côté Railway pour l'activer.
+          </span>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="card">
+      <div className="card-header">
+        <h3><Link2 size={16}/> Connexions bancaires</h3>
+        <button className="secondary-btn" onClick={() => setPicker(true)}><Plus size={14}/> Connecter une banque</button>
+      </div>
+
+      {syncMessage && (
+        <div className="settings-info" style={{
+          color: syncMessage.kind === 'error' ? 'var(--danger)' : syncMessage.kind === 'warn' ? 'var(--warning)' : 'var(--success)',
+        }}>
+          <AlertCircle size={14}/><span>{syncMessage.text}</span>
+        </div>
+      )}
+
+      {loading && <div className="empty-mini"><RefreshCw size={20} className="spin"/><p>Chargement…</p></div>}
+
+      {!loading && connections.length === 0 && (
+        <div className="empty-mini">
+          <Link2 size={24}/>
+          <p>Aucune banque connectée. Ajoute-en une pour recevoir tes transactions automatiquement.</p>
+        </div>
+      )}
+
+      <div className="member-list">
+        {connections.map((c) => {
+          const expiringSoon = c.days_until_expiry !== null && c.days_until_expiry <= 7;
+          const linkedCount = c.account_links.filter((l) => l.account_id).length;
+          return (
+            <div key={c.id} className="member-card" style={{ alignItems: 'flex-start' }}>
+              <span className="member-avatar large" style={{ background: '#1f2026', overflow: 'hidden' }}>
+                {c.institution_logo ? (
+                  <img src={c.institution_logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
+                ) : (c.institution_name || '?').charAt(0)}
+              </span>
+              <div className="member-card-info" style={{ flex: 1 }}>
+                <div className="member-card-name">{c.institution_name}</div>
+                <div className="member-card-role">
+                  {linkedCount}/{c.account_links.length} compte{c.account_links.length > 1 ? 's' : ''} lié{linkedCount > 1 ? 's' : ''}
+                  {' · '}
+                  {c.last_sync_at ? `Synchro : ${new Date(c.last_sync_at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}` : 'Jamais synchronisé'}
+                  {' · '}
+                  <span style={{ color: c.status === 'LN' ? 'var(--success)' : 'var(--warning)' }}>
+                    {c.status_label}
+                  </span>
+                  {expiringSoon && (
+                    <span style={{ color: 'var(--warning)' }}>
+                      {' · expire dans '}{c.days_until_expiry}j
+                    </span>
+                  )}
+                </div>
+                {c.last_sync_error && (
+                  <div className="member-card-role" style={{ color: 'var(--danger)', marginTop: 4 }}>
+                    {c.last_sync_error}
+                  </div>
+                )}
+              </div>
+              <button
+                className="icon-btn-sm"
+                title="Synchroniser maintenant"
+                onClick={() => handleSync(c.id)}
+                disabled={syncingId === c.id || c.status !== 'LN'}
+              >
+                <RefreshCw size={13} className={syncingId === c.id ? 'spin' : ''}/>
+              </button>
+              <button className="icon-btn-sm" title="Déconnecter" onClick={() => handleDelete(c.id, c.institution_name)}>
+                <Unlink size={13}/>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="settings-info" style={{ marginTop: 14 }}>
+        <Lightbulb size={14}/>
+        <span>
+          Le consentement DSP2 dure <strong>90 jours</strong> max — à renouveler en re-connectant la banque. Les transactions sont catégorisées avec tes règles existantes.
+        </span>
+      </div>
+
+      {picker && <InstitutionPicker onClose={() => setPicker(false)}/>}
+    </section>
+  );
+}
+
+function InstitutionPicker({ onClose }) {
+  const [institutions, setInstitutions] = useState(null);
+  const [filter, setFilter] = useState('');
+  const [error, setError] = useState(null);
+  const [connecting, setConnecting] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const list = await api.banks.listInstitutions('FR');
+        setInstitutions(list || []);
+      } catch (e) {
+        setError(e.message);
+      }
+    })();
+  }, []);
+
+  const filtered = (institutions || []).filter((i) =>
+    i.name.toLowerCase().includes(filter.toLowerCase())
+  );
+
+  const start = async (institutionId) => {
+    setConnecting(institutionId);
+    try {
+      const res = await api.banks.connect(institutionId);
+      // Hard navigation to the bank's auth page
+      window.location.href = res.redirect_url;
+    } catch (e) {
+      setError(e.message);
+      setConnecting(null);
+    }
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560 }}>
+        <div className="modal-header">
+          <h2>Connecter une banque</h2>
+          <button className="icon-btn-sm" onClick={onClose}><X size={16}/></button>
+        </div>
+        <div className="modal-body">
+          {error && <div className="settings-info" style={{ color: 'var(--danger)' }}><AlertCircle size={14}/><span>{error}</span></div>}
+          <label>
+            <span>Rechercher</span>
+            <input
+              type="text"
+              autoFocus
+              placeholder="BNP, Boursorama, Revolut…"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            />
+          </label>
+          {!institutions && !error && <div className="empty-mini"><RefreshCw size={20} className="spin"/><p>Chargement des banques…</p></div>}
+          {institutions && (
+            <div className="member-list" style={{ maxHeight: 320, overflowY: 'auto', marginTop: 12 }}>
+              {filtered.map((i) => (
+                <button
+                  key={i.id}
+                  className="member-card"
+                  onClick={() => start(i.id)}
+                  disabled={connecting === i.id}
+                  style={{ cursor: 'pointer', textAlign: 'left', background: 'transparent', border: '1px solid var(--border)' }}
+                >
+                  <span className="member-avatar large" style={{ background: '#1f2026', overflow: 'hidden' }}>
+                    {i.logo ? <img src={i.logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}/> : i.name.charAt(0)}
+                  </span>
+                  <div className="member-card-info">
+                    <div className="member-card-name">{i.name}</div>
+                    {i.bic && <div className="member-card-role">{i.bic}</div>}
+                  </div>
+                  {connecting === i.id && <RefreshCw size={14} className="spin"/>}
+                </button>
+              ))}
+              {filtered.length === 0 && <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: 16 }}>Aucune banque pour ce filtre.</p>}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -3961,6 +4221,7 @@ function Styles({ theme }) {
 
 .loading-screen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: var(--bg-page); color: var(--text-secondary); }
 .spinner { width: 32px; height: 32px; border: 2.5px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+.spin { animation: spin 1s linear infinite; }
 
 /* DEMO MODE banner */
 .demo-banner { display: flex; align-items: center; gap: 12px; padding: 9px 18px; background: var(--primary-soft); border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-secondary); flex-wrap: wrap; }

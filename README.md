@@ -37,6 +37,7 @@ Application web de **gestion patrimoniale familiale** auto-hébergée. Comptes b
 - **Auth complète** : inscription, connexion, JWT 7 jours, **mot de passe oublié** (lien email Resend, token single-use, expire 60 min)
 - **Multi-membres** : foyer = un compte admin + plusieurs membres (adultes / enfants), comptes joints partagés automatiquement
 - **Import CSV** : détection auto de la banque (Revolut, Crédit Agricole, Boursorama, LCL, BNP, etc.), mapping colonnes, prévisualisation
+- **Synchro bancaire automatique** (optionnelle) : connexion DSP2 via **GoCardless Bank Account Data**, l'admin du foyer connecte les comptes de tout le monde une fois et les nouvelles transactions arrivent automatiquement à chaque connexion (1× par jour max, ou bouton "Synchroniser maintenant" dans Réglages). Consentement DSP2 valable 90 jours, à renouveler ensuite. Les transactions arrivent dans la même table que celles importées par CSV (pas de doublons grâce à un identifiant stable bancaire).
 - **Catégorisation hybride** : règles regex intégrées → règles regex personnalisées (UI dans Réglages) → Claude Haiku (BYOK) → "non catégorisé"
 
 ### Vues
@@ -46,7 +47,7 @@ Application web de **gestion patrimoniale familiale** auto-hébergée. Comptes b
 - **Patrimoine** — actifs / passifs / allocation par classe (donut), KPIs gestion privée, **courbe d'évolution mensuelle** du patrimoine net (snapshots auto)
 - **Transactions** — table avec filtres, recatégorisation manuelle, marquage récurrent
 - **Impôts** — **simulateur d'impôt FR 2025** (barème, parts fiscales, plafond quotient, décote, crédits garde d'enfants + CESU avec plafond niches fiscales 10 000 €)
-- **Réglages** — membres, comptes, succès, règles de catégorisation custom, export/import backup JSON
+- **Réglages** — membres, comptes, succès, règles de catégorisation custom, **connexions bancaires DSP2**, export/import backup JSON
 
 ### Mode démo
 Bouton "Voir avec un jeu de démo" sur l'écran de connexion → app pré-remplie (Alice + Bob + Léa, 6 mois de transactions, immo + PEA + AV + prêt). Aucune inscription, aucune écriture en base.
@@ -134,6 +135,11 @@ npm run dev
 | `RESEND_API_KEY` | non | — | Sans elle, le flow "mot de passe oublié" est silencieux (logs uniquement) |
 | `EMAIL_FROM` | non | `Wealthly <onboarding@resend.dev>` | Expéditeur. Avec l'adresse par défaut, **Resend free tier ne livre qu'à l'email du compte Resend**. Vérifier un domaine sur resend.com pour envoyer à n'importe qui. |
 | `FRONTEND_URL` | non | `https://wealthly-six.vercel.app` | Base URL utilisée pour construire les liens de reset |
+| `GOCARDLESS_SECRET_ID` | non | — | Active la synchro bancaire DSP2 (compte gratuit sur https://bankaccountdata.gocardless.com) |
+| `GOCARDLESS_SECRET_KEY` | non | — | À côté de `SECRET_ID` ci-dessus. Sans les 2, la section "Connexions bancaires" est désactivée |
+| `GOCARDLESS_REDIRECT_URI` | non | `https://wealthly-six.vercel.app/bank-callback` | Doit pointer vers la page `/bank-callback` du frontend |
+| `GOCARDLESS_ACCESS_VALID_DAYS` | non | `90` | Durée du consentement en jours (max 90 chez GoCardless) |
+| `GOCARDLESS_HISTORICAL_DAYS` | non | `90` | Profondeur d'historique pull à la première synchro |
 
 ### Frontend (Vercel → Settings → Environment Variables)
 

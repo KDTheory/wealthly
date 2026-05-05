@@ -183,6 +183,20 @@ export const categorizeAI = {
 };
 
 // ============================================================================
+// BANK CONNECTIONS (GoCardless aggregator)
+// ============================================================================
+export const banks = {
+  listInstitutions: (country = 'FR') => get(`/banks/institutions?country=${country}`),
+  connect: (institutionId) => post('/banks/connect', { institution_id: institutionId }),
+  callback: (ref) => get(`/banks/callback?ref=${encodeURIComponent(ref)}`),
+  listConnections: () => get('/banks/connections'),
+  map: (connectionId, mappings) => post(`/banks/connections/${connectionId}/map`, { mappings }),
+  sync: (connectionId) => post(`/banks/connections/${connectionId}/sync`, {}),
+  syncAll: () => post('/banks/sync-all', {}),
+  delete: (connectionId) => del(`/banks/connections/${connectionId}`),
+};
+
+// ============================================================================
 // MIGRATION FROM v2 JSON BACKUP
 // ============================================================================
 export const migrate = {

@@ -1,6 +1,6 @@
 # Wealthly — Roadmap
 
-État au **2026-05-05**.
+État au **2026-05-05** (synchro bancaire ajoutée).
 
 ---
 
@@ -36,6 +36,7 @@
 - [x] **Alerte budget** : badge rouge sur la nav avec le nombre de budgets dépassés ce mois
 - [x] **Mot de passe oublié** : table `password_reset_tokens` (SHA-256, single-use, 60 min), email via Resend, écran reset auto-déclenché par `?reset_token=` dans l'URL
 - [x] **Mode démo** : seed côté client pour explorer l'app sans inscription (Alice + Bob + Léa, 6 mois de données réalistes)
+- [x] **Synchro bancaire DSP2** : intégration GoCardless Bank Account Data (gratuit, EU). L'admin du foyer connecte ses banques depuis Réglages → flow OAuth bancaire → mapping comptes distants ↔ comptes Wealthly → sync auto 1×/jour à la connexion + bouton manuel. Dédup sur `external_id`, catégorisation appliquée à chaque tx synchronisée. Tables `bank_connections` + `bank_account_links`, colonnes `source` + `external_id` ajoutées sur `transactions`. Section désactivée si secrets non configurés.
 
 ### Backend & infra
 - [x] CORS regex pour matcher tous les déploiements Vercel (`wealthly(-…)?\.vercel\.app`)
@@ -83,9 +84,13 @@
 
 ---
 
+## 🔜 À faire (suite synchro bancaire)
+- [ ] **Cron Railway** pour sync auto en arrière-plan (v1 : sync uniquement à la connexion d'un admin)
+- [ ] **Notif email J-7 expiration consentement** via Resend (le consentement DSP2 dure 90 jours max)
+- [ ] **Migration Bridge** ou **Powens** si besoin de sync silencieux longue durée ou meilleure couverture des comptes titres
+
 ## 🚫 Hors scope (volontairement)
 
-- ❌ **Synchro bancaire automatique** (Bridge / GoCardless / Powens) — l'utilisateur a explicitement refusé
 - ❌ **Rebalancing d'allocation** — refusé
 - ❌ **Garde alternée** dans le simulateur d'impôt — supprimé sur demande utilisateur
 

@@ -77,6 +77,7 @@ class Household(Base):
     goals = relationship("Goal", back_populates="household", cascade="all, delete-orphan")
     achievements = relationship("Achievement", back_populates="household", cascade="all, delete-orphan")
     rules = relationship("CategorisationRule", back_populates="household", cascade="all, delete-orphan")
+    bank_connections = relationship("BankConnection", back_populates="household", cascade="all, delete-orphan")
 
 
 class User(Base):
@@ -150,6 +151,11 @@ class Transaction(Base):
     notes = Column(Text, nullable=True, default="")
     # Hash for deduplication on import: account_id|date|amount|label_truncated
     dedup_hash = Column(String, nullable=False, index=True)
+    # Source of the transaction: csv | manual | gocardless
+    source = Column(String, nullable=False, default="manual", index=True)
+    # Stable identifier from the bank aggregator (e.g. GoCardless transactionId).
+    # When set, a unique (account_id, external_id) index dedups syncs across runs.
+    external_id = Column(String, nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     household_id = Column(String, ForeignKey("households.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -159,6 +165,7 @@ class Transaction(Base):
 
     __table_args__ = (
         UniqueConstraint("household_id", "dedup_hash", name="uq_household_dedup"),
+        UniqueConstraint("account_id", "external_id", name="uq_account_external_id"),
         Index("ix_tx_household_date", "household_id", "date"),
     )
 
@@ -325,4 +332,70 @@ class WealthSnapshot(Base):
 
     __table_args__ = (
         UniqueConstraint("household_id", "month", name="uq_household_snapshot_month"),
+    )
+
+
+class BankConnection(Base):
+    """A connection to a bank via an aggregator (GoCardless Bank Account Data
+    for now). One row per (household, institution) link — owns 1+ accounts.
+
+    The PSD2 consent expires after 90 days max; the user must re-link the bank
+    after that. We track expires_at to surface a warning before that point.
+    """
+    __tablename__ = "bank_connections"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    provider = Column(String, nullable=False, default="gocardless")
+    institution_id = Column(String, nullable=False)   # provider-side institution id
+    institution_name = Column(String, nullable=False)
+    institution_logo = Column(String, nullable=True)
+
+    # Provider-side handles
+    requisition_id = Column(String, nullable=False, index=True)
+    agreement_id = Column(String, nullable=True)
+    # Reference we pass to GoCardless so we can correlate the callback
+    reference = Column(String, nullable=False, index=True)
+
+    # CR (created, awaiting auth) | LN (linked) | EX (expired) | ER (error) | RJ (rejected)
+    status = Column(String, nullable=False, default="CR")
+    last_sync_at = Column(DateTime, nullable=True)
+    last_sync_error = Column(Text, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    expires_at = Column(DateTime, nullable=True)
+
+    household_id = Column(String, ForeignKey("households.id", ondelete="CASCADE"), nullable=False, index=True)
+    household = relationship("Household", back_populates="bank_connections")
+    account_links = relationship("BankAccountLink", back_populates="connection", cascade="all, delete-orphan")
+
+
+class BankAccountLink(Base):
+    """A specific external account exposed by a BankConnection, mapped to an
+    internal Account. One row per (connection, external_account_id).
+
+    `account_id` is nullable because right after the callback we know the
+    external accounts but the user hasn't yet picked which internal Account
+    each one maps to (or chosen to create a new one).
+    """
+    __tablename__ = "bank_account_links"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    connection_id = Column(String, ForeignKey("bank_connections.id", ondelete="CASCADE"), nullable=False, index=True)
+    external_account_id = Column(String, nullable=False, index=True)
+
+    iban = Column(String, nullable=True)
+    currency = Column(String, nullable=True, default="EUR")
+    owner_name = Column(String, nullable=True)
+    display_name = Column(String, nullable=True)  # what the bank calls it
+
+    account_id = Column(String, ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True, index=True)
+    last_synced_at = Column(DateTime, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    connection = relationship("BankConnection", back_populates="account_links")
+    account = relationship("Account")
+
+    __table_args__ = (
+        UniqueConstraint("connection_id", "external_account_id", name="uq_connection_ext_account"),
     )

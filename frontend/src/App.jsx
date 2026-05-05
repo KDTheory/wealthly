@@ -2,11 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { getToken, auth } from './api.js';
 import AuthScreen from './AuthScreen.jsx';
 import WealthlyApp from './WealthlyApp.jsx';
+import BankCallback from './BankCallback.jsx';
 import { isDemoMode, disableDemoMode } from './demoData.js';
 
 export default function App() {
   const [authState, setAuthState] = useState('checking'); // checking | authed | unauthed | demo
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isBankCallback, setIsBankCallback] = useState(
+    typeof window !== 'undefined' && window.location.pathname === '/bank-callback'
+  );
 
   useEffect(() => {
     (async () => {
@@ -69,6 +73,17 @@ export default function App() {
 
   if (authState === 'unauthed') {
     return <AuthScreen onAuth={() => setAuthState('authed')} onTryDemo={() => setAuthState('demo')} />;
+  }
+
+  if (isBankCallback) {
+    return (
+      <BankCallback
+        onDone={() => {
+          setIsBankCallback(false);
+          setRefreshKey((k) => k + 1);
+        }}
+      />
+    );
   }
 
   return <WealthlyApp />;

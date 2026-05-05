@@ -49,6 +49,9 @@ backend/
       other.py           categories, budgets, goals, achievements, rules,
                          migration import
       categorize.py      Regex + AI categorization
+      banks.py           GoCardless Bank Account Data — connect/sync flow
+    services/
+      gocardless.py      Thin httpx client over the GoCardless API
   tests/                 pytest, in-memory SQLite, mocked Resend
   pytest.ini
   requirements.txt       prod deps
@@ -64,6 +67,7 @@ frontend/
     main.jsx              Entry, registers SW in prod only
     App.jsx               Auth gate + demo mode + reset_token URL handler
     AuthScreen.jsx        Login | Register | Forgot | Reset modes
+    BankCallback.jsx      Landing page after the bank OAuth redirect
     WealthlyApp.jsx       🐉 ~4500 lignes monolith — toutes les vues + Styles
     TaxSimulator.jsx      Vue Impôts
     taxFr.js              Pure tax engine (barème + parts + crédits)

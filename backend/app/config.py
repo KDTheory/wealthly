@@ -48,6 +48,21 @@ class Settings:
     # Public URL of the frontend, used to build password-reset links.
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "https://wealthly-six.vercel.app")
 
+    # GoCardless Bank Account Data (PSD2 aggregator) — optional.
+    # Without these, the /banks endpoints return 503.
+    GOCARDLESS_SECRET_ID: str | None = os.getenv("GOCARDLESS_SECRET_ID")
+    GOCARDLESS_SECRET_KEY: str | None = os.getenv("GOCARDLESS_SECRET_KEY")
+    # Where the bank redirects the user after they validate the consent.
+    # Must point to the frontend route that handles the callback.
+    GOCARDLESS_REDIRECT_URI: str = os.getenv(
+        "GOCARDLESS_REDIRECT_URI",
+        "https://wealthly-six.vercel.app/bank-callback",
+    )
+    # PSD2 consent length in days (max 90).
+    GOCARDLESS_ACCESS_VALID_DAYS: int = int(os.getenv("GOCARDLESS_ACCESS_VALID_DAYS", "90"))
+    # How many days of historical transactions to pull on first sync (max 90 typical).
+    GOCARDLESS_HISTORICAL_DAYS: int = int(os.getenv("GOCARDLESS_HISTORICAL_DAYS", "90"))
+
     # App
     APP_NAME: str = "Wealthly API"
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
