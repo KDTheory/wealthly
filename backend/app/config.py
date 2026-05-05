@@ -24,11 +24,19 @@ class Settings:
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "10080"))  # 7 days
 
-    # CORS — comma-separated list of allowed origins
+    # CORS — comma-separated list of allowed origins (exact match)
     CORS_ORIGINS: list[str] = os.getenv(
         "CORS_ORIGINS",
         "http://localhost:3000,http://localhost:5173"
     ).split(",")
+
+    # CORS regex — matches all Vercel deployments by default
+    # (each Vercel deploy gets a new hash-prefix URL, so a regex is needed
+    # alongside the exact list).
+    CORS_ORIGIN_REGEX: str = os.getenv(
+        "CORS_ORIGIN_REGEX",
+        r"^https://wealthly(-[a-z0-9-]+)?\.vercel\.app$"
+    )
 
     # Anthropic (optional — enables AI categorization)
     ANTHROPIC_API_KEY: str | None = os.getenv("ANTHROPIC_API_KEY")
