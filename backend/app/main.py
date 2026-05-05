@@ -60,6 +60,11 @@ def _run_lightweight_migrations() -> None:
             "      FOREIGN KEY (linked_asset_id) REFERENCES assets(id) ON DELETE SET NULL; "
             "  END IF; "
             "END $$;",
+            # Wealth snapshot breakdown — drives the brut/net/financier toggle
+            "ALTER TABLE wealth_snapshots ADD COLUMN IF NOT EXISTS real_estate_value DOUBLE PRECISION",
+            "ALTER TABLE wealth_snapshots ADD COLUMN IF NOT EXISTS financial_assets_value DOUBLE PRECISION",
+            "ALTER TABLE wealth_snapshots ADD COLUMN IF NOT EXISTS mortgage_debt DOUBLE PRECISION",
+            "ALTER TABLE wealth_snapshots ADD COLUMN IF NOT EXISTS other_debt DOUBLE PRECISION",
         ]
     with engine.begin() as conn:
         for stmt in statements:

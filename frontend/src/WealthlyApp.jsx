@@ -722,8 +722,17 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     if (liquidWealth === 0 && assetsValue === 0 && liabilitiesValue === 0) return;
     const now = new Date();
     const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    // Compute the breakdown fields needed by the brut / net / financier toggle.
+    const realEstateValue = visibleAssets
+      .filter(a => a.type === 'real_estate')
+      .reduce((s, a) => s + (parseFloat(a.currentValue) || 0) * memberShare(a), 0);
+    const financialAssetsValue = liquidWealth + (assetsValue - realEstateValue);
+    const mortgageDebt = visibleLiabilities
+      .filter(l => l.type === 'mortgage')
+      .reduce((s, l) => s + (parseFloat(l.remainingCapital) || 0) * memberShare(l), 0);
+    const otherDebt = liabilitiesValue - mortgageDebt;
     // Round to 1 € so micro-fluctuations don't trigger noisy POSTs.
-    const key = `${month}|${Math.round(netWorth)}|${Math.round(liquidWealth)}|${Math.round(assetsValue)}|${Math.round(liabilitiesValue)}`;
+    const key = `${month}|${Math.round(netWorth)}|${Math.round(liquidWealth)}|${Math.round(assetsValue)}|${Math.round(liabilitiesValue)}|${Math.round(realEstateValue)}|${Math.round(mortgageDebt)}`;
     if (lastSnapshotKeyRef.current === key) return;
     lastSnapshotKeyRef.current = key;
     const handle = setTimeout(() => {
@@ -733,6 +742,10 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
         liquid_wealth: Number(liquidWealth.toFixed(2)),
         assets_value: Number(assetsValue.toFixed(2)),
         liabilities_value: Number(liabilitiesValue.toFixed(2)),
+        real_estate_value: Number(realEstateValue.toFixed(2)),
+        financial_assets_value: Number(financialAssetsValue.toFixed(2)),
+        mortgage_debt: Number(mortgageDebt.toFixed(2)),
+        other_debt: Number(otherDebt.toFixed(2)),
       }).then((row) => {
         setWealthHistory((prev) => {
           const others = prev.filter((s) => s.month !== row.month);
@@ -741,7 +754,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
       }).catch(() => {});
     }, 1500); // debounce — wait for any settling re-renders before posting
     return () => clearTimeout(handle);
-  }, [netWorth, liquidWealth, assetsValue, liabilitiesValue]);
+  }, [netWorth, liquidWealth, assetsValue, liabilitiesValue, visibleAssets, visibleLiabilities, memberShare]);
 
   const recurringData = useMemo(() => detectRecurring(visibleTransactions, recurringOverrides), [visibleTransactions, recurringOverrides]);
   const recurringIds = recurringData.recurringIds;
@@ -1330,7 +1343,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             transactions={visibleTransactions} categories={categories} fmt={fmt}
             memberShare={memberShare} categoryAnalysis={categoryAnalysis}
             anomalies={anomalies} cashflowProjection={cashflowProjection}
-            goals={goals}
+            goals={goals} wealthHistory={wealthHistory}
             recurringGroups={recurringGroups} currentMonth={currentMonth}
             setView={setView}
           />
@@ -1661,7 +1674,7 @@ function Onboarding({ onComplete }) {
 // ============================================================================
 // DASHBOARD
 // ============================================================================
-function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, thisMonthStats, monthlyEvolution, visibleAccounts, accountBalances, visibleAssets, visibleLiabilities, members, activeMemberId, transactions, categories, fmt, memberShare, categoryAnalysis, anomalies, cashflowProjection, goals, recurringGroups, currentMonth, setView }) {
+function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, thisMonthStats, monthlyEvolution, visibleAccounts, accountBalances, visibleAssets, visibleLiabilities, members, activeMemberId, transactions, categories, fmt, memberShare, categoryAnalysis, anomalies, cashflowProjection, goals, wealthHistory = [], recurringGroups, currentMonth, setView }) {
   const last12Months = monthlyEvolution.slice(-12);
   const recentTx = [...transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
   const activeMember = members.find(m => m.id === activeMemberId);
@@ -1898,39 +1911,9 @@ function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, this
         </section>
       )}
 
-      {/* Net worth chart */}
+      {/* Net worth chart — Finary-style brut/net/financier toggle + period selector */}
       <section className={`${cardCls} p-6 mb-5`}>
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="text-sm font-semibold text-[var(--color-w-text)]">Évolution des liquidités</h3>
-          <span className="text-xs text-[var(--color-w-faint)]">{last12Months.length} derniers mois</span>
-        </div>
-        {last12Months.length > 1 ? (
-          <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={last12Months} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="balanceGradV2" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--color-w-accent)" stopOpacity={0.28}/>
-                  <stop offset="100%" stopColor="var(--color-w-accent)" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-w-border)" vertical={false}/>
-              <XAxis dataKey="month" tickFormatter={(m) => formatDate(m + '-01', { format: 'monthYear' })} stroke="var(--color-w-faint)" fontSize={11} tickLine={false} axisLine={false}/>
-              <YAxis tickFormatter={(v) => formatCurrency(v, { compact: true })} stroke="var(--color-w-faint)" fontSize={11} tickLine={false} axisLine={false} width={55}/>
-              <Tooltip
-                contentStyle={{ background: 'var(--color-w-surface-2)', border: '1px solid var(--color-w-border-strong)', borderRadius: 10, fontSize: 12, color: 'var(--color-w-text)' }}
-                cursor={{ stroke: 'var(--color-w-border-strong)', strokeWidth: 1 }}
-                formatter={(v) => formatCurrency(v)}
-                labelFormatter={(m) => formatDate(m + '-01', { format: 'long' })}
-              />
-              <Area type="monotone" dataKey="balance" stroke="var(--color-w-accent)" strokeWidth={2} fill="url(#balanceGradV2)"/>
-            </AreaChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="h-[200px] flex flex-col items-center justify-center gap-3 text-[var(--color-w-faint)]">
-            <Activity size={26}/>
-            <span className="text-sm">Importez plus de mois pour voir la tendance</span>
-          </div>
-        )}
+        <NetWorthChart snapshots={wealthHistory} fmt={fmt}/>
       </section>
 
       {/* Two-col grid: composition + top expenses */}
@@ -2849,36 +2832,10 @@ function Wealth({ assets, liabilities, members, activeMemberId, visibleAssets, v
         </div>
       </div>
 
-      {/* Patrimoine history — only shown once we have at least 2 snapshots */}
-      {wealthHistory.length >= 2 && (
+      {/* Patrimoine history with brut / net / financier toggle */}
+      {wealthHistory.length >= 1 && (
         <section className="card chart-card">
-          <div className="card-header">
-            <h3>Évolution du patrimoine net</h3>
-            <span className="card-meta">{wealthHistory.length} mois · snapshot mensuel automatique</span>
-          </div>
-          <ResponsiveContainer width="100%" height={240}>
-            <AreaChart data={wealthHistory} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="netWorthGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.3}/>
-                  <stop offset="100%" stopColor="var(--primary)" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false}/>
-              <XAxis dataKey="month" tickFormatter={(m) => formatDate(m + '-01', { format: 'monthYear' })} stroke="var(--text-tertiary)" fontSize={11} tickLine={false} axisLine={false}/>
-              <YAxis tickFormatter={(v) => formatCurrency(v, { compact: true })} stroke="var(--text-tertiary)" fontSize={11} tickLine={false} axisLine={false} width={55}/>
-              <Tooltip
-                contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 12, color: 'var(--text-primary)' }}
-                cursor={{ stroke: 'var(--border-strong)', strokeWidth: 1 }}
-                formatter={(v, key) => {
-                  const labels = { net_worth: 'Patrimoine net', liquid_wealth: 'Liquidités', assets_value: 'Actifs', liabilities_value: 'Dettes' };
-                  return [formatCurrency(v), labels[key] || key];
-                }}
-                labelFormatter={(m) => formatDate(m + '-01', { format: 'long' })}
-              />
-              <Area type="monotone" dataKey="net_worth" stroke="var(--primary)" strokeWidth={2} fill="url(#netWorthGrad)"/>
-            </AreaChart>
-          </ResponsiveContainer>
+          <NetWorthChart snapshots={wealthHistory} fmt={fmt}/>
         </section>
       )}
 
@@ -3139,6 +3096,137 @@ function AssetEditor({ asset, members, onSave, onCancel }) {
           <button className="secondary-btn" onClick={onCancel}>Annuler</button>
           <button className="primary-btn" onClick={handleSave}><Check size={14}/> Enregistrer</button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// NET WORTH CHART — Finary-style toggles + period selector
+// ============================================================================
+
+const NW_PERIODS = [
+  { key: '1M',  months: 1 },
+  { key: 'YTD', months: 'ytd' },
+  { key: '1A',  months: 12 },
+  { key: 'TOUT', months: null },
+];
+
+const NW_MODES = [
+  { key: 'net',       label: 'Patrimoine net' },
+  { key: 'gross',     label: 'Patrimoine brut' },
+  { key: 'financial', label: 'Patrimoine financier' },
+];
+
+function NetWorthChart({ snapshots = [], fmt }) {
+  const [mode, setMode] = useState('net');
+  const [view, setView] = useState('evolution'); // evolution | performance
+  const [period, setPeriod] = useState('TOUT');
+
+  // Project each snapshot row onto the selected mode value.
+  const project = (s) => {
+    const liquid = s.liquid_wealth || 0;
+    const assets = s.assets_value || 0;
+    const liabilities = s.liabilities_value || 0;
+    const re = s.real_estate_value;
+    const fin = s.financial_assets_value;
+    const mortgage = s.mortgage_debt;
+    const otherDebt = s.other_debt;
+    if (mode === 'gross') return liquid + assets;
+    if (mode === 'financial') {
+      // Prefer the stored financial assets / non-mortgage debt; fall back to a
+      // crude approximation for legacy rows that don't have the breakdown.
+      const finVal = fin != null ? fin : (liquid + Math.max(0, assets - (re || 0)));
+      const finDebt = otherDebt != null ? otherDebt : (mortgage == null ? 0 : Math.max(0, liabilities - mortgage));
+      return finVal - finDebt;
+    }
+    // 'net' (default) — stored value is authoritative
+    return s.net_worth || (liquid + assets - liabilities);
+  };
+
+  // Apply the period filter
+  const today = new Date();
+  const filtered = useMemo(() => {
+    const sorted = [...snapshots].sort((a, b) => a.month.localeCompare(b.month));
+    if (period === 'TOUT') return sorted;
+    if (period === 'YTD') {
+      const cutoff = `${today.getFullYear()}-01`;
+      return sorted.filter(s => s.month >= cutoff);
+    }
+    const months = NW_PERIODS.find(p => p.key === period)?.months || 12;
+    const cutDate = new Date(today.getFullYear(), today.getMonth() - months, 1);
+    const cutKey = `${cutDate.getFullYear()}-${String(cutDate.getMonth() + 1).padStart(2, '0')}`;
+    return sorted.filter(s => s.month >= cutKey);
+  }, [snapshots, period, today]);
+
+  const baseline = filtered[0] ? project(filtered[0]) : 0;
+  const data = filtered.map(s => {
+    const v = project(s);
+    const perf = baseline > 0 ? ((v - baseline) / baseline) * 100 : 0;
+    return { month: s.month, value: Math.round(v), perf: Number(perf.toFixed(2)) };
+  });
+
+  const last = data[data.length - 1] || { value: 0, perf: 0 };
+  const first = data[0] || { value: 0 };
+  const delta = last.value - first.value;
+  const deltaPct = first.value > 0 ? ((last.value - first.value) / first.value) * 100 : 0;
+
+  const dataKey = view === 'performance' ? 'perf' : 'value';
+
+  return (
+    <div className="nw-chart">
+      <div className="nw-header">
+        <div className="nw-header-left">
+          <select className="nw-mode-select" value={mode} onChange={(e) => setMode(e.target.value)}>
+            {NW_MODES.map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
+          </select>
+          <div className="nw-current">
+            <div className="nw-current-value">{fmt(last.value)}</div>
+            <div className={`nw-current-delta ${delta >= 0 ? 'positive' : 'negative'}`}>
+              {delta >= 0 ? '+' : ''}{fmt(delta)} <span className="nw-pct">({delta >= 0 ? '+' : ''}{deltaPct.toFixed(2)}%)</span>
+              <span className="nw-period-label">· {period}</span>
+            </div>
+          </div>
+        </div>
+        <div className="nw-toggles">
+          <div className="nw-toggle-group">
+            <button className={view === 'evolution' ? 'active' : ''} onClick={() => setView('evolution')}>Évolution</button>
+            <button className={view === 'performance' ? 'active' : ''} onClick={() => setView('performance')}>Performance %</button>
+          </div>
+        </div>
+      </div>
+
+      {data.length >= 2 ? (
+        <ResponsiveContainer width="100%" height={260}>
+          <AreaChart data={data} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="nwGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.32}/>
+                <stop offset="100%" stopColor="var(--primary)" stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false}/>
+            <XAxis dataKey="month" tickFormatter={(m) => formatDate(m + '-01', { format: 'monthYear' })} stroke="var(--text-tertiary)" fontSize={11} tickLine={false} axisLine={false}/>
+            <YAxis tickFormatter={(v) => view === 'performance' ? `${v}%` : formatCurrency(v, { compact: true })} stroke="var(--text-tertiary)" fontSize={11} tickLine={false} axisLine={false} width={55}/>
+            <Tooltip
+              contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 12, color: 'var(--text-primary)' }}
+              formatter={(v) => view === 'performance' ? `${v}%` : formatCurrency(v)}
+              labelFormatter={(m) => formatDate(m + '-01', { format: 'long' })}
+            />
+            <Area type="monotone" dataKey={dataKey} stroke="var(--primary)" strokeWidth={2} fill="url(#nwGrad)"/>
+          </AreaChart>
+        </ResponsiveContainer>
+      ) : (
+        <div className="empty-mini" style={{ padding: '40px 0' }}>
+          <Activity size={26}/>
+          <p>Pas encore assez de snapshots pour cette période. Reviens dans quelques mois ou élargis la période.</p>
+        </div>
+      )}
+
+      <div className="nw-period-bar">
+        {NW_PERIODS.map(p => (
+          <button key={p.key} className={period === p.key ? 'active' : ''} onClick={() => setPeriod(p.key)}>{p.key}</button>
+        ))}
       </div>
     </div>
   );
@@ -5128,6 +5216,29 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .loan-meta-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .loan-meta-pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: var(--bg-subtle); border: 1px solid var(--border); font-size: 12px; color: var(--text-secondary); }
 .loan-meta-pill strong { color: var(--text-primary); }
+
+/* Net worth chart */
+.nw-chart { display: flex; flex-direction: column; gap: 18px; }
+.nw-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; flex-wrap: wrap; }
+.nw-header-left { display: flex; flex-direction: column; gap: 6px; }
+.nw-mode-select { background: transparent; border: none; color: var(--text-secondary); font-size: 13px; font-weight: 500; padding: 4px 0; cursor: pointer; font-family: inherit; outline: none; max-width: max-content; }
+.nw-mode-select:hover { color: var(--text-primary); }
+.nw-current-value { font-size: 36px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--text-primary); line-height: 1.1; }
+.nw-current-delta { font-size: 13px; font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.nw-current-delta.positive { color: var(--success); }
+.nw-current-delta.negative { color: var(--danger); }
+.nw-pct { opacity: 0.85; }
+.nw-period-label { color: var(--text-tertiary); margin-left: 6px; font-weight: 500; }
+.nw-toggles { display: flex; align-items: center; gap: 12px; }
+.nw-toggle-group { display: inline-flex; padding: 3px; background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: 8px; gap: 2px; }
+.nw-toggle-group button { padding: 6px 14px; font-size: 12px; font-weight: 500; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; border-radius: 6px; font-family: inherit; transition: background 0.15s, color 0.15s; }
+.nw-toggle-group button:hover { color: var(--text-primary); }
+.nw-toggle-group button.active { background: var(--bg-card); color: var(--text-primary); box-shadow: var(--shadow-sm); }
+.nw-period-bar { display: inline-flex; gap: 4px; padding: 4px 0; align-self: flex-start; }
+.nw-period-bar button { font-size: 11.5px; padding: 5px 11px; border-radius: 999px; border: 1px solid transparent; background: transparent; color: var(--text-tertiary); cursor: pointer; font-family: inherit; font-weight: 500; transition: all 0.15s; }
+.nw-period-bar button:hover { color: var(--text-primary); background: var(--bg-subtle); }
+.nw-period-bar button.active { background: var(--bg-subtle); color: var(--primary); border-color: var(--border); font-weight: 600; }
+
 
 .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--border); }
 .modal-header h2 { font-size: 18px; font-weight: 700; margin: 0; }

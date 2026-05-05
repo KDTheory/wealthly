@@ -344,6 +344,14 @@ class WealthSnapshot(Base):
     assets_value = Column(Float, nullable=False, default=0.0)
     liabilities_value = Column(Float, nullable=False, default=0.0)
 
+    # Breakdown — added 2026-05-05 to power the brut / net / financier toggle
+    # in the Synthèse view. Nullable for backwards compatibility; older
+    # snapshots simply fall back to the aggregate values above.
+    real_estate_value = Column(Float, nullable=True)        # subset of assets_value
+    financial_assets_value = Column(Float, nullable=True)   # liquid + non-RE assets
+    mortgage_debt = Column(Float, nullable=True)            # subset of liabilities_value
+    other_debt = Column(Float, nullable=True)               # liabilities - mortgage
+
     household_id = Column(String, ForeignKey("households.id", ondelete="CASCADE"), nullable=False)
     household = relationship("Household")
 

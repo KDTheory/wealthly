@@ -328,6 +328,10 @@ class WealthSnapshotCreate(BaseModel):
     liquid_wealth: float
     assets_value: float
     liabilities_value: float
+    real_estate_value: Optional[float] = None
+    financial_assets_value: Optional[float] = None
+    mortgage_debt: Optional[float] = None
+    other_debt: Optional[float] = None
 
 
 class WealthSnapshotOut(WealthSnapshotCreate):

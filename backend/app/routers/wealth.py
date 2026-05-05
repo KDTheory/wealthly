@@ -198,6 +198,10 @@ def upsert_snapshot(
         existing.liquid_wealth = payload.liquid_wealth
         existing.assets_value = payload.assets_value
         existing.liabilities_value = payload.liabilities_value
+        existing.real_estate_value = payload.real_estate_value
+        existing.financial_assets_value = payload.financial_assets_value
+        existing.mortgage_debt = payload.mortgage_debt
+        existing.other_debt = payload.other_debt
         from datetime import datetime as _dt
         existing.captured_at = _dt.utcnow()
         db.commit()
