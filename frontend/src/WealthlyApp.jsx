@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadialBarChart, RadialBar, ComposedChart } from 'recharts';
-import { Upload, Plus, TrendingUp, TrendingDown, Wallet, Home, Coins, CreditCard, Users, Settings, Search, Download, Trash2, Edit3, Check, X, ChevronRight, ChevronLeft, AlertCircle, AlertTriangle, Repeat, Calendar, ArrowUpDown, Eye, EyeOff, Sparkles, PiggyBank, Bitcoin, Banknote, Landmark, BarChart3, Target, Heart, Sun, Moon, Award, Zap, Activity, ArrowUp, ArrowDown, Minus, PartyPopper, Lightbulb, Bell, ChevronUp, Play, Lock, Unlock, LogOut, Cloud, RefreshCw } from 'lucide-react';
+import { Upload, Plus, TrendingUp, TrendingDown, Wallet, Home, Coins, CreditCard, Users, Settings, Search, Download, Trash2, Edit3, Check, X, ChevronRight, ChevronLeft, AlertCircle, AlertTriangle, Repeat, Calendar, ArrowUpDown, Eye, EyeOff, Sparkles, PiggyBank, Bitcoin, Banknote, Landmark, BarChart3, Target, Heart, Sun, Moon, Award, Zap, Activity, ArrowUp, ArrowDown, Minus, PartyPopper, Lightbulb, Bell, ChevronUp, Play, Lock, Unlock, LogOut, Cloud, RefreshCw, FileText } from 'lucide-react';
 import * as api from './api.js';
+import { generateBilanPdf } from './pdfReport.js';
 
 // ============================================================================
 // CONSTANTS
@@ -1206,6 +1207,7 @@ export default function WealthlyApp() {
             memberShare={memberShare} categoryAnalysis={categoryAnalysis}
             anomalies={anomalies} cashflowProjection={cashflowProjection}
             achievements={achievements} goals={goals}
+            recurringGroups={recurringGroups} currentMonth={currentMonth}
             setView={setView}
           />
         )}
@@ -1537,7 +1539,7 @@ function Onboarding({ onComplete }) {
 // ============================================================================
 // DASHBOARD
 // ============================================================================
-function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, thisMonthStats, monthlyEvolution, visibleAccounts, accountBalances, visibleAssets, visibleLiabilities, members, activeMemberId, transactions, categories, fmt, memberShare, categoryAnalysis, anomalies, cashflowProjection, achievements, goals, setView }) {
+function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, thisMonthStats, monthlyEvolution, visibleAccounts, accountBalances, visibleAssets, visibleLiabilities, members, activeMemberId, transactions, categories, fmt, memberShare, categoryAnalysis, anomalies, cashflowProjection, achievements, goals, recurringGroups, currentMonth, setView }) {
   const last12Months = monthlyEvolution.slice(-12);
   const recentTx = [...transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
   const activeMember = members.find(m => m.id === activeMemberId);
@@ -1639,12 +1641,30 @@ function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, this
           <h1 className="text-[28px] leading-tight font-semibold tracking-tight text-[var(--color-w-text)]">Patrimoine</h1>
           <p className="text-sm text-[var(--color-w-faint)] mt-1">{dateLong}</p>
         </div>
-        {streak >= 2 && (
-          <div className="inline-flex items-center gap-2 px-3 h-8 rounded-full border border-[var(--color-w-border)] bg-[var(--color-w-surface)] text-xs text-[var(--color-w-text)]">
-            <Zap size={13} className="text-[var(--color-w-accent)]"/>
-            <span className="text-[var(--color-w-muted)]">{streak} mois positifs d'affilée</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          {streak >= 2 && (
+            <div className="inline-flex items-center gap-2 px-3 h-8 rounded-full border border-[var(--color-w-border)] bg-[var(--color-w-surface)] text-xs text-[var(--color-w-text)]">
+              <Zap size={13} className="text-[var(--color-w-accent)]"/>
+              <span className="text-[var(--color-w-muted)]">{streak} mois positifs d'affilée</span>
+            </div>
+          )}
+          <button
+            onClick={() => generateBilanPdf({
+              netWorth, liquidWealth, assetsValue, liabilitiesValue,
+              thisMonthStats, monthlyEvolution,
+              visibleAccounts, accountBalances, visibleAssets, visibleLiabilities,
+              members, activeMemberId,
+              recurringGroups, categoryAnalysis, categories,
+              memberShare, currentMonth,
+              ASSET_CLASS_MAP,
+            })}
+            className="inline-flex items-center gap-2 px-3 h-8 rounded-md border border-[var(--color-w-border-strong)] bg-[var(--color-w-surface)] text-xs text-[var(--color-w-text)] hover:bg-[var(--color-w-surface-2)] transition-colors"
+            title="Télécharger le bilan en PDF"
+          >
+            <FileText size={13} className="text-[var(--color-w-accent)]"/>
+            <span>Exporter PDF</span>
+          </button>
+        </div>
       </div>
 
       {/* Hero KPIs — 4 cards, primary spans 2 cols */}
@@ -3863,8 +3883,8 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .proj-bar-fill { height: 100%; background: var(--gradient-hero); border-radius: 3px; transition: width 0.6s ease; }
 
 .monthly-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
-@media (min-width: 900px) { .monthly-grid { grid-template-columns: 1.2fr 1fr; } .recurring-card { grid-row: span 2; } }
-.recurring-list-detailed { display: flex; flex-direction: column; gap: 8px; max-height: 540px; overflow-y: auto; }
+@media (min-width: 900px) { .monthly-grid { grid-template-columns: 1.2fr 1fr; } }
+.recurring-list-detailed { display: flex; flex-direction: column; gap: 8px; }
 .recurring-detailed-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; background: var(--bg-subtle); transition: background 0.15s; border: 1px solid var(--border); }
 .recurring-detailed-item:hover { background: var(--bg-card-hover); border-color: var(--border-strong); }
 .rec-day-badge { display: flex; flex-direction: column; align-items: center; padding: 8px 10px; background: var(--purple-soft); border-radius: 10px; flex-shrink: 0; min-width: 56px; }
