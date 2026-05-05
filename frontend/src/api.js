@@ -19,6 +19,14 @@ export const clearToken = () => localStorage.removeItem(TOKEN_KEY);
 // CORE FETCH WRAPPER
 // ============================================================================
 async function request(method, path, body = null) {
+  // In demo mode the UI is fed from demoData.js; never hit the backend.
+  // Reads return an empty result, writes throw so the caller can show a
+  // soft "mode démo" toast without triggering reload-on-401.
+  if (typeof window !== 'undefined' && window.localStorage.getItem('wealthly:demo') === '1') {
+    if (method === 'GET') return null;
+    throw new Error('Mode démo : modifications non enregistrées');
+  }
+
   const headers = { 'Content-Type': 'application/json' };
   const token = getToken();
   if (token) headers['Authorization'] = `Bearer ${token}`;

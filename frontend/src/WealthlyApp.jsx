@@ -4,6 +4,7 @@ import { Upload, Plus, TrendingUp, TrendingDown, Wallet, Home, Coins, CreditCard
 import * as api from './api.js';
 import { generateBilanPdf } from './pdfReport.js';
 import TaxSimulator from './TaxSimulator.jsx';
+import { getDemoData } from './demoData.js';
 
 // ============================================================================
 // CONSTANTS
@@ -404,7 +405,7 @@ const detectRecurring = (transactions, overrides = {}) => {
 // ============================================================================
 // MAIN APP
 // ============================================================================
-export default function WealthlyApp() {
+export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   const [loading, setLoading] = useState(true);
   const [onboarded, setOnboarded] = useState(false);
   const [view, setView] = useState('dashboard');
@@ -543,8 +544,22 @@ export default function WealthlyApp() {
     kind: c.kind,
   });
 
-  // Reload everything from the server
+  // Reload everything from the server (or from demoData.js in demo mode).
   const reloadAll = useCallback(async () => {
+    if (demoMode) {
+      const d = getDemoData();
+      setMembers(d.members);
+      setAccounts(d.accounts);
+      setTransactions(d.transactions);
+      setAssets(d.assets);
+      setLiabilities(d.liabilities);
+      setCategories(DEFAULT_CATEGORIES);
+      setBudgets(d.budgets);
+      setGoals(d.goals);
+      setAchievements(d.achievements);
+      setCustomRules(d.customRules);
+      return;
+    }
     try {
       const [memList, accList, txList, astList, liaList, catList, budList, goalList, achList, ruleList] = await Promise.all([
         api.members.list(),
@@ -576,7 +591,7 @@ export default function WealthlyApp() {
     } catch (err) {
       showToast('Erreur de chargement : ' + err.message, 'error');
     }
-  }, []);
+  }, [demoMode]);
 
   // Load
   useEffect(() => {
@@ -591,17 +606,20 @@ export default function WealthlyApp() {
       setActiveMemberId(am);
       setTheme(th);
       setColumnMappings(await storage.get(STORAGE_KEYS.MAPPINGS, {}));
-      // Then fetch server data
+      // Then fetch server data (or load demo dataset if applicable)
       await reloadAll();
-      // First-time check: onboarded if at least one member exists
-      try {
-        const me = await api.auth.me();
-        const memList = await api.members.list();
-        // Auto-onboarded: API account exists and has at least the user as member or any member
-        const hasMembers = memList && memList.length > 0;
-        setOnboarded(hasMembers);
-      } catch {
-        setOnboarded(false);
+      if (demoMode) {
+        setOnboarded(true);
+      } else {
+        // First-time check: onboarded if at least one member exists
+        try {
+          await api.auth.me();
+          const memList = await api.members.list();
+          const hasMembers = memList && memList.length > 0;
+          setOnboarded(hasMembers);
+        } catch {
+          setOnboarded(false);
+        }
       }
       setLoading(false);
     })();
@@ -1192,6 +1210,18 @@ export default function WealthlyApp() {
       <Styles theme={theme}/>
       {confettiActive && <Confetti/>}
       {toast && <Toast message={toast.message} type={toast.type}/>}
+
+      {demoMode && (
+        <div className="demo-banner">
+          <span className="demo-banner-pill">DÉMO</span>
+          <span className="demo-banner-text">
+            Données fictives — pour découvrir l'app sans inscription. Les modifications ne sont pas enregistrées.
+          </span>
+          <button className="demo-banner-action" onClick={onExitDemo}>
+            Quitter la démo
+          </button>
+        </div>
+      )}
 
       <header className="app-header">
         <div className="brand" onClick={() => setView('dashboard')}>
@@ -3931,6 +3961,14 @@ function Styles({ theme }) {
 
 .loading-screen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: var(--bg-page); color: var(--text-secondary); }
 .spinner { width: 32px; height: 32px; border: 2.5px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+
+/* DEMO MODE banner */
+.demo-banner { display: flex; align-items: center; gap: 12px; padding: 9px 18px; background: var(--primary-soft); border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-secondary); flex-wrap: wrap; }
+.demo-banner-pill { display: inline-flex; align-items: center; padding: 2px 8px; background: var(--primary); color: ${dark ? '#0c0d10' : '#ffffff'}; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; border-radius: 4px; }
+.demo-banner-text { flex: 1; min-width: 0; }
+.demo-banner-action { padding: 5px 12px; background: transparent; border: 1px solid var(--border-strong); border-radius: 4px; color: var(--text-primary); font-size: 11px; font-weight: 500; cursor: pointer; font-family: inherit; transition: background .15s, border-color .15s; }
+.demo-banner-action:hover { background: var(--bg-card); border-color: var(--text-tertiary); }
+@media (max-width: 640px) { .demo-banner { padding: 8px 14px; font-size: 11px; } .demo-banner-text { font-size: 11px; } }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* HEADER */

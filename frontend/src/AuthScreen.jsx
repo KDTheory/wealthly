@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, Lock, User, Home, Eye, EyeOff, AlertCircle, Lock as LockIcon, ArrowLeft, Check } from 'lucide-react';
+import { Mail, Lock, User, Home, Eye, EyeOff, AlertCircle, Lock as LockIcon, ArrowLeft, Check, Sparkles } from 'lucide-react';
 import { auth, setToken } from './api.js';
+import { enableDemoMode } from './demoData.js';
 
 // On mount, capture any reset_token from the URL so we can land directly
 // on the "set new password" screen and clean it out of the address bar.
@@ -9,7 +10,7 @@ function readResetTokenFromUrl() {
   return params.get('reset_token');
 }
 
-export default function AuthScreen({ onAuth }) {
+export default function AuthScreen({ onAuth, onTryDemo }) {
   const initialResetToken = readResetTokenFromUrl();
   const [mode, setMode] = useState(initialResetToken ? 'reset' : 'login'); // login | register | forgot | reset
   const [email, setEmail] = useState('');
@@ -259,6 +260,16 @@ export default function AuthScreen({ onAuth }) {
               )}
             </div>
 
+            {(mode === 'login' || mode === 'register') && onTryDemo && (
+              <button
+                type="button"
+                onClick={() => { enableDemoMode(); onTryDemo(); }}
+                className="auth-demo-button"
+              >
+                <Sparkles size={14} /> Voir avec un jeu de démo
+              </button>
+            )}
+
             <div className="auth-meta">
               <LockIcon size={11} /> Connexion chiffrée · session JWT
             </div>
@@ -507,6 +518,25 @@ const authStyles = `
   transition: border-color .15s;
 }
 .auth-footer a:hover { border-color: #c5a572; }
+
+.auth-demo-button {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  width: 100%;
+  margin-top: 14px; padding: 10px;
+  background: transparent;
+  border: 1px dashed #2e333f;
+  border-radius: 6px;
+  color: #c5a572;
+  font-family: inherit; font-size: 12px; font-weight: 500;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+  letter-spacing: 0.01em;
+}
+.auth-demo-button:hover {
+  background: rgba(197, 165, 114, 0.06);
+  border-color: rgba(197, 165, 114, 0.5);
+  border-style: solid;
+}
 
 .auth-meta {
   display: flex; align-items: center; justify-content: center; gap: 5px;
