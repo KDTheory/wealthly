@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadialBarChart, RadialBar, ComposedChart } from 'recharts';
-import { Upload, Plus, TrendingUp, TrendingDown, Wallet, Home, Coins, CreditCard, Users, Settings, Search, Download, Trash2, Edit3, Check, X, ChevronRight, ChevronLeft, AlertCircle, AlertTriangle, Repeat, Calendar, ArrowUpDown, Eye, EyeOff, Sparkles, PiggyBank, Bitcoin, Banknote, Landmark, BarChart3, Target, Heart, Sun, Moon, Award, Zap, Activity, ArrowUp, ArrowDown, Minus, PartyPopper, Lightbulb, Bell, ChevronUp, Play, Lock, Unlock, LogOut, Cloud, RefreshCw, FileText } from 'lucide-react';
+import { Upload, Plus, TrendingUp, TrendingDown, Wallet, Home, Coins, CreditCard, Users, Settings, Search, Download, Trash2, Edit3, Check, X, ChevronRight, ChevronLeft, AlertCircle, AlertTriangle, Repeat, Calendar, ArrowUpDown, Eye, EyeOff, Sparkles, PiggyBank, Bitcoin, Banknote, Landmark, BarChart3, Target, Heart, Sun, Moon, Award, Zap, Activity, ArrowUp, ArrowDown, Minus, PartyPopper, Lightbulb, Bell, ChevronUp, Play, Lock, Unlock, LogOut, Cloud, RefreshCw, FileText, Calculator } from 'lucide-react';
 import * as api from './api.js';
 import { generateBilanPdf } from './pdfReport.js';
+import TaxSimulator from './TaxSimulator.jsx';
 
 // ============================================================================
 // CONSTANTS
@@ -1157,6 +1158,7 @@ export default function WealthlyApp() {
           <button onClick={() => setView('budgets')} className={view === 'budgets' ? 'active' : ''}><Target size={14}/> <span>Budgets</span></button>
           <button onClick={() => setView('wealth')} className={view === 'wealth' ? 'active' : ''}><Landmark size={14}/> <span>Patrimoine</span></button>
           <button onClick={() => setView('transactions')} className={view === 'transactions' ? 'active' : ''}><BarChart3 size={14}/> <span>Transactions</span></button>
+          <button onClick={() => setView('tax')} className={view === 'tax' ? 'active' : ''}><Calculator size={14}/> <span>Impôts</span></button>
           <button onClick={() => setView('settings')} className={view === 'settings' ? 'active' : ''}><Settings size={14}/> <span>Réglages</span></button>
         </nav>
         <div className="header-actions">
@@ -1265,12 +1267,16 @@ export default function WealthlyApp() {
             accounts={accounts} memberShare={memberShare} fmt={fmt}
           />
         )}
+        {view === 'tax' && (
+          <TaxSimulator transactions={visibleTransactions} />
+        )}
         {view === 'settings' && (
           <SettingsView
             members={members} accounts={accounts} accountBalances={accountBalances}
             saveMember={saveMember} deleteMember={deleteMember}
             deleteAccount={deleteAccount} achievements={achievements}
             exportData={exportData} importData={importData} resetAllData={resetAllData}
+            categories={categories}
             fmt={fmt}
           />
         )}
@@ -3279,7 +3285,7 @@ function Analysis({ transactions, categories, recurringIds, recurringGroups, mon
 // ============================================================================
 // SETTINGS
 // ============================================================================
-function SettingsView({ members, accounts, accountBalances, saveMember, deleteMember, deleteAccount, achievements, exportData, importData, resetAllData, fmt }) {
+function SettingsView({ members, accounts, accountBalances, saveMember, deleteMember, deleteAccount, achievements, exportData, importData, resetAllData, categories = [], fmt }) {
   const [editingMember, setEditingMember] = useState(null);
   const COLORS = ['#3b82f6', '#10b981', '#f97316', '#ec4899', '#8b5cf6', '#06b6d4', '#f59e0b', '#ef4444'];
 
@@ -3366,8 +3372,200 @@ function SettingsView({ members, accounts, accountBalances, saveMember, deleteMe
         </div>
       </section>
 
+      <CustomRulesSection categories={categories} />
+
       {editingMember && <MemberEditor member={editingMember} onSave={(m) => { saveMember(m); setEditingMember(null); }} onCancel={() => setEditingMember(null)}/>}
     </div>
+  );
+}
+
+/**
+ * Custom regex rules manager — adds to / overrides the built-in pattern
+ * library so the user can teach the categorizer about merchants Wealthly
+ * doesn't know yet (boulangerie locale, médecin habituel, abonnement de
+ * niche, etc.).
+ *
+ * Backend exposes /rules with list / create / delete (rules.create takes
+ * { pattern: string, categoryId: string }).
+ */
+function CustomRulesSection({ categories }) {
+  const [rules, setRules] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [newPattern, setNewPattern] = useState('');
+  const [newCategory, setNewCategory] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const refresh = useCallback(async () => {
+    try {
+      setLoading(true);
+      const list = await api.rules.list();
+      setRules(Array.isArray(list) ? list : []);
+      setError(null);
+    } catch (err) {
+      setError(err.message || 'Erreur de chargement');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const expenseCategories = useMemo(
+    () => categories.filter((c) => c.type !== 'income'),
+    [categories]
+  );
+
+  const onAdd = async (e) => {
+    e.preventDefault();
+    if (!newPattern.trim() || !newCategory) return;
+    try {
+      setSubmitting(true);
+      // Validate the regex client-side first — fail fast with a clear message.
+      try { new RegExp(newPattern, 'i'); } catch (re) {
+        setError(`Regex invalide : ${re.message}`);
+        setSubmitting(false);
+        return;
+      }
+      await api.rules.create({ pattern: newPattern.trim(), category_slug: newCategory });
+      setNewPattern('');
+      setNewCategory('');
+      setError(null);
+      await refresh();
+    } catch (err) {
+      setError(err.message || "Impossible d'ajouter la règle");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const onDelete = async (id) => {
+    if (!window.confirm('Supprimer cette règle ?')) return;
+    try {
+      await api.rules.delete(id);
+      await refresh();
+    } catch (err) {
+      setError(err.message || 'Suppression impossible');
+    }
+  };
+
+  return (
+    <section className="card">
+      <div className="card-header">
+        <h3><Sparkles size={16}/> Règles de catégorisation</h3>
+        <span className="card-meta">{rules.length} règle{rules.length > 1 ? 's' : ''}</span>
+      </div>
+      <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: '0 0 14px', lineHeight: 1.5 }}>
+        Apprenez au catégoriseur à reconnaître vos marchands habituels. Chaque règle est une expression régulière (insensible à la casse) testée sur le libellé de chaque transaction. Les règles personnalisées priment sur les règles par défaut.
+      </p>
+
+      {/* Add form */}
+      <form onSubmit={onAdd} style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+        <input
+          type="text"
+          value={newPattern}
+          onChange={(e) => setNewPattern(e.target.value)}
+          placeholder="ex : boulangerie martin|martin patisser"
+          style={{ flex: '2 1 220px', minWidth: 0 }}
+        />
+        <select
+          value={newCategory}
+          onChange={(e) => setNewCategory(e.target.value)}
+          style={{ flex: '1 1 160px', minWidth: 0 }}
+        >
+          <option value="">Catégorie cible…</option>
+          {expenseCategories.map((c) => (
+            <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+          ))}
+        </select>
+        <button
+          type="submit"
+          className="primary-btn"
+          disabled={submitting || !newPattern.trim() || !newCategory}
+        >
+          <Plus size={14}/> Ajouter
+        </button>
+      </form>
+
+      {error && (
+        <div style={{ padding: '8px 12px', background: 'var(--danger-soft)', color: 'var(--danger-text)', borderRadius: 6, fontSize: 12, marginBottom: 12 }}>
+          <AlertCircle size={12} style={{ verticalAlign: 'text-bottom', marginRight: 4 }}/>
+          {error}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="empty-mini"><Activity size={20}/><p>Chargement…</p></div>
+      ) : rules.length === 0 ? (
+        <div className="empty-mini">
+          <Sparkles size={22}/>
+          <p>Aucune règle personnalisée. Ajoute-en une ci-dessus pour qu'un libellé spécifique aille toujours dans la bonne catégorie.</p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {rules.map((r) => {
+            const slug = r.category_slug || r.categoryId;
+            const cat = categories.find((c) => c.id === slug);
+            return (
+              <div
+                key={r.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '10px 12px',
+                  background: 'var(--bg-subtle)',
+                  borderRadius: 6,
+                  border: '1px solid var(--border)',
+                }}
+              >
+                <code
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    fontFamily: 'JetBrains Mono, ui-monospace, Menlo, monospace',
+                    fontSize: 12,
+                    color: 'var(--text-primary)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                  title={r.pattern}
+                >
+                  /{r.pattern}/i
+                </code>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    padding: '4px 10px',
+                    borderRadius: 6,
+                    background: (cat?.color || '#999') + '22',
+                    color: cat?.color || 'var(--text-secondary)',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {cat?.icon} {cat?.name || slug}
+                </span>
+                <button className="icon-btn-sm" onClick={() => onDelete(r.id)} title="Supprimer">
+                  <Trash2 size={13}/>
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="settings-info" style={{ marginTop: 14 }}>
+        <Lightbulb size={14}/>
+        <span>
+          <strong>Astuce :</strong> sépare plusieurs marchands avec le pipe <code>|</code>. Exemple : <code>amazon|amzn|amz</code> couvre les 3 variantes. Les règles s'appliquent aux nouvelles transactions importées, et au bouton "Recatégoriser" sur chaque transaction.
+        </span>
+      </div>
+    </section>
   );
 }
 
