@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadialBarChart, RadialBar, ComposedChart } from 'recharts';
+import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadialBarChart, RadialBar, ComposedChart, Sankey, Layer, Rectangle } from 'recharts';
 import { Upload, Plus, TrendingUp, TrendingDown, Wallet, Home, Coins, CreditCard, Users, Settings, Search, Download, Trash2, Edit3, Check, X, ChevronRight, ChevronLeft, AlertCircle, AlertTriangle, Repeat, Calendar, ArrowUpDown, Eye, EyeOff, Sparkles, PiggyBank, Bitcoin, Banknote, Landmark, BarChart3, Target, Heart, Sun, Moon, Zap, Activity, ArrowUp, ArrowDown, Minus, PartyPopper, Lightbulb, Bell, ChevronUp, Play, Lock, Unlock, LogOut, Cloud, RefreshCw, FileText, Calculator, Link2, Unlink } from 'lucide-react';
 import * as api from './api.js';
 import { generateBilanPdf } from './pdfReport.js';
@@ -1292,6 +1292,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             )}
           </button>
           <button onClick={() => setView('wealth')} className={view === 'wealth' ? 'active' : ''}><Landmark size={14}/> <span>Patrimoine</span></button>
+          <button onClick={() => setView('cashflow')} className={view === 'cashflow' ? 'active' : ''}><Activity size={14}/> <span>Cashflow</span></button>
           <button onClick={() => setView('transactions')} className={view === 'transactions' ? 'active' : ''}><BarChart3 size={14}/> <span>Transactions</span></button>
           <button onClick={() => setView('tax')} className={view === 'tax' ? 'active' : ''}><Calculator size={14}/> <span>Impôts</span></button>
           <button onClick={() => setView('settings')} className={view === 'settings' ? 'active' : ''}><Settings size={14}/> <span>Réglages</span></button>
@@ -1358,6 +1359,12 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             fixedCharges={fixedCharges} saveFixedCharge={saveFixedCharge} deleteFixedCharge={deleteFixedCharge}
             memberShare={memberShare}
             currentMonth={currentMonth} fmt={fmt}
+          />
+        )}
+        {view === 'cashflow' && (
+          <Cashflow
+            transactions={visibleTransactions} categories={categories} accounts={accounts}
+            memberShare={memberShare} fmt={fmt} currentMonth={currentMonth}
           />
         )}
         {view === 'budgets' && (
@@ -2466,6 +2473,301 @@ function FixedChargeEditor({ charge, categories, members, currentMonth, onSave, 
 // ============================================================================
 // BUDGETS (revamped)
 // ============================================================================
+// ============================================================================
+// CASHFLOW (Sankey diagram — inspired by Finary's Budget view)
+// ============================================================================
+function Cashflow({ transactions, categories, accounts, memberShare, fmt, currentMonth }) {
+  const [period, setPeriod] = useState('1M'); // 1M | 3M | 1A
+  const [anchor, setAnchor] = useState(currentMonth); // YYYY-MM the period ends on (inclusive)
+
+  const monthsInPeriod = period === '1M' ? 1 : period === '3M' ? 3 : 12;
+
+  // Build the [start, end] window
+  const { startKey, endKey } = useMemo(() => {
+    const [y, m] = anchor.split('-').map(Number);
+    const endDate = new Date(y, m - 1, 1);
+    const startDate = new Date(y, m - 1 - (monthsInPeriod - 1), 1);
+    const sk = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}`;
+    return { startKey: sk, endKey: anchor };
+  }, [anchor, monthsInPeriod]);
+
+  // Filter and aggregate
+  const filtered = useMemo(() => {
+    return transactions.filter(t => {
+      const k = monthKey(t.date);
+      return k >= startKey && k <= endKey;
+    }).map(t => {
+      const acc = accounts.find(a => a.id === t.accountId);
+      const share = acc ? memberShare(acc) : 1;
+      return { ...t, sharedAmount: t.amount * share };
+    });
+  }, [transactions, startKey, endKey, accounts, memberShare]);
+
+  // Group by category
+  const incomeByCat = {};
+  const expenseByCat = {};
+  filtered.forEach(t => {
+    const slug = t.categoryId || 'uncategorized';
+    if (t.amount >= 0) {
+      incomeByCat[slug] = (incomeByCat[slug] || 0) + t.sharedAmount;
+    } else {
+      expenseByCat[slug] = (expenseByCat[slug] || 0) + Math.abs(t.sharedAmount);
+    }
+  });
+  const totalIncome = Object.values(incomeByCat).reduce((s, v) => s + v, 0);
+  const totalExpense = Object.values(expenseByCat).reduce((s, v) => s + v, 0);
+  const available = totalIncome - totalExpense;
+
+  // Sort categories by amount descending
+  const incomeEntries = Object.entries(incomeByCat).sort((a, b) => b[1] - a[1]);
+  const expenseEntries = Object.entries(expenseByCat).sort((a, b) => b[1] - a[1]);
+
+  const catFor = (slug) => categories.find(c => c.slug === slug || c.id === slug);
+
+  // Build Sankey data
+  const sankeyData = useMemo(() => {
+    if (totalIncome === 0 && totalExpense === 0) return null;
+    const nodes = [];
+    const links = [];
+    // Income nodes (left)
+    incomeEntries.forEach(([slug, value]) => {
+      const cat = catFor(slug);
+      nodes.push({ name: cat?.name || slug, kind: 'income', value, color: cat?.color || 'var(--success)' });
+    });
+    // Hub
+    const hubIdx = nodes.length;
+    nodes.push({ name: 'Disponible', kind: 'hub' });
+    // Expense nodes (right)
+    expenseEntries.forEach(([slug, value]) => {
+      const cat = catFor(slug);
+      nodes.push({ name: cat?.name || slug, kind: 'expense', value, color: cat?.color || 'var(--danger)' });
+    });
+    // Surplus (épargne) node if income > expense
+    let surplusIdx = null;
+    if (available > 0) {
+      surplusIdx = nodes.length;
+      nodes.push({ name: 'Épargne', kind: 'savings', value: available, color: 'var(--primary)' });
+    }
+    // Links: income → hub, hub → expense / savings
+    incomeEntries.forEach((_, i) => {
+      links.push({ source: i, target: hubIdx, value: incomeEntries[i][1] });
+    });
+    expenseEntries.forEach((_, i) => {
+      const idx = hubIdx + 1 + i;
+      links.push({ source: hubIdx, target: idx, value: expenseEntries[i][1] });
+    });
+    if (surplusIdx !== null) {
+      links.push({ source: hubIdx, target: surplusIdx, value: available });
+    }
+    return { nodes, links };
+  // eslint-disable-next-line
+  }, [incomeByCat, expenseByCat, available, totalIncome, totalExpense, categories]);
+
+  // Distribution donut data — expense categories
+  const donutData = expenseEntries.map(([slug, value]) => {
+    const cat = catFor(slug);
+    return { name: cat?.name || slug, value, color: cat?.color || '#999' };
+  });
+
+  // Period navigation
+  const shiftAnchor = (delta) => {
+    const [y, m] = anchor.split('-').map(Number);
+    const d = new Date(y, m - 1 + delta, 1);
+    setAnchor(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  };
+
+  const periodLabel = period === '1M'
+    ? formatDate(anchor + '-01', { format: 'monthLong' })
+    : `${formatDate(startKey + '-01', { format: 'monthYear' })} → ${formatDate(anchor + '-01', { format: 'monthYear' })}`;
+
+  return (
+    <div className="cashflow-view">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Cashflow</h1>
+          <p className="page-subtitle">D'où vient ton argent et où il part — vue Sankey</p>
+        </div>
+      </div>
+
+      <div className="cashflow-period">
+        <div className="cashflow-period-nav">
+          <button className="icon-btn" onClick={() => shiftAnchor(-1)} title="Période précédente"><ChevronLeft size={16}/></button>
+          <span className="cashflow-period-label">{periodLabel}</span>
+          <button className="icon-btn" onClick={() => shiftAnchor(1)} title="Période suivante"
+            disabled={anchor >= currentMonth}><ChevronRight size={16}/></button>
+        </div>
+        <div className="nw-toggle-group">
+          {['1M', '3M', '1A'].map(p => (
+            <button key={p} className={period === p ? 'active' : ''} onClick={() => setPeriod(p)}>{p}</button>
+          ))}
+        </div>
+      </div>
+
+      <div className="cashflow-grid">
+        <section className="card cashflow-sankey-card">
+          <div className="card-header">
+            <h3>Flux d'argent</h3>
+            <span className="card-meta">{filtered.length} transaction{filtered.length > 1 ? 's' : ''} sur la période</span>
+          </div>
+          {sankeyData ? (
+            <ResponsiveContainer width="100%" height={420}>
+              <Sankey
+                data={sankeyData}
+                nodePadding={28}
+                nodeWidth={12}
+                linkCurvature={0.5}
+                iterations={64}
+                node={<SankeyNode/>}
+                link={{ stroke: 'var(--border)', strokeOpacity: 0.4, fill: 'var(--primary-soft)' }}
+                margin={{ top: 12, right: 180, bottom: 12, left: 180 }}
+              >
+                <Tooltip
+                  formatter={(v) => fmt(v)}
+                  contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
+                />
+              </Sankey>
+            </ResponsiveContainer>
+          ) : (
+            <div className="empty-mini" style={{ padding: '60px 0' }}>
+              <Activity size={28}/>
+              <p>Aucune transaction sur cette période. Importe un CSV ou change de mois.</p>
+            </div>
+          )}
+
+          <div className="cashflow-kpi-row">
+            <div className="cashflow-kpi">
+              <div className="cashflow-kpi-label">Entrées</div>
+              <div className="cashflow-kpi-value positive">+{fmt(totalIncome)}</div>
+            </div>
+            <div className="cashflow-kpi">
+              <div className="cashflow-kpi-label">Sorties</div>
+              <div className="cashflow-kpi-value negative">−{fmt(totalExpense)}</div>
+            </div>
+            <div className="cashflow-kpi">
+              <div className="cashflow-kpi-label">Disponible</div>
+              <div className={`cashflow-kpi-value ${available >= 0 ? 'positive' : 'negative'}`}>{available >= 0 ? '+' : ''}{fmt(available)}</div>
+            </div>
+          </div>
+        </section>
+
+        <section className="card cashflow-distribution-card">
+          <div className="card-header"><h3>Distribution</h3></div>
+          {donutData.length > 0 ? (
+            <>
+              <ResponsiveContainer width="100%" height={240}>
+                <PieChart>
+                  <Pie data={donutData} dataKey="value" cx="50%" cy="50%" innerRadius={62} outerRadius={92} paddingAngle={2} stroke="none">
+                    {donutData.map((d, i) => <Cell key={i} fill={d.color}/>)}
+                  </Pie>
+                  <Tooltip formatter={(v) => fmt(v)} contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}/>
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="cashflow-donut-center">
+                <span className="cashflow-donut-label">Somme sorties</span>
+                <span className="cashflow-donut-value negative">−{fmt(totalExpense)}</span>
+              </div>
+            </>
+          ) : (
+            <div className="empty-mini"><Activity size={20}/><p>Pas encore de dépenses.</p></div>
+          )}
+        </section>
+      </div>
+
+      <div className="cashflow-cats-grid">
+        <section className="card">
+          <div className="card-header">
+            <h3>Entrées</h3>
+            <span className="card-meta">{incomeEntries.length} catégorie{incomeEntries.length > 1 ? 's' : ''}</span>
+          </div>
+          {incomeEntries.length === 0 ? (
+            <div className="empty-mini"><p>Aucune entrée sur la période.</p></div>
+          ) : (
+            <div className="cashflow-cat-list">
+              {incomeEntries.map(([slug, value]) => {
+                const cat = catFor(slug);
+                const pct = totalIncome > 0 ? (value / totalIncome) * 100 : 0;
+                return (
+                  <div key={slug} className="cashflow-cat-row">
+                    <span className="cashflow-cat-icon" style={{ background: (cat?.color || '#999') + '22', color: cat?.color }}>{cat?.icon || '💰'}</span>
+                    <div className="cashflow-cat-info">
+                      <div className="cashflow-cat-name">{cat?.name || slug}</div>
+                      <div className="cashflow-cat-meta">{pct.toFixed(0)} % des entrées</div>
+                    </div>
+                    <div className="cashflow-cat-amount positive">+{fmt(value)}</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <section className="card">
+          <div className="card-header">
+            <h3>Sorties</h3>
+            <span className="card-meta">{expenseEntries.length} catégorie{expenseEntries.length > 1 ? 's' : ''}</span>
+          </div>
+          {expenseEntries.length === 0 ? (
+            <div className="empty-mini"><p>Aucune sortie sur la période.</p></div>
+          ) : (
+            <div className="cashflow-cat-list">
+              {expenseEntries.map(([slug, value]) => {
+                const cat = catFor(slug);
+                const pct = totalExpense > 0 ? (value / totalExpense) * 100 : 0;
+                return (
+                  <div key={slug} className="cashflow-cat-row">
+                    <span className="cashflow-cat-icon" style={{ background: (cat?.color || '#999') + '22', color: cat?.color }}>{cat?.icon || '💸'}</span>
+                    <div className="cashflow-cat-info">
+                      <div className="cashflow-cat-name">{cat?.name || slug}</div>
+                      <div className="cashflow-cat-meta">{pct.toFixed(0)} % des sorties</div>
+                    </div>
+                    <div className="cashflow-cat-amount negative">−{fmt(value)}</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
+
+// Custom Sankey node — colored bar with label outside the diagram
+function SankeyNode({ x, y, width, height, index, payload }) {
+  const isLeft = payload.kind === 'income';
+  const color = payload.color || (payload.kind === 'hub' ? 'var(--primary)' : payload.kind === 'savings' ? 'var(--primary)' : payload.kind === 'income' ? 'var(--success)' : 'var(--danger)');
+  const labelOffset = 8;
+  const valueLabel = payload.value ? Math.round(payload.value).toLocaleString('fr-FR') + ' €' : '';
+  return (
+    <Layer key={`node-${index}`}>
+      <Rectangle x={x} y={y} width={width} height={height} fill={color} fillOpacity={payload.kind === 'hub' ? 0.9 : 0.75} stroke="none"/>
+      {payload.kind !== 'hub' && (
+        <text
+          textAnchor={isLeft ? 'end' : 'start'}
+          x={isLeft ? x - labelOffset : x + width + labelOffset}
+          y={y + height / 2}
+          dy={4}
+          fontSize={12}
+          fill="var(--text-primary)"
+        >
+          {payload.name}{valueLabel ? ` · ${valueLabel}` : ''}
+        </text>
+      )}
+      {payload.kind === 'hub' && (
+        <text
+          textAnchor="middle"
+          x={x + width / 2}
+          y={y - 8}
+          fontSize={11}
+          fill="var(--text-tertiary)"
+        >
+          Disponible
+        </text>
+      )}
+    </Layer>
+  );
+}
+
 function Budgets({ categories, budgets, setBudget, categoryAnalysis, fiftyThirtyTwenty, thisMonthStats, cashflowProjection, goals, saveGoal, deleteGoal, fmt }) {
   const [showGoalEditor, setShowGoalEditor] = useState(null);
   const [budgetMode, setBudgetMode] = useState('balanced'); // balanced | strict | flexible
@@ -5238,6 +5540,40 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .nw-period-bar button { font-size: 11.5px; padding: 5px 11px; border-radius: 999px; border: 1px solid transparent; background: transparent; color: var(--text-tertiary); cursor: pointer; font-family: inherit; font-weight: 500; transition: all 0.15s; }
 .nw-period-bar button:hover { color: var(--text-primary); background: var(--bg-subtle); }
 .nw-period-bar button.active { background: var(--bg-subtle); color: var(--primary); border-color: var(--border); font-weight: 600; }
+
+/* Cashflow */
+.cashflow-view { display: flex; flex-direction: column; gap: 16px; }
+.cashflow-period { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding: 4px 0; }
+.cashflow-period-nav { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px; }
+.cashflow-period-label { font-size: 13px; font-weight: 600; color: var(--text-primary); min-width: 140px; text-align: center; text-transform: capitalize; }
+.cashflow-grid { display: grid; grid-template-columns: 1fr 360px; gap: 16px; }
+@media (max-width: 1100px) { .cashflow-grid { grid-template-columns: 1fr; } }
+.cashflow-sankey-card { display: flex; flex-direction: column; gap: 14px; }
+.cashflow-distribution-card { position: relative; display: flex; flex-direction: column; }
+.cashflow-donut-center { position: absolute; left: 0; right: 0; top: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; padding-bottom: 12px; }
+.cashflow-donut-label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; }
+.cashflow-donut-value { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.cashflow-donut-value.positive { color: var(--success); }
+.cashflow-donut-value.negative { color: var(--danger); }
+.cashflow-kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding-top: 12px; border-top: 1px solid var(--border-light); }
+.cashflow-kpi { display: flex; flex-direction: column; gap: 2px; }
+.cashflow-kpi-label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; display: flex; align-items: center; gap: 6px; }
+.cashflow-kpi-value { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.cashflow-kpi-value.positive { color: var(--success); }
+.cashflow-kpi-value.negative { color: var(--danger); }
+.cashflow-cats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .cashflow-cats-grid { grid-template-columns: 1fr; } }
+.cashflow-cat-list { display: flex; flex-direction: column; gap: 4px; }
+.cashflow-cat-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; transition: background 0.15s; }
+.cashflow-cat-row:hover { background: var(--bg-subtle); }
+.cashflow-cat-icon { width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.cashflow-cat-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cashflow-cat-name { font-size: 13px; color: var(--text-primary); font-weight: 500; }
+.cashflow-cat-meta { font-size: 11px; color: var(--text-tertiary); }
+.cashflow-cat-amount { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cashflow-cat-amount.positive { color: var(--success); }
+.cashflow-cat-amount.negative { color: var(--danger); }
+
 
 
 .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--border); }
