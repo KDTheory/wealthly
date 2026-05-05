@@ -319,3 +319,20 @@ class WealthSnapshotOut(WealthSnapshotCreate):
     id: str
     captured_at: datetime
     model_config = ConfigDict(from_attributes=True)
+
+
+# ============================================================================
+# PASSWORD RESET
+# ============================================================================
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+
+class MessageOut(BaseModel):
+    message: str

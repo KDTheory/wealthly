@@ -41,6 +41,13 @@ class Settings:
     # Anthropic (optional — enables AI categorization)
     ANTHROPIC_API_KEY: str | None = os.getenv("ANTHROPIC_API_KEY")
 
+    # Email (optional — enables password reset). Set RESEND_API_KEY in env.
+    RESEND_API_KEY: str | None = os.getenv("RESEND_API_KEY")
+    # Sender address. Use Resend's testing address if no domain is verified yet.
+    EMAIL_FROM: str = os.getenv("EMAIL_FROM", "Wealthly <onboarding@resend.dev>")
+    # Public URL of the frontend, used to build password-reset links.
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "https://wealthly-six.vercel.app")
+
     # App
     APP_NAME: str = "Wealthly API"
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"

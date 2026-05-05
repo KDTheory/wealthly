@@ -281,6 +281,22 @@ class Achievement(Base):
     )
 
 
+class PasswordResetToken(Base):
+    """Single-use token sent to a user's email to reset their password.
+
+    Stored as a SHA-256 hash so a leaked DB row cannot be replayed
+    against the live link. Tokens expire after 60 minutes.
+    """
+    __tablename__ = "password_reset_tokens"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    token_hash = Column(String, nullable=False, index=True)
+    expires_at = Column(DateTime, nullable=False)
+    used_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class WealthSnapshot(Base):
     """Monthly snapshot of household net worth.
 

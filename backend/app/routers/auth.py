@@ -1,20 +1,34 @@
 """
-Authentication endpoints: register and login.
-
-POST /auth/register: creates a household + first user (admin) + default categories
-POST /auth/login: returns a JWT
-GET /auth/me: returns the current user info
+Authentication endpoints: register, login, password reset.
 """
+import hashlib
+import secrets
+from datetime import datetime, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import User, Household, Category
-from app.schemas import UserCreate, UserLogin, Token, UserOut
+from app.models import User, Household, Category, PasswordResetToken
+from app.schemas import (
+    UserCreate, UserLogin, Token, UserOut,
+    ForgotPasswordRequest, ResetPasswordRequest, MessageOut,
+)
 from app.auth import hash_password, verify_password, create_access_token, get_current_user
 from app.defaults import DEFAULT_CATEGORIES
+from app.config import settings
+from app.email_service import send_password_reset_email
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+# Token settings
+RESET_TOKEN_TTL_MINUTES = 60
+
+
+def _hash_reset_token(token: str) -> str:
+    """SHA-256 of the raw token, hex-encoded. Stored in DB; the raw token
+    only ever travels in the email link, never in the database."""
+    return hashlib.sha256(token.encode()).hexdigest()
 
 
 @router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
@@ -65,3 +79,66 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
 def me(current_user: User = Depends(get_current_user)):
     """Return the current authenticated user."""
     return current_user
+
+
+@router.post("/forgot-password", response_model=MessageOut)
+def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    """Generate a single-use reset token and email it to the user.
+
+    Always returns a generic success message — even if the email is unknown
+    — to avoid leaking which addresses are registered.
+    """
+    user = db.query(User).filter(User.email == payload.email, User.is_active == True).first()
+    if user:
+        # Invalidate any earlier tokens this user might have outstanding.
+        db.query(PasswordResetToken).filter(
+            PasswordResetToken.user_id == user.id,
+            PasswordResetToken.used_at.is_(None),
+        ).update({"used_at": datetime.utcnow()})
+
+        raw_token = secrets.token_urlsafe(32)
+        record = PasswordResetToken(
+            user_id=user.id,
+            token_hash=_hash_reset_token(raw_token),
+            expires_at=datetime.utcnow() + timedelta(minutes=RESET_TOKEN_TTL_MINUTES),
+        )
+        db.add(record)
+        db.commit()
+
+        link = f"{settings.FRONTEND_URL.rstrip('/')}/?reset_token={raw_token}"
+        send_password_reset_email(user.email, user.full_name, link)
+
+    return MessageOut(message="Si cet email existe, un lien de réinitialisation a été envoyé.")
+
+
+@router.post("/reset-password", response_model=Token)
+def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+    """Consume a reset token and replace the user's password."""
+    if not payload.new_password or len(payload.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Le mot de passe doit faire au moins 8 caractères.")
+
+    token_hash = _hash_reset_token(payload.token)
+    record = (
+        db.query(PasswordResetToken)
+        .filter(
+            PasswordResetToken.token_hash == token_hash,
+            PasswordResetToken.used_at.is_(None),
+            PasswordResetToken.expires_at > datetime.utcnow(),
+        )
+        .first()
+    )
+    if not record:
+        raise HTTPException(status_code=400, detail="Lien invalide ou expiré. Demandez un nouveau lien.")
+
+    user = db.query(User).filter(User.id == record.user_id, User.is_active == True).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Utilisateur introuvable.")
+
+    user.hashed_password = hash_password(payload.new_password)
+    record.used_at = datetime.utcnow()
+    db.commit()
+    db.refresh(user)
+
+    # Issue a fresh JWT so the user lands logged-in directly after resetting.
+    token = create_access_token(user.id, user.household_id)
+    return Token(access_token=token)

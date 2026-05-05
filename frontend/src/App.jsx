@@ -8,6 +8,15 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
+      // If the URL has a password-reset token, jump straight to the auth
+      // screen so the user can set a new password — even if they're
+      // already logged in (could be a different account they're recovering).
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('reset_token')) {
+        setAuthState('unauthed');
+        return;
+      }
+
       const token = getToken();
       if (!token) {
         setAuthState('unauthed');

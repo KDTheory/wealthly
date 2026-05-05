@@ -75,6 +75,8 @@ export const auth = {
     }),
   login: (email, password) => post('/auth/login', { email, password }),
   me: () => get('/auth/me'),
+  forgotPassword: (email) => post('/auth/forgot-password', { email }),
+  resetPassword: (token, newPassword) => post('/auth/reset-password', { token, new_password: newPassword }),
 };
 
 // ============================================================================

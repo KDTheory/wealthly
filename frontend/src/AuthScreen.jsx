@@ -1,27 +1,70 @@
-import React, { useState } from 'react';
-import { Mail, Lock, User, Home, Eye, EyeOff, AlertCircle, Lock as LockIcon } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Mail, Lock, User, Home, Eye, EyeOff, AlertCircle, Lock as LockIcon, ArrowLeft, Check } from 'lucide-react';
 import { auth, setToken } from './api.js';
 
+// On mount, capture any reset_token from the URL so we can land directly
+// on the "set new password" screen and clean it out of the address bar.
+function readResetTokenFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('reset_token');
+}
+
 export default function AuthScreen({ onAuth }) {
-  const [mode, setMode] = useState('login'); // 'login' | 'register'
+  const initialResetToken = readResetTokenFromUrl();
+  const [mode, setMode] = useState(initialResetToken ? 'reset' : 'login'); // login | register | forgot | reset
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [householdName, setHouseholdName] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [info, setInfo] = useState(null);
+  const [resetToken] = useState(initialResetToken);
+
+  // Once we've loaded with a reset token, scrub it from the URL so a refresh
+  // (or the user pasting it elsewhere) doesn't keep a single-use token live.
+  useEffect(() => {
+    if (initialResetToken) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('reset_token');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [initialResetToken]);
+
+  const switchMode = (next) => {
+    setMode(next);
+    setError(null);
+    setInfo(null);
+    setPassword('');
+    setConfirmPassword('');
+  };
 
   const submit = async (e) => {
     e.preventDefault();
     setError(null);
+    setInfo(null);
     setLoading(true);
     try {
-      const result = mode === 'login'
-        ? await auth.login(email, password)
-        : await auth.register(email, password, fullName, householdName || 'Mon foyer');
-      setToken(result.access_token);
-      onAuth();
+      if (mode === 'login') {
+        const result = await auth.login(email, password);
+        setToken(result.access_token);
+        onAuth();
+      } else if (mode === 'register') {
+        const result = await auth.register(email, password, fullName, householdName || 'Mon foyer');
+        setToken(result.access_token);
+        onAuth();
+      } else if (mode === 'forgot') {
+        await auth.forgotPassword(email);
+        setInfo("Si cet email existe, un lien de réinitialisation vient d'être envoyé. Vérifiez votre boîte (et vos spams).");
+      } else if (mode === 'reset') {
+        if (password.length < 8) throw new Error("Le mot de passe doit faire au moins 8 caractères.");
+        if (password !== confirmPassword) throw new Error("Les deux mots de passe ne correspondent pas.");
+        const result = await auth.resetPassword(resetToken, password);
+        setToken(result.access_token);
+        onAuth();
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -60,24 +103,40 @@ export default function AuthScreen({ onAuth }) {
         {/* Form column */}
         <main className="auth-form-col">
           <div className="auth-form-card">
-            <div className="auth-tabs">
+            {(mode === 'login' || mode === 'register') ? (
+              <div className="auth-tabs">
+                <button
+                  className={mode === 'login' ? 'active' : ''}
+                  onClick={() => switchMode('login')}
+                  type="button"
+                >Connexion</button>
+                <button
+                  className={mode === 'register' ? 'active' : ''}
+                  onClick={() => switchMode('register')}
+                  type="button"
+                >Créer un compte</button>
+              </div>
+            ) : (
               <button
-                className={mode === 'login' ? 'active' : ''}
-                onClick={() => { setMode('login'); setError(null); }}
                 type="button"
-              >Connexion</button>
-              <button
-                className={mode === 'register' ? 'active' : ''}
-                onClick={() => { setMode('register'); setError(null); }}
-                type="button"
-              >Créer un compte</button>
-            </div>
+                onClick={() => switchMode('login')}
+                className="auth-back-link"
+              >
+                <ArrowLeft size={13} /> Retour à la connexion
+              </button>
+            )}
 
             <h2 className="auth-title">
-              {mode === 'login' ? 'Accéder à votre espace' : 'Créer votre espace'}
+              {mode === 'login' && 'Accéder à votre espace'}
+              {mode === 'register' && 'Créer votre espace'}
+              {mode === 'forgot' && 'Mot de passe oublié'}
+              {mode === 'reset' && 'Nouveau mot de passe'}
             </h2>
             <p className="auth-subtitle">
-              {mode === 'login' ? 'Identifiants confidentiels.' : 'Vos données restent chez vous.'}
+              {mode === 'login' && 'Identifiants confidentiels.'}
+              {mode === 'register' && 'Vos données restent chez vous.'}
+              {mode === 'forgot' && 'Renseignez votre email — vous recevrez un lien pour choisir un nouveau mot de passe.'}
+              {mode === 'reset' && 'Choisissez votre nouveau mot de passe.'}
             </p>
 
             <form onSubmit={submit} className="auth-form">
@@ -106,58 +165,97 @@ export default function AuthScreen({ onAuth }) {
                 </>
               )}
 
-              <label className="auth-field">
-                <span><Mail size={13} /> Email</span>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="vous@exemple.fr"
-                  required
-                  autoFocus={mode === 'login'}
-                />
-              </label>
+              {(mode === 'login' || mode === 'register' || mode === 'forgot') && (
+                <label className="auth-field">
+                  <span><Mail size={13} /> Email</span>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="vous@exemple.fr"
+                    required
+                    autoFocus={mode === 'login' || mode === 'forgot'}
+                  />
+                </label>
+              )}
 
-              <label className="auth-field">
-                <span><Lock size={13} /> Mot de passe</span>
-                <div className="password-input">
+              {(mode === 'login' || mode === 'register' || mode === 'reset') && (
+                <label className="auth-field">
+                  <span><Lock size={13} /> {mode === 'reset' ? 'Nouveau mot de passe' : 'Mot de passe'}</span>
+                  <div className="password-input">
+                    <input
+                      type={showPwd ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder={mode === 'login' ? '••••••••' : 'Au moins 8 caractères'}
+                      minLength={mode === 'login' ? undefined : 8}
+                      required
+                      autoFocus={mode === 'reset'}
+                    />
+                    <button
+                      type="button"
+                      className="pwd-toggle"
+                      onClick={() => setShowPwd(!showPwd)}
+                      aria-label="Afficher / masquer le mot de passe"
+                    >
+                      {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
+                </label>
+              )}
+
+              {mode === 'reset' && (
+                <label className="auth-field">
+                  <span><Lock size={13} /> Confirmer le mot de passe</span>
                   <input
                     type={showPwd ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={mode === 'register' ? 'Au moins 8 caractères' : '••••••••'}
-                    minLength={mode === 'register' ? 8 : undefined}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Retapez le même mot de passe"
+                    minLength={8}
                     required
                   />
-                  <button
-                    type="button"
-                    className="pwd-toggle"
-                    onClick={() => setShowPwd(!showPwd)}
-                    aria-label="Afficher / masquer le mot de passe"
-                  >
-                    {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
-                  </button>
-                </div>
-              </label>
+                </label>
+              )}
 
               {error && (
                 <div className="auth-error">
                   <AlertCircle size={14} /> {error}
                 </div>
               )}
+              {info && (
+                <div className="auth-info">
+                  <Check size={14} /> {info}
+                </div>
+              )}
 
               <button type="submit" className="auth-submit" disabled={loading}>
                 {loading
                   ? <span className="auth-loading">Patientez<span className="dots"/></span>
-                  : (mode === 'login' ? 'Se connecter' : 'Créer mon compte')}
+                  : mode === 'login'
+                  ? 'Se connecter'
+                  : mode === 'register'
+                  ? 'Créer mon compte'
+                  : mode === 'forgot'
+                  ? 'Envoyer le lien'
+                  : 'Définir le mot de passe'}
               </button>
             </form>
 
             <div className="auth-footer">
-              {mode === 'login' ? (
-                <span>Pas encore de compte ? <a onClick={() => setMode('register')}>Créer un compte</a></span>
-              ) : (
-                <span>Déjà inscrit ? <a onClick={() => setMode('login')}>Se connecter</a></span>
+              {mode === 'login' && (
+                <>
+                  <a onClick={() => switchMode('forgot')} className="auth-forgot-link">Mot de passe oublié ?</a>
+                  <span style={{ display: 'block', marginTop: 8 }}>
+                    Pas encore de compte ? <a onClick={() => switchMode('register')}>Créer un compte</a>
+                  </span>
+                </>
+              )}
+              {mode === 'register' && (
+                <span>Déjà inscrit ? <a onClick={() => switchMode('login')}>Se connecter</a></span>
+              )}
+              {mode === 'forgot' && (
+                <span>Vous vous souvenez ? <a onClick={() => switchMode('login')}>Se connecter</a></span>
               )}
             </div>
 
@@ -345,6 +443,32 @@ const authStyles = `
   border-radius: 6px;
   font-size: 12px; font-weight: 500;
 }
+.auth-info {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 9px 11px;
+  background: rgba(136, 169, 120, 0.08);
+  color: #a5c298;
+  border: 1px solid rgba(136, 169, 120, 0.25);
+  border-radius: 6px;
+  font-size: 12px; font-weight: 500;
+  line-height: 1.5;
+}
+.auth-info svg { flex-shrink: 0; margin-top: 2px; }
+.auth-back-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: none; border: none; padding: 0;
+  margin-bottom: 18px;
+  color: #8c8a85; font-size: 12px; font-weight: 500;
+  cursor: pointer; font-family: inherit;
+  transition: color .15s;
+}
+.auth-back-link:hover { color: #ebe8e3; }
+.auth-forgot-link {
+  display: inline-block;
+  font-size: 12px;
+  color: #8c8a85 !important;
+}
+.auth-forgot-link:hover { color: #c5a572 !important; }
 
 .auth-submit {
   margin-top: 6px; padding: 11px;
