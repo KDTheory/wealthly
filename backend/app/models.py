@@ -172,7 +172,14 @@ class Transaction(Base):
 
 
 class Asset(Base):
-    """Non-bank asset: real estate, life insurance, PEA, crypto, etc."""
+    """Non-bank asset: real estate, life insurance, PEA, crypto, etc.
+
+    Real-estate-specific fields (purchase_price, surface_m2, notary_fees,
+    agency_fees, works_fees, furniture_fees, purchase_date,
+    construction_year, ownership_pct, subtype) were added 2026-05-05 to
+    feed the Finary-style "Ajouter mon immobilier" wizard. They're all
+    optional and only meaningful when type == "real_estate".
+    """
     __tablename__ = "assets"
 
     id = Column(String, primary_key=True, default=_uuid)
@@ -181,6 +188,19 @@ class Asset(Base):
     current_value = Column(Float, nullable=False, default=0.0)
     notes = Column(Text, nullable=True, default="")
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Real-estate enrichment — Finary parity
+    subtype = Column(String, nullable=True)              # RP | locative | secondaire | scpi | other
+    purchase_price = Column(Float, nullable=True)
+    surface_m2 = Column(Float, nullable=True)
+    notary_fees = Column(Float, nullable=True)
+    agency_fees = Column(Float, nullable=True)
+    works_fees = Column(Float, nullable=True)
+    furniture_fees = Column(Float, nullable=True)
+    purchase_date = Column(Date, nullable=True)
+    construction_year = Column(Integer, nullable=True)
+    ownership_pct = Column(Float, nullable=True, default=100.0)
+    address = Column(String, nullable=True)              # liée à l'emprunt si tu veux
 
     household_id = Column(String, ForeignKey("households.id", ondelete="CASCADE"), nullable=False)
     household = relationship("Household", back_populates="assets")

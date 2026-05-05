@@ -151,6 +151,18 @@ class AssetBase(BaseModel):
     name: str
     current_value: float = 0.0
     notes: Optional[str] = ""
+    # Real estate enrichment — all optional, used by the immo wizard
+    subtype: Optional[str] = None
+    purchase_price: Optional[float] = None
+    surface_m2: Optional[float] = None
+    notary_fees: Optional[float] = None
+    agency_fees: Optional[float] = None
+    works_fees: Optional[float] = None
+    furniture_fees: Optional[float] = None
+    purchase_date: Optional[date] = None
+    construction_year: Optional[int] = None
+    ownership_pct: Optional[float] = 100.0
+    address: Optional[str] = None
 
 
 class AssetCreate(AssetBase):
@@ -163,6 +175,17 @@ class AssetUpdate(BaseModel):
     current_value: Optional[float] = None
     notes: Optional[str] = None
     member_ids: Optional[List[str]] = None
+    subtype: Optional[str] = None
+    purchase_price: Optional[float] = None
+    surface_m2: Optional[float] = None
+    notary_fees: Optional[float] = None
+    agency_fees: Optional[float] = None
+    works_fees: Optional[float] = None
+    furniture_fees: Optional[float] = None
+    purchase_date: Optional[date] = None
+    construction_year: Optional[int] = None
+    ownership_pct: Optional[float] = None
+    address: Optional[str] = None
 
 
 class AssetOut(AssetBase):

@@ -31,6 +31,17 @@ def _asset_to_out(a: Asset) -> dict:
         "household_id": a.household_id,
         "member_ids": [m.id for m in a.members],
         "updated_at": a.updated_at,
+        "subtype": a.subtype,
+        "purchase_price": a.purchase_price,
+        "surface_m2": a.surface_m2,
+        "notary_fees": a.notary_fees,
+        "agency_fees": a.agency_fees,
+        "works_fees": a.works_fees,
+        "furniture_fees": a.furniture_fees,
+        "purchase_date": a.purchase_date,
+        "construction_year": a.construction_year,
+        "ownership_pct": a.ownership_pct,
+        "address": a.address,
     }
 
 

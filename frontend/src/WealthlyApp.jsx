@@ -483,14 +483,40 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     notes: a.notes || '',
     memberIds: a.member_ids || [],
     updatedAt: a.updated_at,
+    subtype: a.subtype || null,
+    purchasePrice: a.purchase_price ?? null,
+    surfaceM2: a.surface_m2 ?? null,
+    notaryFees: a.notary_fees ?? null,
+    agencyFees: a.agency_fees ?? null,
+    worksFees: a.works_fees ?? null,
+    furnitureFees: a.furniture_fees ?? null,
+    purchaseDate: a.purchase_date || null,
+    constructionYear: a.construction_year ?? null,
+    ownershipPct: a.ownership_pct ?? 100,
+    address: a.address || '',
   });
-  const assetToApi = (a) => ({
-    type: a.type,
-    name: a.name,
-    current_value: parseFloat(a.currentValue) || 0,
-    notes: a.notes || '',
-    member_ids: a.memberIds || [],
-  });
+  const assetToApi = (a) => {
+    const numOrNull = (v) => (v === '' || v == null) ? null : parseFloat(v);
+    const intOrNull = (v) => (v === '' || v == null) ? null : parseInt(v, 10);
+    return {
+      type: a.type,
+      name: a.name,
+      current_value: parseFloat(a.currentValue) || 0,
+      notes: a.notes || '',
+      member_ids: a.memberIds || [],
+      subtype: a.subtype || null,
+      purchase_price: numOrNull(a.purchasePrice),
+      surface_m2: numOrNull(a.surfaceM2),
+      notary_fees: numOrNull(a.notaryFees),
+      agency_fees: numOrNull(a.agencyFees),
+      works_fees: numOrNull(a.worksFees),
+      furniture_fees: numOrNull(a.furnitureFees),
+      purchase_date: a.purchaseDate || null,
+      construction_year: intOrNull(a.constructionYear),
+      ownership_pct: numOrNull(a.ownershipPct) ?? 100,
+      address: a.address || null,
+    };
+  };
   // Liabilities
   const liaFromApi = (l) => ({
     id: l.id,
@@ -3414,7 +3440,7 @@ function Wealth({ assets, liabilities, members, activeMemberId, visibleAssets, v
       </section>
       )}
 
-      {editingAsset && <AssetEditor asset={editingAsset} members={members} onSave={(a) => { saveAsset(a); setEditingAsset(null); }} onCancel={() => setEditingAsset(null)}/>}
+      {editingAsset && <AssetEditor asset={editingAsset} members={members} liabilities={visibleLiabilities} onSave={(a) => { saveAsset(a); setEditingAsset(null); }} onCancel={() => setEditingAsset(null)}/>}
       {editingLia && <LiabilityEditor liability={editingLia} members={members} assets={assets} onSave={(l) => { saveLiability(l); setEditingLia(null); }} onCancel={() => setEditingLia(null)}/>}
       {viewingLia && <LiabilityDetail liability={viewingLia} assets={assets} members={members} memberShare={memberShare} fmt={fmt} onEdit={() => { setEditingLia(viewingLia); setViewingLia(null); }} onClose={() => setViewingLia(null)}/>}
       {showAddPicker && (
@@ -3475,7 +3501,15 @@ function CompletePatrimoinePicker({ onClose, onPickAsset, onPickLiability }) {
   );
 }
 
-function AssetEditor({ asset, members, onSave, onCancel }) {
+function AssetEditor({ asset, members, liabilities = [], onSave, onCancel }) {
+  // Real-estate gets the multi-step wizard; the rest stays the lighter form.
+  if (asset.type === 'real_estate') {
+    return <RealEstateEditor asset={asset} members={members} liabilities={liabilities} onSave={onSave} onCancel={onCancel}/>;
+  }
+  return <SimpleAssetEditor asset={asset} members={members} onSave={onSave} onCancel={onCancel}/>;
+}
+
+function SimpleAssetEditor({ asset, members, onSave, onCancel }) {
   const [draft, setDraft] = useState(asset);
   const handleSave = () => {
     if (!draft.name) { alert('Donnez un nom à cet actif'); return; }
@@ -3525,6 +3559,211 @@ function AssetEditor({ asset, members, onSave, onCancel }) {
         <div className="modal-footer">
           <button className="secondary-btn" onClick={onCancel}>Annuler</button>
           <button className="primary-btn" onClick={handleSave}><Check size={14}/> Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// REAL ESTATE WIZARD — 4 steps: Description / Caractéristiques / Détails / Emprunts
+// ============================================================================
+const RE_SUBTYPES = [
+  { key: 'rp',         label: 'Résidence principale' },
+  { key: 'secondaire', label: 'Résidence secondaire' },
+  { key: 'locative',   label: 'Investissement locatif' },
+  { key: 'scpi',       label: 'SCPI' },
+  { key: 'other',      label: 'Autre' },
+];
+
+const RE_STEPS = [
+  { key: 'desc',  label: 'Description' },
+  { key: 'specs', label: 'Caractéristiques' },
+  { key: 'detail', label: 'Détails' },
+  { key: 'loans', label: 'Emprunts rattachés' },
+];
+
+function RealEstateEditor({ asset, members, liabilities, onSave, onCancel }) {
+  const [draft, setDraft] = useState({
+    ...asset,
+    subtype: asset.subtype || 'rp',
+    address: asset.address || '',
+    purchasePrice: asset.purchasePrice ?? '',
+    surfaceM2: asset.surfaceM2 ?? '',
+    notaryFees: asset.notaryFees ?? '',
+    agencyFees: asset.agencyFees ?? '',
+    worksFees: asset.worksFees ?? '',
+    furnitureFees: asset.furnitureFees ?? '',
+    purchaseDate: asset.purchaseDate || '',
+    constructionYear: asset.constructionYear ?? '',
+    ownershipPct: asset.ownershipPct ?? 100,
+    currentValue: asset.currentValue ?? '',
+  });
+  const [stepIdx, setStepIdx] = useState(0);
+  const step = RE_STEPS[stepIdx].key;
+  const set = (k, v) => setDraft({ ...draft, [k]: v });
+  const toggleMember = (mid) => {
+    const ids = draft.memberIds || [];
+    set('memberIds', ids.includes(mid) ? ids.filter(i => i !== mid) : [...ids, mid]);
+  };
+  const linkedLoans = (liabilities || []).filter(l => l.linkedAssetId === asset.id);
+
+  const canSave = draft.name && (draft.memberIds || []).length > 0;
+  const submit = () => {
+    if (!canSave) { alert('Renseigne un nom et au moins un propriétaire.'); return; }
+    onSave({ ...draft, updatedAt: new Date().toISOString() });
+  };
+
+  // Auto-suggest current value when not set (purchase + works + furniture)
+  const suggestedValue = (() => {
+    const p = parseFloat(draft.purchasePrice) || 0;
+    const w = parseFloat(draft.worksFees) || 0;
+    const f = parseFloat(draft.furnitureFees) || 0;
+    return p + w + f;
+  })();
+
+  return (
+    <div className="modal-backdrop" onClick={onCancel}>
+      <div className="modal modal--wizard" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>{asset.id ? 'Modifier mon immobilier' : 'Ajouter mon immobilier'}</h2>
+          <button className="icon-btn-sm" onClick={onCancel}><X size={16}/></button>
+        </div>
+        <div className="wizard-body">
+          <nav className="wizard-steps">
+            {RE_STEPS.map((s, i) => (
+              <button
+                key={s.key}
+                className={`wizard-step ${i === stepIdx ? 'active' : ''} ${i < stepIdx ? 'done' : ''}`}
+                onClick={() => setStepIdx(i)}
+              >
+                <span className="wizard-step-num">{i + 1}</span>
+                <span className="wizard-step-label">{s.label}</span>
+              </button>
+            ))}
+          </nav>
+          <div className="wizard-pane">
+            {step === 'desc' && (
+              <>
+                <label><span>Nom du bien</span>
+                  <input autoFocus value={draft.name} onChange={(e) => set('name', e.target.value)} placeholder="Appartement Paris 11e"/>
+                </label>
+                <label><span>Adresse <em>optionnel</em></span>
+                  <input value={draft.address} onChange={(e) => set('address', e.target.value)} placeholder="58bis Cité Durmar, 75011 Paris"/>
+                </label>
+                <label><span>Catégorie</span>
+                  <select value={draft.subtype} onChange={(e) => set('subtype', e.target.value)}>
+                    {RE_SUBTYPES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+                  </select>
+                </label>
+                <label><span>Propriétaires</span>
+                  <div className="member-checks">
+                    {members.map(m => (
+                      <label key={m.id} className={`member-check ${(draft.memberIds || []).includes(m.id) ? 'active' : ''}`} style={{ borderColor: (draft.memberIds || []).includes(m.id) ? m.color : undefined }}>
+                        <input type="checkbox" checked={(draft.memberIds || []).includes(m.id)} onChange={() => toggleMember(m.id)}/>
+                        <span className="member-avatar" style={{ background: m.color }}>{m.name.charAt(0).toUpperCase()}</span>
+                        <span>{m.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </label>
+              </>
+            )}
+
+            {step === 'specs' && (
+              <>
+                <label><span>Prix d'achat hors frais (€)</span>
+                  <input type="number" value={draft.purchasePrice} onChange={(e) => set('purchasePrice', e.target.value)} step="any"/>
+                </label>
+                <div className="field-row">
+                  <label><span>Surface (m²)</span>
+                    <input type="number" value={draft.surfaceM2} onChange={(e) => set('surfaceM2', e.target.value)} step="0.1"/>
+                  </label>
+                  <label><span>Détention (%)</span>
+                    <input type="number" min={0} max={100} value={draft.ownershipPct} onChange={(e) => set('ownershipPct', e.target.value)} step="0.1"/>
+                  </label>
+                </div>
+                <div className="field-row">
+                  <label><span>Frais d'agence (€) <em>optionnel</em></span>
+                    <input type="number" value={draft.agencyFees} onChange={(e) => set('agencyFees', e.target.value)} step="any"/>
+                  </label>
+                  <label><span>Frais de notaire (€) <em>optionnel</em></span>
+                    <input type="number" value={draft.notaryFees} onChange={(e) => set('notaryFees', e.target.value)} step="any"/>
+                  </label>
+                </div>
+                <div className="field-row">
+                  <label><span>Frais de travaux (€) <em>optionnel</em></span>
+                    <input type="number" value={draft.worksFees} onChange={(e) => set('worksFees', e.target.value)} step="any"/>
+                  </label>
+                  <label><span>Frais d'ameublement (€) <em>optionnel</em></span>
+                    <input type="number" value={draft.furnitureFees} onChange={(e) => set('furnitureFees', e.target.value)} step="any"/>
+                  </label>
+                </div>
+                <div className="field-row">
+                  <label><span>Date d'achat <em>optionnel</em></span>
+                    <input type="date" value={draft.purchaseDate || ''} onChange={(e) => set('purchaseDate', e.target.value)}/>
+                  </label>
+                  <label><span>Année de construction <em>optionnel</em></span>
+                    <input type="number" value={draft.constructionYear} onChange={(e) => set('constructionYear', e.target.value)} placeholder="1985"/>
+                  </label>
+                </div>
+              </>
+            )}
+
+            {step === 'detail' && (
+              <>
+                <label><span>Valeur actuelle (€)</span>
+                  <input type="number" value={draft.currentValue} onChange={(e) => set('currentValue', e.target.value)} step="any"/>
+                </label>
+                {suggestedValue > 0 && (!draft.currentValue || parseFloat(draft.currentValue) === 0) && (
+                  <button type="button" className="secondary-btn" style={{ alignSelf: 'flex-start' }} onClick={() => set('currentValue', String(suggestedValue))}>
+                    Estimer à {Math.round(suggestedValue).toLocaleString('fr-FR')} € (achat + travaux + ameublement)
+                  </button>
+                )}
+                <label><span>Notes <em>optionnel</em></span>
+                  <textarea rows={3} value={draft.notes || ''} onChange={(e) => set('notes', e.target.value)} placeholder="DPE, locataire, copro…"/>
+                </label>
+              </>
+            )}
+
+            {step === 'loans' && (
+              <>
+                <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
+                  Les emprunts rattachés à ce bien apparaissent ici. Pour lier un nouveau crédit, ajoute-le depuis Patrimoine → Emprunts et sélectionne ce bien dans l'étape "Actifs liés" du wizard.
+                </p>
+                {linkedLoans.length === 0 ? (
+                  <div className="empty-mini" style={{ padding: '32px 0' }}>
+                    <CreditCard size={24}/>
+                    <p>Aucun emprunt rattaché à ce bien.</p>
+                  </div>
+                ) : (
+                  <div className="liability-list">
+                    {linkedLoans.map(l => (
+                      <div key={l.id} className="liability-card-v2" style={{ cursor: 'default' }}>
+                        <div className="lia-header">
+                          <div className="lia-icon" style={{ background: '#7c2d1222', color: '#7c2d12' }}><Home size={14}/></div>
+                          <div className="lia-name-block">
+                            <span className="lia-name">{l.name}</span>
+                            <span className="lia-type">Restant dû : {Math.round(l.remainingCapital || 0).toLocaleString('fr-FR')} €</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+        <div className="modal-footer wizard-footer">
+          <button className="secondary-btn" onClick={onCancel}>Annuler</button>
+          <div style={{ flex: 1 }}/>
+          {stepIdx > 0 && <button className="secondary-btn" onClick={() => setStepIdx(stepIdx - 1)}><ChevronLeft size={14}/> Retour</button>}
+          {stepIdx < RE_STEPS.length - 1 ? (
+            <button className="primary-btn" onClick={() => setStepIdx(stepIdx + 1)}>Suivant <ChevronRight size={14}/></button>
+          ) : (
+            <button className="primary-btn" onClick={submit} disabled={!canSave}><Check size={14}/> Enregistrer</button>
+          )}
         </div>
       </div>
     </div>

@@ -65,6 +65,18 @@ def _run_lightweight_migrations() -> None:
             "ALTER TABLE wealth_snapshots ADD COLUMN IF NOT EXISTS financial_assets_value DOUBLE PRECISION",
             "ALTER TABLE wealth_snapshots ADD COLUMN IF NOT EXISTS mortgage_debt DOUBLE PRECISION",
             "ALTER TABLE wealth_snapshots ADD COLUMN IF NOT EXISTS other_debt DOUBLE PRECISION",
+            # Asset enrichment for the Finary-style immo wizard
+            "ALTER TABLE assets ADD COLUMN IF NOT EXISTS subtype VARCHAR",
+            "ALTER TABLE assets ADD COLUMN IF NOT EXISTS purchase_price DOUBLE PRECISION",
+            "ALTER TABLE assets ADD COLUMN IF NOT EXISTS surface_m2 DOUBLE PRECISION",
+            "ALTER TABLE assets ADD COLUMN IF NOT EXISTS notary_fees DOUBLE PRECISION",
+            "ALTER TABLE assets ADD COLUMN IF NOT EXISTS agency_fees DOUBLE PRECISION",
+            "ALTER TABLE assets ADD COLUMN IF NOT EXISTS works_fees DOUBLE PRECISION",
+            "ALTER TABLE assets ADD COLUMN IF NOT EXISTS furniture_fees DOUBLE PRECISION",
+            "ALTER TABLE assets ADD COLUMN IF NOT EXISTS purchase_date DATE",
+            "ALTER TABLE assets ADD COLUMN IF NOT EXISTS construction_year INTEGER",
+            "ALTER TABLE assets ADD COLUMN IF NOT EXISTS ownership_pct DOUBLE PRECISION DEFAULT 100.0",
+            "ALTER TABLE assets ADD COLUMN IF NOT EXISTS address VARCHAR",
         ]
     with engine.begin() as conn:
         for stmt in statements:
