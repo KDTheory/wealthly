@@ -1421,22 +1421,25 @@ function AnimatedNumber({ value, format, duration = 800 }) {
 // ============================================================================
 // ONBOARDING
 // ============================================================================
+// Member palette — harmonised with the private-banking tokens.
+// Stable order so the same person keeps the same colour across renders.
+const MEMBER_PALETTE = ['#c5a572', '#88a978', '#7a8aa8', '#c8855a', '#9d8bb5', '#d4a554', '#c47158', '#8c918f'];
+
 function Onboarding({ onComplete }) {
   const [step, setStep] = useState(0);
   const [members, setMembers] = useState([]);
-  const [memberDraft, setMemberDraft] = useState({ name: '', role: 'adult', color: '#3b82f6' });
-  const COLORS = ['#3b82f6', '#10b981', '#f97316', '#ec4899', '#8b5cf6', '#06b6d4', '#f59e0b', '#ef4444'];
+  const [memberDraft, setMemberDraft] = useState({ name: '', role: 'adult', color: MEMBER_PALETTE[0] });
 
   const addMember = () => {
     if (!memberDraft.name.trim()) return;
-    setMembers([...members, { ...memberDraft, id: generateId(), color: COLORS[members.length % COLORS.length] }]);
-    setMemberDraft({ name: '', role: 'adult', color: '#3b82f6' });
+    setMembers([...members, { ...memberDraft, id: generateId(), color: MEMBER_PALETTE[members.length % MEMBER_PALETTE.length] }]);
+    setMemberDraft({ name: '', role: 'adult', color: MEMBER_PALETTE[0] });
   };
   const removeMember = (id) => setMembers(members.filter(m => m.id !== id));
 
   const finish = () => {
     if (members.length === 0) {
-      onComplete({ members: [{ id: generateId(), name: 'Moi', role: 'adult', color: '#3b82f6' }] });
+      onComplete({ members: [{ id: generateId(), name: 'Moi', role: 'adult', color: MEMBER_PALETTE[0] }] });
     } else {
       onComplete({ members });
     }
@@ -1472,8 +1475,8 @@ function Onboarding({ onComplete }) {
                   <path d="M7 9 L9.5 15.5 L12 10.5 L14.5 15.5 L17 9"/>
                 </svg>
               </div>
-              <h1>Bienvenue dans Wealthly</h1>
-              <p className="onboarding-lead">Tout votre patrimoine familial, sous contrôle. Comptes bancaires, placements, immobilier, prêts — un seul endroit, vraiment privé, vraiment vôtre.</p>
+              <h1>Bienvenue chez Wealthly</h1>
+              <p className="onboarding-lead">Vue consolidée de votre patrimoine familial — comptes, placements, immobilier, prêts. Souverain, chiffré, vôtre.</p>
             </div>
             <div className="onboarding-features-grid">
               <div className="ob-feature-card">
@@ -1554,9 +1557,9 @@ function Onboarding({ onComplete }) {
 
         {step === 2 && (
           <div className="onboarding-step-content">
-            <div className="ready-icon"><PartyPopper size={36}/></div>
-            <h2>C'est prêt !</h2>
-            <p className="onboarding-lead">Votre Wealthly est configuré. Vous pourrez ajouter vos comptes, votre patrimoine et vos prêts depuis l'application. Commencez petit, enrichissez au fil du temps.</p>
+            <div className="ready-icon"><Check size={28} strokeWidth={2}/></div>
+            <h2>Configuration terminée</h2>
+            <p className="onboarding-lead">Votre espace est prêt. Ajoutez vos comptes, votre patrimoine et vos prêts au fil du temps — commencez petit, enrichissez au rythme qui vous convient.</p>
 
             <div className="onboarding-summary">
               <div className="summary-stat">
@@ -3380,7 +3383,7 @@ function Analysis({ transactions, categories, recurringIds, recurringGroups, mon
 // ============================================================================
 function SettingsView({ members, accounts, accountBalances, saveMember, deleteMember, deleteAccount, achievements, exportData, importData, resetAllData, categories = [], fmt }) {
   const [editingMember, setEditingMember] = useState(null);
-  const COLORS = ['#3b82f6', '#10b981', '#f97316', '#ec4899', '#8b5cf6', '#06b6d4', '#f59e0b', '#ef4444'];
+  const COLORS = MEMBER_PALETTE;
 
   return (
     <div className="settings-view">
@@ -3664,7 +3667,7 @@ function CustomRulesSection({ categories }) {
 
 function MemberEditor({ member, onSave, onCancel }) {
   const [draft, setDraft] = useState(member);
-  const COLORS = ['#3b82f6', '#10b981', '#f97316', '#ec4899', '#8b5cf6', '#06b6d4', '#f59e0b', '#ef4444'];
+  const COLORS = MEMBER_PALETTE;
   return (
     <div className="modal-backdrop" onClick={onCancel}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -3990,18 +3993,18 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 /* ONBOARDING */
 .onboarding { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg-page); padding: 32px 16px; color: var(--text-primary); position: relative; overflow: hidden; }
 .onboarding-bg-mesh { position: absolute; inset: 0; background: radial-gradient(circle at 15% 20%, ${dark ? 'rgba(197, 165, 114, 0.08)' : 'rgba(160, 133, 85, 0.06)'}, transparent 50%), radial-gradient(circle at 85% 80%, ${dark ? 'rgba(197, 165, 114, 0.04)' : 'rgba(160, 133, 85, 0.03)'}, transparent 50%); pointer-events: none; }
-.onboarding-card { background: var(--bg-card); border-radius: 24px; padding: 40px; max-width: 720px; width: 100%; box-shadow: var(--shadow-xl); border: 1px solid var(--border); position: relative; z-index: 1; }
+.onboarding-card { background: var(--bg-card); border-radius: 14px; padding: 36px; max-width: 680px; width: 100%; box-shadow: var(--shadow-lg); border: 1px solid var(--border); position: relative; z-index: 1; }
 .onboarding-progress { display: flex; align-items: center; gap: 8px; margin-bottom: 32px; }
 .progress-step { display: flex; align-items: center; gap: 8px; color: var(--text-tertiary); font-size: 12px; font-weight: 600; }
 .progress-step.active { color: var(--primary); }
 .progress-step.done { color: var(--success); }
-.progress-dot { width: 26px; height: 26px; border-radius: 50%; background: var(--bg-subtle); border: 2px solid var(--border); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
-.progress-step.active .progress-dot { background: var(--primary); color: white; border-color: var(--primary); }
-.progress-step.done .progress-dot { background: var(--success); color: white; border-color: var(--success); }
+.progress-dot { width: 24px; height: 24px; border-radius: 50%; background: var(--bg-subtle); border: 1px solid var(--border-strong); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+.progress-step.active .progress-dot { background: var(--primary); color: ${dark ? '#0c0d10' : '#ffffff'}; border-color: var(--primary); }
+.progress-step.done .progress-dot { background: var(--primary-soft); color: var(--primary); border-color: var(--primary); }
 .progress-line { flex: 1; height: 2px; background: var(--border); border-radius: 1px; }
-.onboarding-step-content h1 { font-size: 30px; font-weight: 800; margin: 0 0 8px; letter-spacing: -0.025em; }
-.onboarding-step-content h2 { font-size: 24px; font-weight: 700; margin: 0 0 8px; letter-spacing: -0.02em; }
-.onboarding-lead { font-size: 15px; color: var(--text-secondary); margin: 0 0 28px; line-height: 1.6; }
+.onboarding-step-content h1 { font-size: 26px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.025em; }
+.onboarding-step-content h2 { font-size: 22px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.02em; }
+.onboarding-lead { font-size: 14px; color: var(--text-secondary); margin: 0 0 24px; line-height: 1.6; }
 .onboarding-hero { text-align: center; margin-bottom: 32px; }
 .ob-mark-large { width: 64px; height: 64px; border-radius: 8px; background: var(--primary-soft); border: 1px solid ${dark ? 'rgba(197, 165, 114, 0.32)' : 'rgba(160, 133, 85, 0.28)'}; display: inline-flex; align-items: center; justify-content: center; color: var(--primary); margin-bottom: 20px; }
 .onboarding-features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }
@@ -4021,7 +4024,7 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .add-member-form select { width: 110px; }
 .ob-tip { display: flex; gap: 10px; padding: 12px 14px; background: var(--warning-soft); color: var(--warning-text); border-radius: 10px; font-size: 12px; line-height: 1.5; margin-bottom: 24px; }
 .ob-tip svg { flex-shrink: 0; margin-top: 2px; }
-.ready-icon { width: 80px; height: 80px; border-radius: 22px; background: var(--gradient-success); display: inline-flex; align-items: center; justify-content: center; color: white; margin-bottom: 20px; }
+.ready-icon { width: 56px; height: 56px; border-radius: 8px; background: var(--primary-soft); border: 1px solid ${dark ? 'rgba(197, 165, 114, 0.32)' : 'rgba(160, 133, 85, 0.28)'}; display: inline-flex; align-items: center; justify-content: center; color: var(--primary); margin-bottom: 18px; }
 .onboarding-summary { padding: 20px; background: var(--bg-subtle); border-radius: 14px; margin-bottom: 20px; }
 .summary-stat { text-align: center; margin-bottom: 16px; }
 .summary-num { font-size: 36px; font-weight: 800; color: var(--primary); line-height: 1; }
