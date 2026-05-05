@@ -1,150 +1,98 @@
-# Wealthly — Roadmap & idées d'amélioration
+# Wealthly — Roadmap
+
+État au **2026-05-05**.
 
 ---
 
-## ✅ Déjà fait (session actuelle)
+## ✅ Fait
 
-- [x] Setup sans Docker : Python + SQLite + Node.js en local
-- [x] Auth JWT (register / login / me)
-- [x] Import CSV multi-banques (Revolut, Crédit Agricole, Boursorama, LCL…)
-- [x] Catégorisation hybride : 25 règles regex intégrées → règles custom → **Claude Haiku (IA)**
-- [x] Navigation repensée : Résumé · Trésorerie · Budgets · Patrimoine · Transactions · Réglages
-- [x] Dashboard Résumé : 4 cartes hero (Patrimoine net · Perf 1m · Liquidité · Endettement)
-- [x] Trésorerie : taux d'épargne · analyse approfondie (top marchands, évolution catégories)
-- [x] Patrimoine : allocation par classe d'actifs (donut) · KPIs gestion privée
+### Visuel & design system
+- [x] Tailwind v4 + design tokens (CSS vars) — palette "encre profonde + or sobre" type banque privée
+- [x] Refonte complète du Dashboard (Tailwind utilities, tokens-based)
+- [x] Propagation de la palette sur toutes les pages via le CSS-in-JS existant (rewiring des `--bg-card`, `--primary`…)
+- [x] Boutons / inputs / cartes adoucis (radii sharper, pas de glow bleu, pas de transform hover)
+- [x] Nouveau monogramme W or (favicon + brand mark + AuthScreen + onboarding)
+- [x] AuthScreen entièrement refait — layout 2 colonnes, sombre, branded, modes login/register/forgot/reset
+- [x] Onboarding : palette membres harmonisée, ready-icon sobre, copy resserrée, progress dots inversés sur or
+- [x] Rename "Trésorerie" → "Suivi mensuel"
 
----
+### Mobile & PWA
+- [x] Mobile responsive : nav en barre du bas, header compact, modales plein écran, tableau transactions reflowé
+- [x] Safe-area-inset support (iPhone à encoche)
+- [x] PWA installable : manifest, icônes (gold W on dark + maskable variant), service worker minimal (network-first shell, cache-first hashed assets)
+- [x] Métadonnées iOS (`apple-mobile-web-app-capable`, viewport-fit=cover)
 
-## 🔜 Prochaines étapes prioritaires
+### Features fonctionnelles
+- [x] **Export PDF bilan** mensuel (3 pages : Synthèse, Trésorerie, Détail) via jsPDF + jspdf-autotable
+- [x] **Simulateur d'impôt FR 2025** :
+  - Barème progressif, parts fiscales (couple / enfants), plafond du quotient familial, décote
+  - Salaires séparés conjoint A / conjoint B + primes exceptionnelles par conjoint
+  - Crédits d'impôt : garde d'enfants <6 ans (3 500 €/enfant) + emploi à domicile CESU (12 000 € + 1 500 €/personne, max 15 000 €)
+  - Plafond global niches fiscales 10 000 € (avec warning quand atteint)
+  - Pré-remplissage depuis l'historique transactions
+  - Solde à payer / trop-perçu vs PAS, taux PAS cible
+- [x] **Règles de catégorisation custom** (UI dans Réglages, validation regex client-side, pipe-separated patterns)
+- [x] **Historique patrimoine** : nouvelle table `wealth_snapshots`, snapshot mensuel auto-uploadé (debounced + idempotent), courbe d'évolution sur la page Patrimoine
+- [x] **Alerte budget** : badge rouge sur la nav avec le nombre de budgets dépassés ce mois
+- [x] **Mot de passe oublié** : table `password_reset_tokens` (SHA-256, single-use, 60 min), email via Resend, écran reset auto-déclenché par `?reset_token=` dans l'URL
+- [x] **Mode démo** : seed côté client pour explorer l'app sans inscription (Alice + Bob + Léa, 6 mois de données réalistes)
 
-### P0 — Finitions immédiates
+### Backend & infra
+- [x] CORS regex pour matcher tous les déploiements Vercel (`wealthly(-…)?\.vercel\.app`)
+- [x] Tests pytest (25 tests couvrent auth, password reset, snapshots, rules)
+- [x] CI GitHub Actions sur chaque push + PR (notification mail si KO)
+- [x] Logging structuré du service email (Railway logs)
 
-- [ ] **Responsive mobile** : les grilles KPI s'empilent correctement sur petits écrans
-- [ ] **PWA manifest** : ajouter `manifest.json` + icônes pour installer l'app sur l'écran d'accueil iOS/Android sans App Store
-- [ ] **Alerte budget dépassé** : badge rouge clignotant dans la nav quand un budget est dépassé ce mois
-- [ ] **Règles d'auto-catégorisation custom** : interface dans Réglages pour créer/tester ses propres regex avant de passer à l'IA
-
-### P1 — Fonctionnalités manquantes vs la concurrence
-
-- [ ] **Invitation conjoint** : envoyer un lien pour qu'un second utilisateur rejoigne le même foyer (partage de token d'invitation, rôles owner/member)
-- [ ] **Rapport PDF mensuel** : export automatique d'un bilan mensuel propre (style relevé banque privée) — librairie `reportlab` côté backend
-- [ ] **Migrations Alembic** : remplacer `Base.metadata.create_all` par de vraies migrations versionnées pour évoluer le schéma sans perdre les données
-- [ ] **Calcul plus-values latentes** : pour les actifs de type PEA/CTO, saisir le prix de revient et afficher la plus-value en % et en €
-
-### P2 — UX & design
-
-- [ ] **Onboarding guidé** : wizard 3 étapes à la première connexion (ajouter compte → importer CSV → définir budgets) avec barre de progression
-- [ ] **Tooltip contextuel** sur les KPIs gestion privée (ex: clic sur "Ratio d'endettement" → explication de ce que c'est et comment l'interpréter)
-- [ ] **Graphique patrimoine net historique** dans le Résumé : courbe chronologique du net worth (nécessite de stocker des snapshots)
-- [ ] **Aperçu de compte** : cliquer sur un compte dans la liste pour voir ses transactions directement
-- [ ] **Tri et filtres avancés** dans Transactions : multi-catégories, plage de dates, montant min/max
-
----
-
-## 💡 Idées inspirées de la concurrence
-
-*(Finary, Bankin, YNAB, Personal Capital, Copilot, Linxea)*
-
-### Synchro bancaire automatique
-
-Le plus demandé sur tous les outils. Plutôt que d'importer des CSV manuellement :
-
-- **Bridge by Bankin** (API française DSP2, ~30 banques FR) — gratuit jusqu'à ~50 req/mois
-- **GoCardless Bank Account Data** (ex-Nordigen) — gratuit jusqu'à 50 connexions, 90 jours d'historique
-- **Powens** (ex-Budget Insight) — plus complet, payant
-
-Implémentation : nouveau router `/sync`, OAuth flow dans le frontend, webhook ou polling pour récupérer les nouvelles transactions.
-
-### Projection retraite *(style JP Morgan / Goldman Sachs)*
-
-Calculateur basé sur :
-- Revenus actuels + taux d'épargne
-- Actifs existants (PEA, PER, AV)
-- Âge cible de départ
-- Hypothèses de rendement paramétrable (3%, 5%, 7%)
-
-Affiche : capital estimé à la retraite, rente mensuelle équivalente, gap vs objectif.
-
-### Simulateur de crédit immobilier
-
-Saisir : prix du bien, apport, durée, taux → simulation mensualité, coût total du crédit, capacité d'emprunt basée sur les revenus de Trésorerie. Comparaison achat vs location sur 10/20 ans.
-
-### Alertes & notifications
-
-- Budget dépassé à 80% → notification push (via service worker si PWA)
-- Dépense inhabituelle > 2× la moyenne détectée
-- Facture récurrente manquante ce mois
-- Évolution du patrimoine net (chaque 1er du mois)
-
-### Enrichissement des transactions *(style Copilot)*
-
-- Logo du marchand (API Clearbit ou Brandfetch, gratuit)
-- Normalisation du libellé (ex: "VIR PERM NETFLIX INTL" → "Netflix")
-- Mémorisation des corrections manuelles pour les futures transactions
-
-### Score de santé financière *(style Finary)*
-
-Note de 0 à 100 calculée sur :
-- Taux d'épargne (objectif : ≥20%)
-- Ratio d'endettement (objectif : <30%)
-- Fonds d'urgence (objectif : 3-6 mois de charges)
-- Diversification des actifs (objectif : pas + de 70% sur une classe)
-- Régularité d'épargne (objectif : mois positifs consécutifs)
-
-### Rebalancing d'allocation *(style gestion privée)*
-
-L'utilisateur définit une allocation cible (ex: 40% immo, 30% placements, 20% épargne, 10% liquidités).  
-Le dashboard affiche l'écart actuel vs cible et suggère les mouvements à effectuer.
-
-### Optimisation fiscale *(France-centric)*
-
-Suggestions contextuelles :
-- "Votre PEA a X€ de plus-value latente — pensez à ne pas le clôturer avant 5 ans"
-- "Vous avez versé X€ sur votre AV cette année — plafond déductible : Y€"
-- "Votre TMI estimé est X% — le PER vous ferait économiser Z€/an"
-
-### Mode hors-ligne / PWA
-
-Service worker qui cache les données localement pour une consultation sans internet. Synchronisation différée quand la connexion revient.
+### Bugs résolus
+- [x] Carte "Charges fixes" qui suivait au scroll (grid-row: span 2 retiré)
+- [x] Section "Composition" du Dashboard cassée (référence à `wealthComposition` undefined → utilise `allocationData`)
 
 ---
 
-## 🏗️ Architecture future (si l'app grandit)
+## 🔜 À faire
 
-- **Alembic** pour les migrations DB (prioritaire avant d'ajouter des colonnes)
-- **Celery + Redis** pour les tâches async (synchro bancaire, envoi de rapports PDF par email)
-- **Tests** : pytest pour les routers backend (au moins auth + transactions), Playwright pour les flux critiques frontend
-- **Docker Compose optionnel** : ré-activer Docker pour ceux qui veulent un déploiement one-command (SQLite → volume monté)
-- **Multi-foyers** : un utilisateur peut appartenir à plusieurs foyers (utile pour gérer le patrimoine des parents)
+### Refactoring (prio 1, technique)
+- [ ] **Découpe du monolithe** `frontend/src/WealthlyApp.jsx` (~4500 lignes) en :
+  - `lib/constants.js`, `lib/format.js`, `lib/recurring.js`
+  - `components/AnimatedNumber.jsx`, `Toast.jsx`, `Confetti.jsx`, `Styles.jsx`
+  - `views/Dashboard.jsx`, `Wealth.jsx`, `Monthly.jsx`, `Transactions.jsx`, `Budgets.jsx`, `SettingsView.jsx`, `ImportFlow.jsx`, `Onboarding.jsx`
+  - `components/MemberEditor.jsx`, `AssetEditor.jsx`, `LiabilityEditor.jsx`
+  - `hooks/useReload.js`, `useMembers.js`, etc.
+  
+  À faire par niveaux pour limiter le risque (utils → composants → vues → modales).
+
+### Sécurité (prio 1)
+- [ ] **Vérifier `SECRET_KEY`** sur Railway — toujours penser à la rotation périodique
+- [ ] **2FA** (TOTP via `pyotp` + QR code)
+- [ ] **Journal de connexion** : table `login_events` avec IP / user-agent / timestamp, vue admin
+- [ ] **Rate limiting** sur `/auth/login` et `/auth/forgot-password` (slowapi)
+
+### Features (prio 2)
+- [ ] **Tests frontend** — vitest sur `taxFr.js` (le moteur fiscal mérite une couverture rigoureuse vu sa criticité)
+- [ ] **Calcul plus-values latentes** sur les actifs (PEA, CTO) — saisir prix de revient, afficher PV en € et %
+- [ ] **Plafond annuel** sur PEA (150 000 €) et Livret A — alertes
+- [ ] **Comparaison mois N vs N-1** sur le suivi mensuel
+- [ ] **Score de santé financière** (style Finary) : note 0-100 sur taux d'épargne, ratio dette, fonds d'urgence, diversification
+- [ ] **Migrations Alembic** — actuellement `Base.metadata.create_all()` sur startup, qui rajoute des tables mais ne migre rien d'existant. Avant tout changement de colonne, basculer.
+
+### UX (prio 3)
+- [ ] **Tooltips** sur les KPIs gestion privée (explication du concept)
+- [ ] **Aperçu de compte** : cliquer sur un compte ouvre ses transactions filtrées
+- [ ] **Tri / filtres avancés** dans Transactions : multi-catégories, plage de dates, montant min/max
+- [ ] **Onboarding** : preview live des KPIs mis à jour au fur et à mesure que l'utilisateur saisit ses comptes
 
 ---
 
-## 📝 Notes pour reprendre le travail avec Claude
+## 🚫 Hors scope (volontairement)
 
-**Stack** :
-- Backend : FastAPI, SQLAlchemy, SQLite (`backend/wealthly.db`), Python 3.13
-- Frontend : React 18, Vite, Recharts, Lucide-react — tout dans `frontend/src/WealthlyApp.jsx` (~4000 lignes)
-- Auth : JWT via `python-jose`, stocké dans `localStorage` (`wealthly:token`)
-- IA : Claude Haiku (`claude-haiku-4-5-20251001`) via `backend/app/routers/categorize.py`
+- ❌ **Synchro bancaire automatique** (Bridge / GoCardless / Powens) — l'utilisateur a explicitement refusé
+- ❌ **Rebalancing d'allocation** — refusé
+- ❌ **Garde alternée** dans le simulateur d'impôt — supprimé sur demande utilisateur
 
-**Lancer l'app** :
-```bash
-# Terminal 1
-cd backend && uvicorn app.main:app --reload --port 8000
-# Terminal 2
-cd frontend && npm run dev
-# → http://localhost:3000
-```
+---
 
-**Fichiers clés** :
-- `frontend/src/WealthlyApp.jsx` — toute l'UI (composants : Dashboard, Monthly/Trésorerie, Budgets, Wealth, Transactions, Analysis, SettingsView)
-- `frontend/src/api.js` — tous les appels HTTP vers le backend
-- `backend/app/routers/` — un fichier par domaine métier
-- `backend/app/models.py` — schéma de la DB
-- `backend/app/routers/categorize.py` — logique de catégorisation 3 passes
-- `backend/.env` — config locale (jamais committer)
+## 📅 Notes session 2026-05-05
 
-**Conventions CSS** : variables CSS dans `:root`, thème dark/light via `data-theme` sur `<html>`. Classes BEM light : `.kpi-card`, `.mk-card`, `.ws-card`, `.wk-card`.
+Direction visuelle stabilisée : **encre profonde + or sobre + sage / terracotta sourds**. Inspirations : Finary (couleur, typo numéraire), Linear (sobriety craft), banque privée (mood général). Le user a explicitement validé après l'avoir vu en prod.
 
-**Pour continuer avec Claude Code** :  
-Ouvrir le dossier `wealthly/` dans VS Code ou un terminal, lancer `claude` (CLI), et décrire ce que tu veux ajouter. Le contexte de cette session est disponible dans `.claude/projects/`.
+Email "mot de passe oublié" — point d'attention : avec l'expéditeur par défaut `onboarding@resend.dev`, **Resend free tier ne livre qu'à l'email du compte Resend**. Pour envoyer à n'importe qui, **vérifier un domaine** sur resend.com.

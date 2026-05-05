@@ -1,85 +1,113 @@
-# Wealthly — Suivi de patrimoine familial auto-hébergé
+# Wealthly — Patrimoine privé
 
-Application complète de gestion de patrimoine : comptes bancaires, immobilier, placements, prêts, budgets, trésorerie mensuelle, et KPIs de gestion privée (taux d'épargne, ratio d'endettement, allocation par classe d'actifs).
+Application web de **gestion patrimoniale familiale** auto-hébergée. Comptes bancaires, immobilier, placements, prêts, budgets, suivi mensuel, simulateur d'impôt FR, KPIs gestion privée et historique du patrimoine.
 
-**100% auto-hébergé. Vos données restent chez vous.**  
-**Catégorisation IA** via Claude Haiku — BYOK (votre propre clé Anthropic, optionnel).
+> **Production** : https://wealthly-six.vercel.app
+
+| | |
+|---|---|
+| Frontend | React 18 + Vite + Recharts + Tailwind v4 — déployé sur **Vercel** |
+| Backend | FastAPI + SQLAlchemy — déployé sur **Railway** |
+| Database | Postgres hébergé sur **Supabase** |
+| Email | **Resend** (mot de passe oublié) |
+| AI | Claude Haiku (catégorisation, optionnel, BYOK) |
+| Auth | JWT (bcrypt + python-jose), stocké en localStorage |
+| PWA | Installable depuis le navigateur sur iOS / Android / desktop |
+| Tests | pytest backend + GitHub Actions CI |
 
 ---
 
 ## Sommaire
 
-1. [Prérequis](#prérequis)
-2. [Installation locale (5 min)](#installation-locale)
-3. [Pousser sur GitHub](#pousser-sur-github)
-4. [Reprendre le travail sur une autre machine](#reprendre-sur-une-autre-machine)
-5. [Commandes quotidiennes](#commandes-quotidiennes)
-6. [Activer la catégorisation IA](#activer-la-catégorisation-ia)
-7. [Backup et restauration](#backup-et-restauration)
-8. [Déployer sur un VPS](#déployer-sur-un-vps)
-9. [Architecture](#architecture)
-10. [Dépannage](#dépannage)
+1. [Features](#features)
+2. [Architecture & topologie](#architecture--topologie)
+3. [Lancer en local](#lancer-en-local)
+4. [Variables d'environnement](#variables-denvironnement)
+5. [Déploiement](#déploiement)
+6. [Structure du repo](#structure-du-repo)
+7. [Tests](#tests)
+8. [Sécurité](#sécurité)
+9. [Dépannage](#dépannage)
 
 ---
 
-## Prérequis
+## Features
 
-| Outil | Version minimale | Vérification |
-|---|---|---|
-| **Python** | 3.11+ | `python --version` |
-| **Node.js** | 18+ | `node --version` |
-| **npm** | 9+ | `npm --version` |
-| **Git** | n'importe | `git --version` |
+### Core
+- **Auth complète** : inscription, connexion, JWT 7 jours, **mot de passe oublié** (lien email Resend, token single-use, expire 60 min)
+- **Multi-membres** : foyer = un compte admin + plusieurs membres (adultes / enfants), comptes joints partagés automatiquement
+- **Import CSV** : détection auto de la banque (Revolut, Crédit Agricole, Boursorama, LCL, BNP, etc.), mapping colonnes, prévisualisation
+- **Catégorisation hybride** : règles regex intégrées → règles regex personnalisées (UI dans Réglages) → Claude Haiku (BYOK) → "non catégorisé"
 
-> **Pas de Docker requis.** Le backend tourne avec uvicorn, le frontend avec Vite. La base de données est SQLite (fichier local, aucune installation).
+### Vues
+- **Résumé** (Dashboard) — patrimoine net + 4 KPIs, anomalies, allocation, top dépenses, comptes, activité récente, succès, **export PDF** d'un bilan 3 pages
+- **Suivi mensuel** — cashflow du mois, charges fixes auto-détectées, calendrier, comparaison vs moyenne 3 mois
+- **Budgets** — répartition 50/30/20, plafonds par catégorie avec barres de progression, **badge rouge sur la nav** quand un budget est dépassé
+- **Patrimoine** — actifs / passifs / allocation par classe (donut), KPIs gestion privée, **courbe d'évolution mensuelle** du patrimoine net (snapshots auto)
+- **Transactions** — table avec filtres, recatégorisation manuelle, marquage récurrent
+- **Impôts** — **simulateur d'impôt FR 2025** (barème, parts fiscales, plafond quotient, décote, crédits garde d'enfants + CESU avec plafond niches fiscales 10 000 €)
+- **Réglages** — membres, comptes, succès, règles de catégorisation custom, export/import backup JSON
+
+### Mode démo
+Bouton "Voir avec un jeu de démo" sur l'écran de connexion → app pré-remplie (Alice + Bob + Léa, 6 mois de transactions, immo + PEA + AV + prêt). Aucune inscription, aucune écriture en base.
+
+### PWA installable
+- Manifest, service worker, icônes
+- "Ajouter à l'écran d'accueil" depuis Safari iOS / Chrome Android → app plein écran avec barre de navigation en bas
+- Cache offline du shell HTML, network-first pour les mises à jour
 
 ---
 
-## Installation locale
+## Architecture & topologie
 
-### 1. Cloner ou décompresser le projet
+```
+   Browser
+      │ HTTPS
+      ▼
+   Vercel (Frontend statique React)
+      │ /api/* → CORS regex match
+      ▼
+   Railway (FastAPI Python)
+      │ Postgres TLS
+      ▼
+   Supabase (DB hébergée)
 
-```bash
-git clone https://github.com/ton-username/wealthly.git
-cd wealthly
-# ou simplement décompresser l'archive dans un dossier
+   Resend  ◄── backend (mot de passe oublié)
 ```
 
-### 2. Configurer le backend
+**CORS** : le backend accepte tout `https://wealthly(-…)?\.vercel\.app` via une regex (`CORS_ORIGIN_REGEX`), donc chaque nouveau déploiement Vercel marche automatiquement.
+
+**Auth** : JWT signé avec `SECRET_KEY` (env Railway). Le token est stocké dans `localStorage` côté navigateur sous `wealthly:token`. Pour les snapshots patrimoine, le frontend POST automatiquement le snapshot du mois courant.
+
+---
+
+## Lancer en local
+
+> Pas de Docker requis. SQLite + uvicorn + Vite.
+
+### Prérequis
+
+| Outil | Version | Vérification |
+|---|---|---|
+| Python | 3.11+ | `python --version` |
+| Node.js | 18+ | `node --version` |
+| Git | n'importe | `git --version` |
+
+### Backend
 
 ```bash
 cd backend
+cp .env.example .env
+# Édite backend/.env :
+#   - SECRET_KEY (génère avec: python3 -c "import secrets; print(secrets.token_urlsafe(48))")
+#   - DATABASE_URL (laisser SQLite en local : sqlite:///./wealthly.db)
+#   - RESEND_API_KEY (optionnel — sinon le mot de passe oublié logge le lien sans envoyer)
 
-# Copier le template de configuration
-cp .env.example .env      # Mac/Linux
-copy .env.example .env    # Windows
-
-# Édite backend/.env et remplace SECRET_KEY par une vraie clé aléatoire :
-#   Mac/Linux : openssl rand -hex 32
-#   Windows   : powershell -Command "[Convert]::ToHexString([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32))"
-```
-
-Installer les dépendances Python :
-
-```bash
-# Dans le dossier backend/
 pip install -r requirements.txt
-```
-
-### 3. Lancer le backend
-
-```bash
-# Dans backend/
 uvicorn app.main:app --reload --port 8000
 ```
 
-La base SQLite `backend/wealthly.db` est créée automatiquement au premier démarrage.  
-API disponible sur : http://localhost:8000  
-Swagger (doc interactive) : http://localhost:8000/docs
-
-### 4. Configurer et lancer le frontend
-
-Dans un **nouveau terminal** :
+### Frontend
 
 ```bash
 cd frontend
@@ -87,279 +115,183 @@ npm install
 npm run dev
 ```
 
-Frontend disponible sur : http://localhost:3000
-
-### 5. Créer ton compte
-
-Va sur http://localhost:3000 → **Créer un compte** → remplis email, mot de passe, prénom, nom du foyer.
+→ http://localhost:3000
 
 ---
 
-## Pousser sur GitHub
+## Variables d'environnement
 
-### Créer le repo
+### Backend (`backend/.env` ou Railway → Variables)
 
-1. Connecte-toi sur https://github.com → `+` → **New repository**
-2. Nom : `wealthly`, cocher **Private** (important), ne pas initialiser avec README
-3. Copier l'URL : `https://github.com/ton-username/wealthly.git`
+| Variable | Obligatoire | Défaut | Description |
+|---|---|---|---|
+| `DATABASE_URL` | oui | `postgresql://wealthly:wealthly@db:5432/wealthly` | URL de connexion. SQLite supporté pour le dev (`sqlite:///./wealthly.db`) |
+| `SECRET_KEY` | **oui en prod** | `CHANGE_ME_IN_PRODUCTION_PLEASE` | Clé HMAC pour signer les JWT. **Doit faire ≥32 caractères aléatoires en prod.** |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | non | `10080` (7 jours) | Durée de vie du JWT |
+| `CORS_ORIGINS` | non | `http://localhost:3000,http://localhost:5173` | Liste exacte d'origines autorisées (CSV) |
+| `CORS_ORIGIN_REGEX` | non | `^https://wealthly(-[a-z0-9-]+)?\.vercel\.app$` | Pattern d'origines autorisées — couvre tous les déploiements Vercel |
+| `ANTHROPIC_API_KEY` | non | — | Active la catégorisation IA Claude Haiku |
+| `RESEND_API_KEY` | non | — | Sans elle, le flow "mot de passe oublié" est silencieux (logs uniquement) |
+| `EMAIL_FROM` | non | `Wealthly <onboarding@resend.dev>` | Expéditeur. Avec l'adresse par défaut, **Resend free tier ne livre qu'à l'email du compte Resend**. Vérifier un domaine sur resend.com pour envoyer à n'importe qui. |
+| `FRONTEND_URL` | non | `https://wealthly-six.vercel.app` | Base URL utilisée pour construire les liens de reset |
 
-### Premier push
+### Frontend (Vercel → Settings → Environment Variables)
 
-```bash
-# Dans le dossier racine du projet
-git init
-git add .
-
-# Vérification cruciale AVANT le commit :
-# git status ne doit PAS lister .env ou backend/.env
-# Ces fichiers contiennent ta clé secrète — ne jamais les committer
-
-git commit -m "Initial commit: Wealthly self-hosted"
-git remote add origin https://github.com/ton-username/wealthly.git
-git branch -M main
-git push -u origin main
-```
-
-> **Token GitHub** : depuis 2021, le push demande un token d'accès (pas ton mot de passe).  
-> Génère-le sur https://github.com/settings/tokens → **Generate new token (classic)** → coche `repo` → copie le token `ghp_...`.  
-> Astuce Windows : `git config --global credential.helper manager` pour le mémoriser.
-
-### Mises à jour suivantes
-
-```bash
-git add .
-git commit -m "Description de ce que j'ai changé"
-git push
-```
+| Variable | Description |
+|---|---|
+| `VITE_API_URL` | URL du backend Railway (ex: `https://wealthly-production-45aa.up.railway.app`). Sans elle, le frontend appelle `/api` qui n'existe pas en prod. |
 
 ---
 
-## Reprendre sur une autre machine
+## Déploiement
+
+L'app est **auto-déployée** : tout push sur `main` déclenche
+
+- Vercel → build du frontend → déploiement immédiat (~1 min)
+- Railway → redémarrage du backend si les fichiers `backend/` ont changé (~1-2 min)
+- GitHub Actions → tests pytest sur chaque push (notification mail si KO)
+
+Pour ajouter ou changer une URL Vercel : Vercel Dashboard → Project → Settings → Domains. Le pattern CORS `wealthly(-…)?\.vercel\.app` couvre déjà tout `wealthly-*.vercel.app`. Pour un domaine custom, ajouter dans `CORS_ORIGINS` ou ajuster le regex.
+
+Pour pivoter d'un fournisseur vers un autre :
 
 ```bash
-# 1. Cloner
-git clone https://github.com/ton-username/wealthly.git
-cd wealthly
+# Frontend → autre hébergeur (Cloudflare Pages, Netlify…) :
+cd frontend && npm install && npm run build
+# Puis servir frontend/dist/ avec n'importe quel CDN ou nginx.
 
-# 2. Recréer backend/.env (non versionné, à refaire sur chaque machine)
-cd backend
-cp .env.example .env
-# Édite .env : même SECRET_KEY que sur l'autre machine pour que les comptes existants fonctionnent
-# (ou une nouvelle clé si tu repars de zéro)
+# Backend → autre PaaS (Fly.io, Render…) :
+# Pas de magie : pip install + uvicorn. Penser à reporter les env vars.
 
-# 3. Installer les dépendances
-pip install -r requirements.txt
-cd ../frontend && npm install
-
-# 4. Si tu as un backup JSON de tes données :
-# Lance le backend, crée un compte, puis Réglages → Importer un backup
-
-# 5. Lancer
-# Terminal 1 :
-cd backend && uvicorn app.main:app --reload --port 8000
-# Terminal 2 :
-cd frontend && npm run dev
+# Database → autre Postgres :
+# pg_dump sur Supabase, pg_restore ailleurs. Aucun code à changer.
 ```
 
 ---
 
-## Commandes quotidiennes
-
-### Lancer l'app
-
-```bash
-# Terminal 1 — backend
-cd backend
-uvicorn app.main:app --reload --port 8000
-
-# Terminal 2 — frontend
-cd frontend
-npm run dev
-```
-
-Puis ouvrir http://localhost:3000.
-
-### Git — workflow quotidien
-
-```bash
-git status                          # voir les changements
-git diff                            # détail ligne par ligne
-git add .                           # stager tout
-git add frontend/src/WealthlyApp.jsx  # stager un fichier précis
-git commit -m "feat: ..."           # committer
-git push                            # pousser sur GitHub
-git pull                            # récupérer depuis GitHub
-git log --oneline -10               # historique récent
-```
-
-### Branches (pour expérimenter)
-
-```bash
-git checkout -b nouvelle-feature    # créer une branche
-# ... code, test ...
-git push -u origin nouvelle-feature
-# Sur GitHub : Pull Request → merge sur main
-git checkout main && git pull
-```
-
----
-
-## Activer la catégorisation IA
-
-Wealthly utilise **Claude Haiku** pour catégoriser automatiquement les transactions non reconnues par les règles regex. C'est un modèle rapide et bon marché (~0,001 € pour 100 transactions).
-
-### Obtenir une clé Anthropic
-
-1. Va sur https://console.anthropic.com
-2. Crée un compte (nécessite une carte bancaire pour activer les crédits)
-3. **API Keys** → **Create Key** → copie la clé `sk-ant-api03-...`
-
-### Activer dans Wealthly
-
-Édite `backend/.env` et décommente la ligne :
-
-```
-ANTHROPIC_API_KEY=sk-ant-api03-ta-vraie-cle-ici
-```
-
-Redémarre le backend. Lors du prochain import CSV, le badge ✨ apparaîtra sur les transactions catégorisées par l'IA.
-
-**Sans clé** : la catégorisation fonctionne normalement par regex (25 règles intégrées + tes règles personnalisées). Seules les transactions non reconnues restent "Non catégorisé".
-
----
-
-## Backup et restauration
-
-### Export depuis l'app (recommandé)
-
-**Réglages** → **Exporter (backup JSON)** → fichier `wealthly-backup-YYYY-MM-DD.json`.  
-Garde ce fichier en lieu sûr (cloud chiffré, disque externe).
-
-### Restauration
-
-Sur n'importe quelle installation Wealthly : **Réglages** → **Importer un backup** → sélectionner le JSON.
-
-### Backup du fichier SQLite (alternatif)
-
-```bash
-# Copier simplement le fichier DB (backend doit être arrêté ou fichier en lecture seule)
-cp backend/wealthly.db backend/wealthly-backup-$(date +%Y%m%d).db
-```
-
----
-
-## Déployer sur un VPS
-
-Pour accéder à Wealthly depuis n'importe où (mobile, travail…).
-
-**VPS recommandés** : Hetzner CX22 (4,50€/mois), Scaleway DEV1-S (4€/mois), ou un Raspberry Pi 4 à la maison.
-
-```bash
-# 1. Sur le VPS : installer Python et Node
-sudo apt update && sudo apt install python3-pip nodejs npm git -y
-
-# 2. Cloner
-git clone https://github.com/ton-username/wealthly.git && cd wealthly
-
-# 3. Configurer
-cd backend && cp .env.example .env
-# Éditer .env : nouvelle SECRET_KEY, CORS_ORIGINS=https://ton-domaine.com
-
-# 4. Installer
-pip3 install -r requirements.txt
-cd ../frontend && npm install && npm run build
-
-# 5. Lancer le backend en production (avec gunicorn ou en service systemd)
-cd ../backend
-pip install gunicorn
-gunicorn app.main:app -w 2 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 &
-
-# 6. Servir le frontend buildé avec nginx ou Caddy
-# Caddy (le plus simple, HTTPS automatique) :
-# Caddyfile : ton-domaine.com { root * /chemin/vers/wealthly/frontend/dist; file_server; reverse_proxy /api/* localhost:8000 }
-```
-
----
-
-## Architecture
+## Structure du repo
 
 ```
 wealthly/
-├── backend/                    FastAPI + SQLAlchemy + SQLite
+├── backend/                    FastAPI + SQLAlchemy
 │   ├── app/
-│   │   ├── main.py             Point d'entrée, CORS, montage des routers
-│   │   ├── config.py           Variables d'environnement (Pydantic Settings)
-│   │   ├── database.py         Moteur SQLAlchemy (SQLite ou Postgres)
-│   │   ├── models.py           Tables ORM (11 modèles)
-│   │   ├── auth.py             JWT (python-jose + passlib bcrypt)
-│   │   ├── schemas.py          Schémas Pydantic (validation I/O)
-│   │   ├── defaults.py         Catégories par défaut à la création du foyer
+│   │   ├── main.py             Point d'entrée + CORS + routers
+│   │   ├── config.py           Settings (env vars)
+│   │   ├── database.py         Engine SQLAlchemy (SQLite ou Postgres)
+│   │   ├── models.py           14 tables (User, Household, Member, Account,
+│   │   │                       Transaction, Asset, Liability, Category,
+│   │   │                       CategorisationRule, Budget, Goal, Achievement,
+│   │   │                       PasswordResetToken, WealthSnapshot)
+│   │   ├── auth.py             JWT helpers (python-jose) + bcrypt
+│   │   ├── schemas.py          Pydantic I/O models
+│   │   ├── defaults.py         Catégories par défaut
+│   │   ├── email_service.py    Resend client (best-effort, never raises)
 │   │   └── routers/
-│   │       ├── auth.py         POST /auth/register, /auth/login, /auth/me
+│   │       ├── auth.py         /auth/register, /login, /me,
+│   │       │                   /forgot-password, /reset-password
+│   │       ├── members.py      CRUD membres du foyer
 │   │       ├── accounts.py     CRUD comptes bancaires
-│   │       ├── transactions.py CRUD + import bulk CSV
-│   │       ├── wealth.py       CRUD actifs + passifs
-│   │       ├── other.py        Catégories, budgets, objectifs, règles, succès
-│   │       ├── categorize.py   POST /categorize — regex + Claude Haiku
-│   │       └── members.py      CRUD membres du foyer
+│   │       ├── transactions.py CRUD + bulk import
+│   │       ├── wealth.py       CRUD actifs / passifs +
+│   │       │                   /wealth/snapshots (history)
+│   │       ├── other.py        Categories, budgets, goals,
+│   │       │                   achievements, rules, migration
+│   │       └── categorize.py   Catégorisation regex + AI Haiku
+│   ├── tests/                  pytest — 25 tests couvrent auth, password
+│   │                           reset, snapshots, rules
+│   ├── pytest.ini
 │   ├── requirements.txt
-│   ├── .env.example            Template de config (à copier en .env)
-│   └── wealthly.db             Base SQLite (dans .gitignore)
+│   ├── requirements-dev.txt    + pytest, pytest-cov
+│   └── .env.example
 │
-├── frontend/                   React 18 + Vite + Recharts
+├── frontend/                   React 18 + Vite + Tailwind v4
+│   ├── public/
+│   │   ├── manifest.webmanifest    PWA manifest
+│   │   ├── icon.svg                Favicon + PWA (256-bit gold W mark)
+│   │   ├── icon-maskable.svg       Android adaptive
+│   │   └── sw.js                   Service worker (network-first shell,
+│   │                               cache-first hashed assets)
 │   ├── src/
-│   │   ├── WealthlyApp.jsx     Toute l'app (~4000 lignes)
-│   │   ├── AuthScreen.jsx      Écran login / inscription
-│   │   ├── api.js              Client HTTP (JWT, fetch wrapper)
-│   │   └── main.jsx            Entrée React
-│   ├── vite.config.js          Proxy /api → localhost:8000
+│   │   ├── main.jsx                Entry — registers SW in prod only
+│   │   ├── App.jsx                 Auth gating + demo mode + reset_token
+│   │   ├── AuthScreen.jsx          login | register | forgot | reset modes
+│   │   ├── WealthlyApp.jsx         🐉 Monolithe ~4500 lignes — toutes les
+│   │   │                           vues + tous les Styles CSS-in-JS
+│   │   ├── TaxSimulator.jsx        Vue Impôts (revenus 2025)
+│   │   ├── taxFr.js                Moteur fiscal FR (barème, parts,
+│   │   │                           crédits, plafonds)
+│   │   ├── pdfReport.js            Générateur PDF bilan (jsPDF)
+│   │   ├── demoData.js             Jeu de données fictives
+│   │   ├── api.js                  Client HTTP (JWT, CORS-aware)
+│   │   └── index.css               Design tokens Tailwind v4
+│   ├── index.html                  Manifest + apple-touch-icon liens
+│   ├── vite.config.js
 │   └── package.json
 │
-├── .gitignore
-├── .env.example                (obsolète, voir backend/.env.example)
-├── README.md                   Ce fichier
-└── ROADMAP.md                  Prochaines étapes et idées
+├── .github/workflows/test.yml      CI : pytest sur push + PR
+├── README.md                       Ce fichier
+├── ROADMAP.md                      Statut + idées
+├── CLAUDE.md                       Notes pour reprise par Claude
+├── QUICKSTART.md                   Ancien guide local (obsolète)
+├── docker-compose.yml              Local dev avec Docker (optionnel)
+└── LICENSE
 ```
 
-**Flux de données** :  
-`Navigateur → Vite dev server (port 3000) → proxy /api/* → FastAPI (port 8000) → SQLite`
+---
 
-**Auth** : JWT stocké dans `localStorage` sous la clé `wealthly:token`. Expire selon `ACCESS_TOKEN_EXPIRE_MINUTES`.
+## Tests
 
-**Catégorisation** : 3 passes — règles regex intégrées (25) → règles custom du foyer → Claude Haiku (si clé dispo) → "non catégorisé".
+```bash
+cd backend
+pip install -r requirements-dev.txt
+pytest -v
+```
+
+Les tests utilisent une SQLite en mémoire. Le service email est mocké (pas d'appel Resend en CI).
+
+CI GitHub Actions (`.github/workflows/test.yml`) tourne automatiquement à chaque push sur `main` et chaque PR. Échec → mail aux mainteneurs.
+
+---
+
+## Sécurité
+
+- ✅ HTTPS partout (TLS via Vercel, Railway, Supabase)
+- ✅ Mots de passe hashés bcrypt (`passlib`)
+- ✅ JWT signé HMAC, expire 7 jours
+- ✅ Reset token : SHA-256 stocké en DB, single-use, expire 60 min, génération nouvelle invalide les anciens
+- ✅ `forgot-password` ne révèle jamais si l'email existe (même réponse pour adresses connues / inconnues)
+- ✅ CORS allowlist regex
+- ✅ Tests automatiques sur tous les flows critiques d'auth
+- ⚠️ **À vérifier en prod** : `SECRET_KEY` doit être une vraie clé aléatoire ≥32 caractères, **pas** la valeur par défaut `CHANGE_ME_IN_PRODUCTION_PLEASE`
+- ❌ Pas de 2FA (à venir)
+- ❌ Pas de journal de connexion (à venir)
 
 ---
 
 ## Dépannage
 
 ### "Impossible de joindre le serveur"
-Le backend n'est pas lancé. Ouvre un terminal, `cd backend`, `uvicorn app.main:app --reload --port 8000`.
-
-### "Module not found" au démarrage du backend
+Soit le backend Railway est down, soit CORS rejette ton domaine. Test rapide :
 ```bash
-cd backend && pip install -r requirements.txt
+curl https://wealthly-production-45aa.up.railway.app/health
+# Attendu : {"status":"ok","version":"2.0.0"}
 ```
+Si le `/health` répond mais l'app non, c'est CORS — vérifier que `CORS_ORIGIN_REGEX` couvre l'URL du frontend.
 
-### Page blanche sur le frontend
-Ouvre la console (F12). Si erreur 401 → session expirée, recharge et reconnecte-toi. Si erreur réseau → backend arrêté.
+### Mail "mot de passe oublié" non reçu
+1. **Resend logs** → https://resend.com/emails — chercher la tentative récente
+2. Si "failed" + 403 : tu utilises l'expéditeur `onboarding@resend.dev` qui ne livre **qu'à l'email du compte Resend**. Solution : (a) tester avec cet email, ou (b) vérifier un domaine dans Resend
+3. Si rien dans Resend : Railway → Logs, chercher `[email]` — tu verras s'il y a une erreur ou si la clé manque
+4. Vérifier les spams
 
-### Port 3000 déjà occupé
-```bash
-# Windows
-netstat -ano | findstr :3000   # trouve le PID
-taskkill /PID <pid> /F
-```
+### CI échoue après un commit
+GitHub → Actions → cliquer le run rouge → ouvrir le job pour voir l'erreur. Souvent un test cassé par un changement de schéma — corriger et repush.
 
-### Réinitialiser complètement
-```bash
-rm backend/wealthly.db   # supprime la base
-# Relancer le backend recrée une base vide
-```
+### Réinitialiser le mot de passe d'un compte de test
+Pas de UI admin. Solution : se connecter à Supabase → Table editor → `users` → modifier la ligne. Ou utiliser le flow "mot de passe oublié" en ayant configuré Resend.
 
-### Mettre à jour après un `git pull`
-```bash
-# Backend : si requirements.txt a changé
-pip install -r backend/requirements.txt
-# Frontend : si package.json a changé
-cd frontend && npm install
-```
+---
+
+## Licence
+
+MIT — voir [LICENSE](LICENSE).

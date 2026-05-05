@@ -8,13 +8,21 @@ of raising, so the rest of the app keeps working in dev / preview envs.
 from __future__ import annotations
 
 import logging
+import sys
 from typing import Optional
 
 import httpx
 
 from app.config import settings
 
-logger = logging.getLogger(__name__)
+# Send logs to stdout so Railway captures them in the Logs tab.
+logger = logging.getLogger("wealthly.email")
+if not logger.handlers:
+    h = logging.StreamHandler(sys.stdout)
+    h.setFormatter(logging.Formatter("[email] %(levelname)s: %(message)s"))
+    logger.addHandler(h)
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
 
 RESEND_ENDPOINT = "https://api.resend.com/emails"
 
@@ -32,7 +40,11 @@ def send_email(
     log the failure than expose internal errors).
     """
     if not settings.RESEND_API_KEY:
-        logger.warning("Email skipped: RESEND_API_KEY not configured (to=%s, subject=%s)", to, subject)
+        logger.warning(
+            "SKIPPED — RESEND_API_KEY is not configured on this deployment. "
+            "Tried to send to=%s subject=%r. Set RESEND_API_KEY in Railway → Variables.",
+            to, subject,
+        )
         return False
 
     payload = {
@@ -44,6 +56,7 @@ def send_email(
     if text:
         payload["text"] = text
 
+    logger.info("→ Resend POST to=%s from=%r subject=%r", to, settings.EMAIL_FROM, subject)
     try:
         with httpx.Client(timeout=10.0) as client:
             resp = client.post(
@@ -55,11 +68,24 @@ def send_email(
                 json=payload,
             )
         if resp.status_code >= 400:
-            logger.error("Resend rejected email: status=%s body=%s", resp.status_code, resp.text[:300])
+            # 403 with "from" in body usually = unverified-domain restriction.
+            logger.error(
+                "FAILED — Resend rejected email: status=%s body=%s. "
+                "Most common cause: free tier with onboarding@resend.dev sender "
+                "can only deliver to the email used to register on Resend. "
+                "Either (a) use that email for testing, or (b) verify a domain on resend.com.",
+                resp.status_code, resp.text[:400],
+            )
             return False
+        message_id = ""
+        try:
+            message_id = resp.json().get("id", "")
+        except Exception:
+            pass
+        logger.info("✓ Sent. Resend message id=%s", message_id)
         return True
     except httpx.HTTPError as exc:
-        logger.exception("Resend HTTP error: %s", exc)
+        logger.exception("HTTP error talking to Resend: %s", exc)
         return False
 
 
