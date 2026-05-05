@@ -798,6 +798,17 @@ export default function WealthlyApp() {
     return result;
   }, [visibleTransactions, categories, currentMonth, monthlyEvolution, accounts, memberShare]);
 
+  // Number of budget categories the user has overspent this month — drives
+  // the red dot on the "Budgets" nav button so the user notices without
+  // having to open the page.
+  const budgetsOverCount = useMemo(() => {
+    let count = 0;
+    for (const [catId, budget] of Object.entries(budgets)) {
+      if (budget > 0 && (categoryAnalysis[catId]?.current || 0) > budget) count += 1;
+    }
+    return count;
+  }, [budgets, categoryAnalysis]);
+
   // Anomaly detection: categories that doubled vs avg
   const anomalies = useMemo(() => {
     return Object.entries(categoryAnalysis)
@@ -1198,7 +1209,12 @@ export default function WealthlyApp() {
         <nav className="main-nav">
           <button onClick={() => setView('dashboard')} className={view === 'dashboard' ? 'active' : ''}><Activity size={14}/> <span>Résumé</span></button>
           <button onClick={() => setView('monthly')} className={view === 'monthly' ? 'active' : ''}><Calendar size={14}/> <span>Trésorerie</span></button>
-          <button onClick={() => setView('budgets')} className={view === 'budgets' ? 'active' : ''}><Target size={14}/> <span>Budgets</span></button>
+          <button onClick={() => setView('budgets')} className={view === 'budgets' ? 'active' : ''}>
+            <Target size={14}/> <span>Budgets</span>
+            {budgetsOverCount > 0 && (
+              <span className="nav-alert-dot" title={`${budgetsOverCount} budget${budgetsOverCount > 1 ? 's' : ''} dépassé${budgetsOverCount > 1 ? 's' : ''}`}>{budgetsOverCount}</span>
+            )}
+          </button>
           <button onClick={() => setView('wealth')} className={view === 'wealth' ? 'active' : ''}><Landmark size={14}/> <span>Patrimoine</span></button>
           <button onClick={() => setView('transactions')} className={view === 'transactions' ? 'active' : ''}><BarChart3 size={14}/> <span>Transactions</span></button>
           <button onClick={() => setView('tax')} className={view === 'tax' ? 'active' : ''}><Calculator size={14}/> <span>Impôts</span></button>
@@ -3926,6 +3942,7 @@ function Styles({ theme }) {
 .main-nav button { display: inline-flex; align-items: center; gap: 5px; padding: 7px 12px; border: none; background: transparent; color: var(--text-secondary); font-size: 13px; font-weight: 500; border-radius: 8px; cursor: pointer; transition: all 0.15s; font-family: inherit; white-space: nowrap; }
 .main-nav button:hover { background: var(--bg-card); color: var(--text-primary); }
 .main-nav button.active { background: var(--bg-card); color: var(--primary); box-shadow: var(--shadow-sm); }
+.nav-alert-dot { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px; padding: 0 5px; margin-left: 4px; border-radius: 8px; background: var(--danger); color: white; font-size: 10px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
 .header-actions { display: flex; align-items: center; gap: 8px; }
 .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; background: var(--bg-subtle); border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; transition: all 0.15s; }
 .icon-btn:hover { background: var(--bg-card-hover); color: var(--text-primary); }
@@ -4523,6 +4540,17 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
   .main-nav button span { font-size: 10px; line-height: 1.1; white-space: nowrap; }
   .main-nav button:hover { background: transparent; color: var(--text-secondary); }
   .main-nav button.active { background: transparent; color: var(--primary); box-shadow: none; }
+  .main-nav button { position: relative; }
+  .nav-alert-dot {
+    position: absolute;
+    top: 4px;
+    right: 16px;
+    margin-left: 0;
+    min-width: 14px;
+    height: 14px;
+    font-size: 9px;
+    padding: 0 4px;
+  }
 
   /* Cards: less padding */
   .card { padding: 18px; border-radius: 10px; }
