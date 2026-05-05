@@ -1,13 +1,14 @@
 /* ============================================================================
  * Wealthly — Design System (Tailwind v4 + custom tokens)
  *
- * Visual direction: Finary + Linear + private banking. Sober, premium, dark-first.
+ * Visual direction: private banking. Warm dark surfaces, muted gold accent,
+ * cream-tinted typography, desaturated semantics. Sober, mature, archival.
+ *
  * Tokens are exposed as CSS variables AND as Tailwind theme colors,
  * so utilities like `bg-w-surface` / `text-w-muted` work out of the box.
  *
  * Preflight is intentionally NOT loaded — the existing CSS-in-JS in
  * WealthlyApp.jsx still owns global resets. We only add tokens + utilities.
- * Once the redesign migrates a page fully to Tailwind, that page can opt in.
  * ============================================================================ */
 
 @layer theme, base, components, utilities;
@@ -15,85 +16,92 @@
 @import "tailwindcss/utilities.css" layer(utilities);
 
 @theme {
-  /* Surfaces */
-  --color-w-bg: #0a0a0c;
-  --color-w-surface: #121217;
-  --color-w-surface-2: #181820;
-  --color-w-surface-3: #1f1f29;
+  /* Surfaces — warm near-black, very subtle blue-grey cast */
+  --color-w-bg: #0c0d10;
+  --color-w-surface: #15171c;
+  --color-w-surface-2: #1b1d24;
+  --color-w-surface-3: #232730;
 
   /* Borders */
-  --color-w-border: #1f1f27;
-  --color-w-border-strong: #2a2a35;
+  --color-w-border: #232730;
+  --color-w-border-strong: #2e333f;
 
-  /* Text */
-  --color-w-text: #ececef;
-  --color-w-muted: #8a8a93;
-  --color-w-faint: #585862;
+  /* Text — cream-tinted off-white for warmth */
+  --color-w-text: #ebe8e3;
+  --color-w-muted: #8c8a85;
+  --color-w-faint: #5a5a55;
 
-  /* Accent — Finary-style sober green/teal */
-  --color-w-accent: #00d09c;
-  --color-w-accent-hover: #00b88a;
-  --color-w-accent-soft: rgba(0, 208, 156, 0.12);
+  /* Accent — muted antique gold (private banking signature) */
+  --color-w-accent: #c5a572;
+  --color-w-accent-hover: #b8965f;
+  --color-w-accent-soft: rgba(197, 165, 114, 0.14);
 
-  /* Semantic */
-  --color-w-success: #00d09c;
-  --color-w-danger: #f87171;
-  --color-w-warning: #f5b544;
-  --color-w-info: #6aa6ff;
+  /* Semantic — desaturated, never alarming */
+  --color-w-success: #88a978;
+  --color-w-danger: #c47158;
+  --color-w-warning: #d4a554;
+  --color-w-info: #7a8aa8;
 
-  /* Asset class palette (sober, desaturated) */
-  --color-w-asset-realestate: #d97757;
-  --color-w-asset-equity: #6aa6ff;
-  --color-w-asset-bond: #8b9bb4;
-  --color-w-asset-crypto: #f5b544;
-  --color-w-asset-cash: #00d09c;
-  --color-w-asset-pension: #b48cff;
-  --color-w-asset-other: #8a8a93;
+  /* Asset class palette — desaturated, all in the same temperature family */
+  --color-w-asset-realestate: #c8855a;
+  --color-w-asset-equity: #7a8aa8;
+  --color-w-asset-bond: #8c918f;
+  --color-w-asset-crypto: #d4a554;
+  --color-w-asset-cash: #c5a572;
+  --color-w-asset-pension: #9d8bb5;
+  --color-w-asset-other: #8a8a85;
 
-  /* Radius */
-  --radius-w-sm: 6px;
-  --radius-w-md: 10px;
-  --radius-w-lg: 14px;
-  --radius-w-xl: 20px;
+  /* Radii — slightly sharper than the previous spec, more architectural */
+  --radius-w-sm: 4px;
+  --radius-w-md: 8px;
+  --radius-w-lg: 12px;
+  --radius-w-xl: 16px;
 
-  /* Shadows — very subtle, premium */
+  /* Shadows — minimal, premium */
   --shadow-w-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-w-md: 0 4px 12px rgba(0, 0, 0, 0.32);
-  --shadow-w-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
-  --shadow-w-glow-accent: 0 0 0 1px rgba(0, 208, 156, 0.2), 0 8px 24px rgba(0, 208, 156, 0.12);
+  --shadow-w-lg: 0 16px 40px rgba(0, 0, 0, 0.45);
+  --shadow-w-glow-accent: 0 0 0 1px rgba(197, 165, 114, 0.25);
 
   /* Typography */
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-
-  /* Number / data display — tabular figures for clean column alignment */
-  --font-feature-settings-numeric: "tnum" 1, "cv11" 1;
 }
 
-/* Light mode overrides — same token names, different values.
-   Activated by the existing `data-theme="light"` attribute on <html>. */
+/* Light mode — warm cream background, deeper gold for contrast.
+   Activated by `data-theme="light"` on <html>. */
 :root[data-theme="light"] {
-  --color-w-bg: #fafaf8;
+  --color-w-bg: #faf8f3;
   --color-w-surface: #ffffff;
-  --color-w-surface-2: #f5f5f2;
-  --color-w-surface-3: #ececea;
+  --color-w-surface-2: #f5f1e6;
+  --color-w-surface-3: #ebe5d3;
 
-  --color-w-border: #e8e8e3;
-  --color-w-border-strong: #d4d4cf;
+  --color-w-border: #e8e3d6;
+  --color-w-border-strong: #cfc8b6;
 
-  --color-w-text: #0a0a0c;
-  --color-w-muted: #6a6a73;
-  --color-w-faint: #a0a0a8;
+  --color-w-text: #1a1812;
+  --color-w-muted: #6a6357;
+  --color-w-faint: #9a9285;
 
-  --color-w-accent: #00a884;
-  --color-w-accent-hover: #008e70;
-  --color-w-accent-soft: rgba(0, 168, 132, 0.1);
+  --color-w-accent: #a08555;
+  --color-w-accent-hover: #8a7146;
+  --color-w-accent-soft: rgba(160, 133, 85, 0.1);
 
-  --color-w-asset-bond: #6b7a93;
+  --color-w-success: #6e8c61;
+  --color-w-danger: #ad5f48;
+  --color-w-warning: #b5872c;
+  --color-w-info: #5b6a85;
 
-  --shadow-w-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-w-md: 0 4px 12px rgba(0, 0, 0, 0.06);
-  --shadow-w-lg: 0 12px 32px rgba(0, 0, 0, 0.08);
+  --color-w-asset-realestate: #a8643d;
+  --color-w-asset-equity: #5b6a85;
+  --color-w-asset-bond: #6f7472;
+  --color-w-asset-crypto: #b5872c;
+  --color-w-asset-cash: #a08555;
+  --color-w-asset-pension: #7d6c95;
+
+  --shadow-w-sm: 0 1px 2px rgba(20, 18, 12, 0.04);
+  --shadow-w-md: 0 4px 12px rgba(20, 18, 12, 0.06);
+  --shadow-w-lg: 0 16px 40px rgba(20, 18, 12, 0.08);
 }
 
 /* Tabular numerals for any element marked with .w-num — used for KPIs,

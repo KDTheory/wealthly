@@ -1140,15 +1140,14 @@ export default function WealthlyApp() {
       <header className="app-header">
         <div className="brand" onClick={() => setView('dashboard')}>
           <div className="brand-mark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
-              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-              <path d="M2 17l10 5 10-5"/>
-              <path d="M2 12l10 5 10-5"/>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" strokeLinejoin="miter" width="22" height="22">
+              <rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/>
+              <path d="M7 9 L9.5 15.5 L12 10.5 L14.5 15.5 L17 9"/>
             </svg>
           </div>
           <div className="brand-text">
             <div className="brand-name">{APP_NAME}</div>
-            <div className="brand-tagline">Smart family finance</div>
+            <div className="brand-tagline">Patrimoine privé</div>
           </div>
         </div>
         <nav className="main-nav">
@@ -1400,10 +1399,9 @@ function Onboarding({ onComplete }) {
           <div className="onboarding-step-content">
             <div className="onboarding-hero">
               <div className="ob-mark-large">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="36" height="36">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                  <path d="M2 17l10 5 10-5"/>
-                  <path d="M2 12l10 5 10-5"/>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" strokeLinejoin="miter" width="40" height="40">
+                  <rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/>
+                  <path d="M7 9 L9.5 15.5 L12 10.5 L14.5 15.5 L17 9"/>
                 </svg>
               </div>
               <h1>Bienvenue dans Wealthly</h1>
@@ -1411,28 +1409,28 @@ function Onboarding({ onComplete }) {
             </div>
             <div className="onboarding-features-grid">
               <div className="ob-feature-card">
-                <div className="ob-feature-icon" style={{ background: '#dbeafe', color: '#2563eb' }}><Users size={18}/></div>
+                <div className="ob-feature-icon" style={{ background: 'var(--primary-soft)', color: 'var(--primary)' }}><Users size={18}/></div>
                 <div className="ob-feature-text">
                   <strong>Famille intelligente</strong>
                   <span>Espaces privés par adulte, comptes joints partagés automatiquement</span>
                 </div>
               </div>
               <div className="ob-feature-card">
-                <div className="ob-feature-icon" style={{ background: '#d1fae5', color: '#059669' }}><Sparkles size={18}/></div>
+                <div className="ob-feature-icon" style={{ background: 'var(--success-soft)', color: 'var(--success)' }}><Sparkles size={18}/></div>
                 <div className="ob-feature-text">
                   <strong>Catégorisation automatique</strong>
                   <span>Détection des marchands français, apprentissage de vos corrections</span>
                 </div>
               </div>
               <div className="ob-feature-card">
-                <div className="ob-feature-icon" style={{ background: '#fef3c7', color: '#d97706' }}><Activity size={18}/></div>
+                <div className="ob-feature-icon" style={{ background: 'var(--warning-soft)', color: 'var(--warning)' }}><Activity size={18}/></div>
                 <div className="ob-feature-text">
                   <strong>Suivi mensuel intelligent</strong>
                   <span>Charges fixes auto-détectées, anomalies signalées, projections</span>
                 </div>
               </div>
               <div className="ob-feature-card">
-                <div className="ob-feature-icon" style={{ background: '#fce7f3', color: '#db2777' }}><Landmark size={18}/></div>
+                <div className="ob-feature-icon" style={{ background: 'var(--purple-soft)', color: 'var(--purple)' }}><Landmark size={18}/></div>
                 <div className="ob-feature-text">
                   <strong>Patrimoine complet</strong>
                   <span>Immobilier, AV, PEA, crypto, prêts — pas que du bancaire</span>
@@ -3569,37 +3567,47 @@ function Styles({ theme }) {
   const dark = theme === 'dark';
   const css = `
 :root {
-  --bg-page: ${dark ? '#0a0d14' : '#fafbfc'};
-  --bg-card: ${dark ? '#141821' : '#ffffff'};
-  --bg-card-hover: ${dark ? '#1a1f2b' : '#f9fafb'};
-  --bg-subtle: ${dark ? '#0f131c' : '#f1f5f9'};
-  --text-primary: ${dark ? '#f1f5f9' : '#0f172a'};
-  --text-secondary: ${dark ? '#cbd5e1' : '#475569'};
-  --text-tertiary: ${dark ? '#64748b' : '#94a3b8'};
-  --border: ${dark ? '#1f2533' : '#e2e8f0'};
-  --border-light: ${dark ? '#1a1f2b' : '#f1f5f9'};
-  --border-strong: ${dark ? '#2d3548' : '#cbd5e1'};
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --primary-soft: ${dark ? 'rgba(30, 58, 138, 0.3)' : '#dbeafe'};
-  --primary-text: ${dark ? '#93c5fd' : '#1e40af'};
-  --success: #10b981;
-  --success-soft: ${dark ? 'rgba(6, 64, 43, 0.5)' : '#d1fae5'};
-  --success-text: ${dark ? '#6ee7b7' : '#047857'};
-  --danger: #ef4444;
-  --danger-soft: ${dark ? 'rgba(76, 20, 20, 0.5)' : '#fee2e2'};
-  --danger-text: ${dark ? '#fca5a5' : '#991b1b'};
-  --warning: #f59e0b;
-  --warning-soft: ${dark ? 'rgba(69, 26, 3, 0.5)' : '#fef3c7'};
-  --warning-text: ${dark ? '#fcd34d' : '#92400e'};
-  --purple: #8b5cf6;
-  --purple-soft: ${dark ? 'rgba(59, 7, 100, 0.5)' : '#ede9fe'};
-  --shadow-sm: 0 1px 2px 0 rgba(0,0,0,${dark ? '0.4' : '0.05'});
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,${dark ? '0.4' : '0.07'});
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,${dark ? '0.5' : '0.08'});
-  --shadow-xl: 0 20px 25px -5px rgba(0,0,0,${dark ? '0.5' : '0.08'});
-  --gradient-hero: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-  --gradient-success: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
+  /* Surfaces — warm near-black */
+  --bg-page: ${dark ? '#0c0d10' : '#faf8f3'};
+  --bg-card: ${dark ? '#15171c' : '#ffffff'};
+  --bg-card-hover: ${dark ? '#1b1d24' : '#faf8f3'};
+  --bg-subtle: ${dark ? '#11131a' : '#f5f1e6'};
+  /* Text — cream-tinted off-white in dark, near-black in light */
+  --text-primary: ${dark ? '#ebe8e3' : '#1a1812'};
+  --text-secondary: ${dark ? '#b5b2ab' : '#4a4740'};
+  --text-tertiary: ${dark ? '#7a7872' : '#8a8579'};
+  /* Borders */
+  --border: ${dark ? '#232730' : '#e8e3d6'};
+  --border-light: ${dark ? '#1c1f27' : '#f1ede2'};
+  --border-strong: ${dark ? '#2e333f' : '#cfc8b6'};
+  /* Primary — muted antique gold */
+  --primary: ${dark ? '#c5a572' : '#a08555'};
+  --primary-hover: ${dark ? '#b8965f' : '#8a7146'};
+  --primary-soft: ${dark ? 'rgba(197, 165, 114, 0.14)' : 'rgba(160, 133, 85, 0.1)'};
+  --primary-text: ${dark ? '#e0c896' : '#6a5436'};
+  /* Success — muted sage */
+  --success: ${dark ? '#88a978' : '#6e8c61'};
+  --success-soft: ${dark ? 'rgba(136, 169, 120, 0.14)' : 'rgba(110, 140, 97, 0.1)'};
+  --success-text: ${dark ? '#a5c298' : '#4a6242'};
+  /* Danger — muted terracotta */
+  --danger: ${dark ? '#c47158' : '#ad5f48'};
+  --danger-soft: ${dark ? 'rgba(196, 113, 88, 0.14)' : 'rgba(173, 95, 72, 0.1)'};
+  --danger-text: ${dark ? '#e0917a' : '#8a4632'};
+  /* Warning */
+  --warning: ${dark ? '#d4a554' : '#b5872c'};
+  --warning-soft: ${dark ? 'rgba(212, 165, 84, 0.14)' : 'rgba(181, 135, 44, 0.1)'};
+  --warning-text: ${dark ? '#e8be7a' : '#806020'};
+  /* Purple — used for joint accounts */
+  --purple: ${dark ? '#9d8bb5' : '#7d6c95'};
+  --purple-soft: ${dark ? 'rgba(157, 139, 181, 0.14)' : 'rgba(125, 108, 149, 0.1)'};
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0,0,0,${dark ? '0.4' : '0.04'});
+  --shadow-md: 0 4px 12px -1px rgba(0,0,0,${dark ? '0.32' : '0.06'});
+  --shadow-lg: 0 16px 40px -10px rgba(0,0,0,${dark ? '0.45' : '0.08'});
+  --shadow-xl: 0 24px 60px -15px rgba(0,0,0,${dark ? '0.55' : '0.1'});
+  /* Gradients — sober, no startup-y blue/purple */
+  --gradient-hero: linear-gradient(135deg, ${dark ? '#c5a572' : '#a08555'} 0%, ${dark ? '#a08555' : '#7a6440'} 100%);
+  --gradient-success: linear-gradient(135deg, ${dark ? '#88a978' : '#6e8c61'} 0%, ${dark ? '#6e8c61' : '#516948'} 100%);
 }
 * { box-sizing: border-box; }
 .app { font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; background: var(--bg-page); color: var(--text-primary); min-height: 100vh; letter-spacing: -0.01em; -webkit-font-smoothing: antialiased; }
@@ -3612,7 +3620,7 @@ function Styles({ theme }) {
 .app-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(12px); background: ${dark ? 'rgba(20, 24, 33, 0.85)' : 'rgba(255, 255, 255, 0.85)'}; gap: 12px; flex-wrap: wrap; }
 .brand { display: flex; align-items: center; gap: 12px; cursor: pointer; }
 .brand:hover { opacity: 0.85; }
-.brand-mark { width: 36px; height: 36px; border-radius: 10px; background: var(--gradient-hero); display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+.brand-mark { width: 38px; height: 38px; border-radius: 6px; background: var(--primary-soft); border: 1px solid ${dark ? 'rgba(197, 165, 114, 0.35)' : 'rgba(160, 133, 85, 0.3)'}; display: flex; align-items: center; justify-content: center; color: var(--primary); box-shadow: none; }
 .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
 .brand-name { font-size: 17px; font-weight: 700; letter-spacing: -0.025em; }
 .brand-tagline { font-size: 10px; color: var(--text-tertiary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 1px; }

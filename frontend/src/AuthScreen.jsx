@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Mail, Lock, User, Home, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Mail, Lock, User, Home, Eye, EyeOff, AlertCircle, Lock as LockIcon } from 'lucide-react';
 import { auth, setToken } from './api.js';
 
 export default function AuthScreen({ onAuth }) {
@@ -31,115 +31,141 @@ export default function AuthScreen({ onAuth }) {
 
   return (
     <div className="auth-screen">
-      <div className="auth-bg-mesh" />
-      <div className="auth-card">
-        <div className="auth-brand">
-          <div className="auth-mark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="32" height="32">
-              <path d="M12 2L2 7l10 5 10-5-10-5z" />
-              <path d="M2 17l10 5 10-5" />
-              <path d="M2 12l10 5 10-5" />
+      <div className="auth-bg" aria-hidden="true" />
+      <div className="auth-grid" aria-hidden="true" />
+
+      <div className="auth-shell">
+        {/* Brand column */}
+        <aside className="auth-brand-col">
+          <div className="auth-brand-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" strokeLinejoin="miter" width="28" height="28">
+              <rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/>
+              <path d="M7 9 L9.5 15.5 L12 10.5 L14.5 15.5 L17 9"/>
             </svg>
           </div>
-          <h1>Wealthly</h1>
-          <p>Smart family finance</p>
-        </div>
+          <div className="auth-wordmark">Wealthly</div>
+          <div className="auth-tagline">Patrimoine privé</div>
 
-        <div className="auth-tabs">
-          <button
-            className={mode === 'login' ? 'active' : ''}
-            onClick={() => { setMode('login'); setError(null); }}
-            type="button"
-          >Connexion</button>
-          <button
-            className={mode === 'register' ? 'active' : ''}
-            onClick={() => { setMode('register'); setError(null); }}
-            type="button"
-          >Créer un compte</button>
-        </div>
+          <div className="auth-pitch">
+            Vue consolidée de votre patrimoine familial. Comptes, placements, immobilier, dettes — souverain, chiffré, vôtre.
+          </div>
 
-        <form onSubmit={submit} className="auth-form">
-          {mode === 'register' && (
-            <>
-              <label className="auth-field">
-                <span><User size={14} /> Votre prénom</span>
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="ex : Antoine"
-                  required
-                  autoFocus
-                />
-              </label>
-              <label className="auth-field">
-                <span><Home size={14} /> Nom du foyer (optionnel)</span>
-                <input
-                  type="text"
-                  value={householdName}
-                  onChange={(e) => setHouseholdName(e.target.value)}
-                  placeholder="ex : Famille Dupont"
-                />
-              </label>
-            </>
-          )}
+          <div className="auth-bullets">
+            <div className="auth-bullet"><span className="auth-bullet-dot"/>Auto-hébergé · vos données chez vous</div>
+            <div className="auth-bullet"><span className="auth-bullet-dot"/>Catégorisation IA optionnelle (BYOK)</div>
+            <div className="auth-bullet"><span className="auth-bullet-dot"/>Multi-membres · vue par foyer</div>
+          </div>
+        </aside>
 
-          <label className="auth-field">
-            <span><Mail size={14} /> Email</span>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="vous@exemple.fr"
-              required
-              autoFocus={mode === 'login'}
-            />
-          </label>
-
-          <label className="auth-field">
-            <span><Lock size={14} /> Mot de passe</span>
-            <div className="password-input">
-              <input
-                type={showPwd ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={mode === 'register' ? 'Au moins 8 caractères' : '••••••••'}
-                minLength={mode === 'register' ? 8 : undefined}
-                required
-              />
+        {/* Form column */}
+        <main className="auth-form-col">
+          <div className="auth-form-card">
+            <div className="auth-tabs">
               <button
+                className={mode === 'login' ? 'active' : ''}
+                onClick={() => { setMode('login'); setError(null); }}
                 type="button"
-                className="pwd-toggle"
-                onClick={() => setShowPwd(!showPwd)}
-                aria-label="Afficher / masquer le mot de passe"
-              >
-                {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+              >Connexion</button>
+              <button
+                className={mode === 'register' ? 'active' : ''}
+                onClick={() => { setMode('register'); setError(null); }}
+                type="button"
+              >Créer un compte</button>
+            </div>
+
+            <h2 className="auth-title">
+              {mode === 'login' ? 'Accéder à votre espace' : 'Créer votre espace'}
+            </h2>
+            <p className="auth-subtitle">
+              {mode === 'login' ? 'Identifiants confidentiels.' : 'Vos données restent chez vous.'}
+            </p>
+
+            <form onSubmit={submit} className="auth-form">
+              {mode === 'register' && (
+                <>
+                  <label className="auth-field">
+                    <span><User size={13} /> Votre prénom</span>
+                    <input
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Antoine"
+                      required
+                      autoFocus
+                    />
+                  </label>
+                  <label className="auth-field">
+                    <span><Home size={13} /> Nom du foyer <em>(optionnel)</em></span>
+                    <input
+                      type="text"
+                      value={householdName}
+                      onChange={(e) => setHouseholdName(e.target.value)}
+                      placeholder="Famille Dupont"
+                    />
+                  </label>
+                </>
+              )}
+
+              <label className="auth-field">
+                <span><Mail size={13} /> Email</span>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="vous@exemple.fr"
+                  required
+                  autoFocus={mode === 'login'}
+                />
+              </label>
+
+              <label className="auth-field">
+                <span><Lock size={13} /> Mot de passe</span>
+                <div className="password-input">
+                  <input
+                    type={showPwd ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder={mode === 'register' ? 'Au moins 8 caractères' : '••••••••'}
+                    minLength={mode === 'register' ? 8 : undefined}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="pwd-toggle"
+                    onClick={() => setShowPwd(!showPwd)}
+                    aria-label="Afficher / masquer le mot de passe"
+                  >
+                    {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+              </label>
+
+              {error && (
+                <div className="auth-error">
+                  <AlertCircle size={14} /> {error}
+                </div>
+              )}
+
+              <button type="submit" className="auth-submit" disabled={loading}>
+                {loading
+                  ? <span className="auth-loading">Patientez<span className="dots"/></span>
+                  : (mode === 'login' ? 'Se connecter' : 'Créer mon compte')}
               </button>
+            </form>
+
+            <div className="auth-footer">
+              {mode === 'login' ? (
+                <span>Pas encore de compte ? <a onClick={() => setMode('register')}>Créer un compte</a></span>
+              ) : (
+                <span>Déjà inscrit ? <a onClick={() => setMode('login')}>Se connecter</a></span>
+              )}
             </div>
-          </label>
 
-          {error && (
-            <div className="auth-error">
-              <AlertCircle size={14} /> {error}
+            <div className="auth-meta">
+              <LockIcon size={11} /> Connexion chiffrée · session JWT
             </div>
-          )}
-
-          <button type="submit" className="auth-submit" disabled={loading}>
-            {loading ? 'Patientez…' : (mode === 'login' ? 'Se connecter' : 'Créer mon compte')}
-          </button>
-        </form>
-
-        <div className="auth-footer">
-          {mode === 'login' ? (
-            <span>Pas encore de compte ? <a onClick={() => setMode('register')}>Créer un compte</a></span>
-          ) : (
-            <span>Déjà inscrit ? <a onClick={() => setMode('login')}>Se connecter</a></span>
-          )}
-        </div>
-
-        <div className="auth-features">
-          <div className="auth-feature"><Sparkles size={14} /> 100% auto-hébergé · vos données chez vous</div>
-        </div>
+          </div>
+        </main>
       </div>
 
       <style>{authStyles}</style>
@@ -151,114 +177,234 @@ const authStyles = `
 .auth-screen {
   min-height: 100vh;
   display: flex; align-items: center; justify-content: center;
-  background: #fafbfc;
-  padding: 24px;
+  background: #0c0d10;
+  color: #ebe8e3;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   position: relative; overflow: hidden;
   -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.01em;
+  padding: 32px 24px;
 }
-.auth-bg-mesh {
-  position: absolute; inset: 0; pointer-events: none;
+
+/* Subtle radial glow + grid texture, very low contrast */
+.auth-bg {
+  position: absolute; inset: 0; pointer-events: none; z-index: 0;
   background:
-    radial-gradient(circle at 20% 20%, rgba(59,130,246,0.15), transparent 40%),
-    radial-gradient(circle at 80% 80%, rgba(139,92,246,0.12), transparent 40%),
-    radial-gradient(circle at 50% 50%, rgba(236,72,153,0.06), transparent 50%);
+    radial-gradient(ellipse 60% 40% at 70% 20%, rgba(197, 165, 114, 0.08), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 20% 90%, rgba(197, 165, 114, 0.04), transparent 60%);
 }
-.auth-card {
-  background: white;
-  border-radius: 24px;
-  padding: 40px;
-  max-width: 440px;
-  width: 100%;
-  box-shadow: 0 24px 48px -12px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+.auth-grid {
+  position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 30%, transparent 80%);
+}
+
+.auth-shell {
   position: relative; z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  width: 100%;
+  max-width: 1040px;
+  align-items: center;
 }
-.auth-brand { text-align: center; margin-bottom: 28px; }
-.auth-mark {
-  width: 64px; height: 64px; border-radius: 18px;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+
+/* Brand column */
+.auth-brand-col {
+  display: flex; flex-direction: column; gap: 16px;
+  padding: 24px 0;
+}
+.auth-brand-mark {
+  width: 48px; height: 48px;
+  border-radius: 6px;
+  background: rgba(197, 165, 114, 0.1);
+  border: 1px solid rgba(197, 165, 114, 0.32);
+  color: #c5a572;
   display: inline-flex; align-items: center; justify-content: center;
-  color: white; box-shadow: 0 12px 24px rgba(59,130,246,0.3);
-  margin-bottom: 16px;
+  margin-bottom: 4px;
 }
-.auth-brand h1 {
-  font-size: 28px; font-weight: 800; margin: 0;
-  letter-spacing: -0.025em; color: #0f172a;
+.auth-wordmark {
+  font-size: 32px; font-weight: 600; letter-spacing: -0.03em;
+  color: #ebe8e3;
+  line-height: 1;
 }
-.auth-brand p {
-  font-size: 13px; color: #64748b;
-  margin: 4px 0 0; font-weight: 500;
+.auth-tagline {
+  font-size: 11px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.18em;
+  color: #c5a572;
 }
+.auth-pitch {
+  font-size: 15px; line-height: 1.6;
+  color: #b5b2ab;
+  max-width: 380px;
+  margin-top: 28px;
+}
+.auth-bullets {
+  display: flex; flex-direction: column; gap: 10px;
+  margin-top: 20px;
+}
+.auth-bullet {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; color: #8c8a85;
+}
+.auth-bullet-dot {
+  width: 4px; height: 4px; border-radius: 50%;
+  background: #c5a572;
+  flex-shrink: 0;
+}
+
+/* Form column */
+.auth-form-col {
+  display: flex; justify-content: center;
+}
+.auth-form-card {
+  background: #15171c;
+  border: 1px solid #232730;
+  border-radius: 12px;
+  padding: 32px;
+  width: 100%; max-width: 420px;
+  box-shadow: 0 24px 60px -20px rgba(0,0,0,0.5);
+}
+
 .auth-tabs {
-  display: flex; gap: 4px; padding: 4px;
-  background: #f1f5f9; border-radius: 12px; margin-bottom: 24px;
+  display: flex; gap: 2px; padding: 3px;
+  background: #11131a;
+  border: 1px solid #232730;
+  border-radius: 8px;
+  margin-bottom: 24px;
 }
 .auth-tabs button {
-  flex: 1; padding: 9px; border: none; background: transparent;
-  color: #64748b; font-size: 13px; font-weight: 600;
-  border-radius: 8px; cursor: pointer; transition: all .15s;
-  font-family: inherit;
+  flex: 1; padding: 8px; border: none; background: transparent;
+  color: #8c8a85; font-size: 12px; font-weight: 500;
+  border-radius: 5px; cursor: pointer; transition: all .15s;
+  font-family: inherit; letter-spacing: 0.01em;
 }
+.auth-tabs button:hover { color: #ebe8e3; }
 .auth-tabs button.active {
-  background: white; color: #3b82f6;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  background: #1b1d24; color: #ebe8e3;
+  border: 1px solid #2e333f;
+  padding: 7px;
 }
+
+.auth-title {
+  font-size: 18px; font-weight: 600; letter-spacing: -0.02em;
+  color: #ebe8e3; margin: 0 0 4px;
+}
+.auth-subtitle {
+  font-size: 13px; color: #8c8a85; margin: 0 0 20px;
+}
+
 .auth-form { display: flex; flex-direction: column; gap: 14px; }
 .auth-field { display: flex; flex-direction: column; gap: 6px; }
 .auth-field span {
-  font-size: 12px; font-weight: 600; color: #475569;
-  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 500; color: #b5b2ab;
+  display: inline-flex; align-items: center; gap: 6px;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.auth-field span em {
+  color: #7a7872; font-style: normal; font-weight: 400; text-transform: none; letter-spacing: 0;
 }
 .auth-field input {
-  padding: 11px 14px; border: 1px solid #e2e8f0;
-  border-radius: 10px; font-size: 14px; color: #0f172a;
-  font-family: inherit; transition: all .15s; background: white;
+  padding: 10px 12px;
+  border: 1px solid #232730;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #ebe8e3;
+  background: #11131a;
+  font-family: inherit;
+  transition: border-color .15s, background .15s, box-shadow .15s;
+  letter-spacing: -0.01em;
 }
+.auth-field input::placeholder { color: #5a5a55; }
 .auth-field input:focus {
-  outline: none; border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+  outline: none;
+  border-color: #c5a572;
+  background: #15171c;
+  box-shadow: 0 0 0 3px rgba(197, 165, 114, 0.08);
 }
+
 .password-input { position: relative; }
-.password-input input { padding-right: 44px; width: 100%; }
+.password-input input { padding-right: 40px; width: 100%; }
 .pwd-toggle {
-  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
   background: none; border: none; cursor: pointer; padding: 4px;
-  color: #94a3b8; display: flex;
+  color: #5a5a55; display: flex;
+  transition: color .15s;
 }
-.pwd-toggle:hover { color: #0f172a; }
+.pwd-toggle:hover { color: #ebe8e3; }
+
 .auth-error {
   display: flex; align-items: center; gap: 8px;
-  padding: 10px 12px; background: #fee2e2; color: #991b1b;
-  border-radius: 8px; font-size: 13px; font-weight: 500;
+  padding: 9px 11px;
+  background: rgba(196, 113, 88, 0.08);
+  color: #e0917a;
+  border: 1px solid rgba(196, 113, 88, 0.25);
+  border-radius: 6px;
+  font-size: 12px; font-weight: 500;
 }
+
 .auth-submit {
-  margin-top: 8px; padding: 13px;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-  color: white; border: none; border-radius: 12px;
-  font-size: 14px; font-weight: 700; cursor: pointer;
-  transition: all .15s; font-family: inherit;
-  box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+  margin-top: 6px; padding: 11px;
+  background: #c5a572;
+  color: #0c0d10;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, transform .05s;
+  font-family: inherit;
+  letter-spacing: 0.01em;
 }
-.auth-submit:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(59,130,246,0.4);
+.auth-submit:hover:not(:disabled) { background: #d4b687; }
+.auth-submit:active:not(:disabled) { transform: translateY(1px); }
+.auth-submit:disabled {
+  background: #232730; color: #7a7872; cursor: not-allowed;
 }
-.auth-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+.auth-loading .dots::after {
+  content: '...'; animation: authDots 1.2s infinite;
+  display: inline-block; width: 1em; text-align: left;
+}
+@keyframes authDots {
+  0%, 20% { content: '.'; }
+  40% { content: '..'; }
+  60%, 100% { content: '...'; }
+}
+
 .auth-footer {
-  text-align: center; margin-top: 20px;
-  font-size: 13px; color: #64748b;
+  text-align: center; margin-top: 18px;
+  font-size: 12px; color: #8c8a85;
 }
 .auth-footer a {
-  color: #3b82f6; font-weight: 600; cursor: pointer;
+  color: #c5a572; font-weight: 500; cursor: pointer;
+  border-bottom: 1px solid transparent;
+  transition: border-color .15s;
 }
-.auth-footer a:hover { text-decoration: underline; }
-.auth-features {
-  margin-top: 20px; padding-top: 20px;
-  border-top: 1px solid #f1f5f9;
-  text-align: center;
+.auth-footer a:hover { border-color: #c5a572; }
+
+.auth-meta {
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  margin-top: 18px; padding-top: 18px;
+  border-top: 1px solid #232730;
+  font-size: 10px; color: #5a5a55;
+  font-weight: 500; text-transform: uppercase; letter-spacing: 0.12em;
 }
-.auth-feature {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 11px; color: #94a3b8; font-weight: 500;
+
+/* Responsive — stack on narrow screens */
+@media (max-width: 860px) {
+  .auth-shell {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    max-width: 460px;
+  }
+  .auth-brand-col {
+    text-align: center; align-items: center;
+    padding: 0;
+  }
+  .auth-pitch { display: none; }
+  .auth-bullets { display: none; }
+  .auth-wordmark { font-size: 28px; }
 }
 `;
