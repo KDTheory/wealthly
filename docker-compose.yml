@@ -1,0 +1,69 @@
+# Wealthly — Self-hosted family finance tracker
+# Lance toute la stack avec : docker compose up -d
+# Accès : http://localhost:3000
+
+services:
+  # --------------------------------------------------------------------------
+  # Postgres — base de données
+  # Volume nommé pour persister les données entre les redémarrages
+  # --------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: wealthly-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-wealthly}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wealthly}
+      POSTGRES_DB: ${POSTGRES_DB:-wealthly}
+    volumes:
+      - wealthly_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-wealthly}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Pas de port exposé sur l'hôte — la DB n'est joignable qu'en interne par le backend
+    # Pour debug local, décommente la ligne suivante :
+    # ports:
+    #   - "5432:5432"
+
+  # --------------------------------------------------------------------------
+  # Backend — API FastAPI
+  # --------------------------------------------------------------------------
+  backend:
+    build: ./backend
+    container_name: wealthly-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-wealthly}:${POSTGRES_PASSWORD:-wealthly}@db:5432/${POSTGRES_DB:-wealthly}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set in .env}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-10080}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      DEBUG: ${DEBUG:-false}
+    # Port exposé pour debug direct (Swagger doc), à fermer en production derrière reverse proxy
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+
+  # --------------------------------------------------------------------------
+  # Frontend — React build servi par nginx, proxy /api → backend
+  # --------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Le frontend appelle /api (proxied par nginx) — pas besoin de modifier
+        VITE_API_URL: /api
+    container_name: wealthly-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+
+# Volume persistant pour Postgres
+volumes:
+  wealthly_db_data:
+    name: wealthly_db_data
