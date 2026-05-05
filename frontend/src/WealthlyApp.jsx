@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadialBarChart, RadialBar, ComposedChart } from 'recharts';
-import { Upload, Plus, TrendingUp, TrendingDown, Wallet, Home, Coins, CreditCard, Users, Settings, Search, Download, Trash2, Edit3, Check, X, ChevronRight, ChevronLeft, AlertCircle, AlertTriangle, Repeat, Calendar, ArrowUpDown, Eye, EyeOff, Sparkles, PiggyBank, Bitcoin, Banknote, Landmark, BarChart3, Target, Heart, Sun, Moon, Award, Zap, Activity, ArrowUp, ArrowDown, Minus, PartyPopper, Lightbulb, Bell, ChevronUp, Play, Lock, Unlock, LogOut, Cloud, RefreshCw, FileText, Calculator, Link2, Unlink } from 'lucide-react';
+import { Upload, Plus, TrendingUp, TrendingDown, Wallet, Home, Coins, CreditCard, Users, Settings, Search, Download, Trash2, Edit3, Check, X, ChevronRight, ChevronLeft, AlertCircle, AlertTriangle, Repeat, Calendar, ArrowUpDown, Eye, EyeOff, Sparkles, PiggyBank, Bitcoin, Banknote, Landmark, BarChart3, Target, Heart, Sun, Moon, Zap, Activity, ArrowUp, ArrowDown, Minus, PartyPopper, Lightbulb, Bell, ChevronUp, Play, Lock, Unlock, LogOut, Cloud, RefreshCw, FileText, Calculator, Link2, Unlink } from 'lucide-react';
 import * as api from './api.js';
 import { generateBilanPdf } from './pdfReport.js';
 import TaxSimulator from './TaxSimulator.jsx';
@@ -24,7 +24,6 @@ const STORAGE_KEYS = {
   BUDGETS: 'w2:budgets',
   RECURRING_OVERRIDES: 'w2:recurring_overrides',
   GOALS: 'w2:goals',
-  ACHIEVEMENTS: 'w2:achievements',
   SETTINGS: 'w2:settings',
   ONBOARDED: 'w2:onboarded',
   ACTIVE_MEMBER: 'w2:active_member',
@@ -84,6 +83,9 @@ const DEFAULT_RULES = [
   { pattern: /commission|frais|cotisation carte|agios/i, categoryId: 'fees' },
   { pattern: /ecole|creche|nounou|assistante mater|cantine|periscolaire|centre aere/i, categoryId: 'children' },
   { pattern: /cultura|amazon kindle|udemy|coursera|formation/i, categoryId: 'education' },
+  // Generic virements — must stay LAST so the more specific salary / savings
+  // patterns above win first.
+  { pattern: /virement (re[cç]u de|de la part de|en faveur de|au profit de|à |a |internet|sepa|instantan|inst |ordinaire|external|familial|interne)|virement\s+\w+|^vir\.?\s|prelevement.*virement|annulation virement/i, categoryId: 'transfer' },
 ];
 
 const BANK_PROFILES = {
@@ -144,18 +146,8 @@ const LIABILITY_TYPES = [
   { id: 'other_loan', name: 'Autre prêt', icon: Banknote, color: '#6b7280' },
 ];
 
-const ACHIEVEMENT_DEFS = [
-  { id: 'first_import', name: 'Premier pas', description: 'Premier import CSV', icon: '🎯' },
-  { id: 'first_member', name: 'En famille', description: 'Plusieurs membres ajoutés', icon: '👨‍👩‍👧' },
-  { id: 'first_asset', name: 'Patrimoine bâti', description: 'Premier actif renseigné', icon: '🏛️' },
-  { id: 'first_budget', name: 'Cap budget', description: 'Premier budget défini', icon: '🎯' },
-  { id: 'positive_month', name: 'Mois vert', description: 'Premier mois avec solde positif', icon: '🌱' },
-  { id: 'three_streak', name: 'Trio gagnant', description: '3 mois positifs d\'affilée', icon: '🔥' },
-  { id: 'budget_master', name: 'Maître du budget', description: 'Tous les budgets respectés sur un mois', icon: '🏆' },
-  { id: 'big_saver', name: 'Gros écureuil', description: 'Plus de 20% épargnés sur un mois', icon: '🐿️' },
-  { id: 'wealth_10k', name: 'Cap 10k€', description: 'Patrimoine net dépasse 10 000€', icon: '✨' },
-  { id: 'wealth_100k', name: 'Cap 100k€', description: 'Patrimoine net dépasse 100 000€', icon: '💎' },
-];
+// Achievements removed — kept the backend endpoints to avoid touching the
+// schema, but the UI no longer surfaces them.
 
 // ============================================================================
 // STORAGE — localStorage for client-side cache (UI prefs).
@@ -422,7 +414,6 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   const [budgets, setBudgets] = useState({});
   const [recurringOverrides, setRecurringOverrides] = useState({});
   const [goals, setGoals] = useState([]);
-  const [achievements, setAchievements] = useState([]);
   const [hideAmounts, setHideAmounts] = useState(false);
   const [toast, setToast] = useState(null);
   const [confettiActive, setConfettiActive] = useState(false);
@@ -556,12 +547,11 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
       setCategories(DEFAULT_CATEGORIES);
       setBudgets(d.budgets);
       setGoals(d.goals);
-      setAchievements(d.achievements);
       setCustomRules(d.customRules);
       return;
     }
     try {
-      const [memList, accList, txList, astList, liaList, catList, budList, goalList, achList, ruleList] = await Promise.all([
+      const [memList, accList, txList, astList, liaList, catList, budList, goalList, ruleList] = await Promise.all([
         api.members.list(),
         api.accounts.list(),
         api.transactions.list(),
@@ -570,7 +560,6 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
         api.categories.list(),
         api.budgets.list(),
         api.goals.list(),
-        api.achievements.list(),
         api.rules.list(),
       ]);
       setMembers(memList);
@@ -585,7 +574,6 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
       (budList || []).forEach(b => { budDict[b.category_slug] = b.amount; });
       setBudgets(budDict);
       setGoals((goalList || []).map(goalFromApi));
-      setAchievements((achList || []).map(a => a.achievement_slug));
       // Custom rules
       setCustomRules((ruleList || []).map(r => ({ pattern: r.pattern, categoryId: r.category_slug, source: r.source, _id: r.id })));
     } catch (err) {
@@ -657,21 +645,6 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     setTimeout(() => setConfettiActive(false), 3000);
   };
 
-  // Achievement unlocking
-  const unlockAchievement = useCallback(async (id) => {
-    if (achievements.includes(id)) return;
-    try {
-      await api.achievements.unlock(id);
-      setAchievements(prev => [...prev, id]);
-      const def = ACHIEVEMENT_DEFS.find(a => a.id === id);
-      if (def) {
-        showToast(`🏆 Succès débloqué : ${def.name}`, 'success');
-        triggerConfetti();
-      }
-    } catch (e) {
-      console.error('Achievement unlock failed:', e);
-    }
-  }, [achievements]);
 
   // ===== Visibility filtering =====
   const visibleAccountIds = useMemo(() => {
@@ -890,7 +863,6 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
       }
       await reloadAll();
       setOnboarded(true);
-      if (data.members.length > 1) unlockAchievement('first_member');
       showToast('🎉 Foyer configuré !', 'success');
     } catch (err) {
       showToast('Erreur : ' + err.message, 'error');
@@ -994,7 +966,6 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
       }));
       const result = await api.transactions.bulkImport(accountId, txsForApi);
       showToast(`✅ ${result.inserted} transactions ajoutées${result.skipped_duplicates > 0 ? ` · ${result.skipped_duplicates} doublons ignorés` : ''}`, 'success');
-      if (transactions.length === 0 && result.inserted > 0) unlockAchievement('first_import');
       // Reload from server to get fresh state
       await reloadAll();
       setImportFile(null); setImportStep('upload'); setParsedData(null);
@@ -1066,7 +1037,6 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
       else saved = await api.assets.create(apiPayload);
       const mapped = assetFromApi(saved);
       setAssets(prev => asset.id ? prev.map(a => a.id === asset.id ? mapped : a) : [...prev, mapped]);
-      if (assets.length === 0) unlockAchievement('first_asset');
       showToast('💎 Actif enregistré', 'success');
     } catch (err) { showToast('Erreur : ' + err.message, 'error'); }
   };
@@ -1106,7 +1076,6 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
       if (member.id) saved = await api.members.update(member.id, payload);
       else saved = await api.members.create(payload);
       setMembers(prev => member.id ? prev.map(m => m.id === member.id ? saved : m) : [...prev, saved]);
-      if ((members.length + (member.id ? 0 : 1)) > 1) unlockAchievement('first_member');
     } catch (err) { showToast('Erreur : ' + err.message, 'error'); }
   };
 
@@ -1124,7 +1093,6 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     try {
       await api.budgets.set(categoryId, num);
       setBudgets(prev => ({ ...prev, [categoryId]: num }));
-      if (Object.values(budgets).filter(b => b > 0).length === 0 && num > 0) unlockAchievement('first_budget');
     } catch (err) { showToast('Erreur : ' + err.message, 'error'); }
   };
 
@@ -1151,7 +1119,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     // Export current frontend state as JSON (matches v2 backup format)
     const data = {
       version: 2, app: 'Wealthly', exportedAt: new Date().toISOString(),
-      members, accounts, transactions, assets, liabilities, categories, customRules, budgets, columnMappings, recurringOverrides, goals, achievements,
+      members, accounts, transactions, assets, liabilities, categories, customRules, budgets, columnMappings, recurringOverrides, goals,
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -1312,7 +1280,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             transactions={visibleTransactions} categories={categories} fmt={fmt}
             memberShare={memberShare} categoryAnalysis={categoryAnalysis}
             anomalies={anomalies} cashflowProjection={cashflowProjection}
-            achievements={achievements} goals={goals}
+            goals={goals}
             recurringGroups={recurringGroups} currentMonth={currentMonth}
             setView={setView}
           />
@@ -1379,7 +1347,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
           <SettingsView
             members={members} accounts={accounts} accountBalances={accountBalances}
             saveMember={saveMember} deleteMember={deleteMember}
-            deleteAccount={deleteAccount} achievements={achievements}
+            deleteAccount={deleteAccount}
             exportData={exportData} importData={importData} resetAllData={resetAllData}
             categories={categories}
             fmt={fmt}
@@ -1653,7 +1621,7 @@ function Onboarding({ onComplete }) {
 // ============================================================================
 // DASHBOARD
 // ============================================================================
-function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, thisMonthStats, monthlyEvolution, visibleAccounts, accountBalances, visibleAssets, visibleLiabilities, members, activeMemberId, transactions, categories, fmt, memberShare, categoryAnalysis, anomalies, cashflowProjection, achievements, goals, recurringGroups, currentMonth, setView }) {
+function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, thisMonthStats, monthlyEvolution, visibleAccounts, accountBalances, visibleAssets, visibleLiabilities, members, activeMemberId, transactions, categories, fmt, memberShare, categoryAnalysis, anomalies, cashflowProjection, goals, recurringGroups, currentMonth, setView }) {
   const last12Months = monthlyEvolution.slice(-12);
   const recentTx = [...transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
   const activeMember = members.find(m => m.id === activeMemberId);
@@ -2062,26 +2030,6 @@ function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, this
         )}
       </div>
 
-      {/* Achievements — discreet footer */}
-      {achievements.length > 0 && (
-        <section className={`${cardCls} p-6`}>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Award size={15} className="text-[var(--color-w-accent)]"/>
-              <h3 className="text-sm font-semibold text-[var(--color-w-text)]">Vos succès</h3>
-            </div>
-            <span className="text-xs text-[var(--color-w-faint)]">{achievements.length}/{ACHIEVEMENT_DEFS.length}</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {ACHIEVEMENT_DEFS.filter(a => achievements.includes(a.id)).slice(0, 8).map(a => (
-              <div key={a.id} title={a.description} className="inline-flex items-center gap-2 px-3 h-8 rounded-full bg-[var(--color-w-surface-2)] border border-[var(--color-w-border)] text-xs text-[var(--color-w-text)]">
-                <span>{a.icon}</span>
-                <span>{a.name}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 }
@@ -3426,7 +3374,7 @@ function Analysis({ transactions, categories, recurringIds, recurringGroups, mon
 // ============================================================================
 // SETTINGS
 // ============================================================================
-function SettingsView({ members, accounts, accountBalances, saveMember, deleteMember, deleteAccount, achievements, exportData, importData, resetAllData, categories = [], fmt }) {
+function SettingsView({ members, accounts, accountBalances, saveMember, deleteMember, deleteAccount, exportData, importData, resetAllData, categories = [], fmt }) {
   const [editingMember, setEditingMember] = useState(null);
   const COLORS = MEMBER_PALETTE;
 
@@ -3473,24 +3421,6 @@ function SettingsView({ members, accounts, accountBalances, saveMember, deleteMe
                   <div className="member-card-role">{a.bank} · {owners} · {fmt(accountBalances[a.id] || 0)}</div>
                 </div>
                 <button className="icon-btn-sm" onClick={() => deleteAccount(a.id)}><Trash2 size={13}/></button>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="card">
-        <div className="card-header"><h3><Award size={16}/> Vos succès</h3><span className="card-meta">{achievements.length}/{ACHIEVEMENT_DEFS.length} débloqués</span></div>
-        <div className="achievements-grid full">
-          {ACHIEVEMENT_DEFS.map(a => {
-            const unlocked = achievements.includes(a.id);
-            return (
-              <div key={a.id} className={`achievement-badge ${unlocked ? 'unlocked' : 'locked'}`}>
-                <span className="ach-icon">{unlocked ? a.icon : '🔒'}</span>
-                <div className="ach-info">
-                  <span className="ach-name">{a.name}</span>
-                  <span className="ach-desc">{a.description}</span>
-                </div>
               </div>
             );
           })}
@@ -4171,50 +4101,50 @@ function Styles({ theme }) {
   const dark = theme === 'dark';
   const css = `
 :root {
-  /* Surfaces — warm near-black */
-  --bg-page: ${dark ? '#0c0d10' : '#faf8f3'};
-  --bg-card: ${dark ? '#15171c' : '#ffffff'};
-  --bg-card-hover: ${dark ? '#1b1d24' : '#faf8f3'};
-  --bg-subtle: ${dark ? '#11131a' : '#f5f1e6'};
-  /* Text — cream-tinted off-white in dark, near-black in light */
-  --text-primary: ${dark ? '#ebe8e3' : '#1a1812'};
-  --text-secondary: ${dark ? '#b5b2ab' : '#4a4740'};
-  --text-tertiary: ${dark ? '#7a7872' : '#8a8579'};
+  /* Surfaces — warm near-black in dark / sober paper in light */
+  --bg-page: ${dark ? '#0c0d10' : '#efece4'};
+  --bg-card: ${dark ? '#15171c' : '#f7f5ef'};
+  --bg-card-hover: ${dark ? '#1b1d24' : '#f1ede2'};
+  --bg-subtle: ${dark ? '#11131a' : '#e8e3d4'};
+  /* Text — cream-tinted off-white in dark, deep ink in light */
+  --text-primary: ${dark ? '#ebe8e3' : '#14110b'};
+  --text-secondary: ${dark ? '#b5b2ab' : '#4a4538'};
+  --text-tertiary: ${dark ? '#7a7872' : '#837d6e'};
   /* Borders */
-  --border: ${dark ? '#232730' : '#e8e3d6'};
-  --border-light: ${dark ? '#1c1f27' : '#f1ede2'};
-  --border-strong: ${dark ? '#2e333f' : '#cfc8b6'};
-  /* Primary — muted antique gold */
-  --primary: ${dark ? '#c5a572' : '#a08555'};
-  --primary-hover: ${dark ? '#b8965f' : '#8a7146'};
-  --primary-soft: ${dark ? 'rgba(197, 165, 114, 0.14)' : 'rgba(160, 133, 85, 0.1)'};
-  --primary-text: ${dark ? '#e0c896' : '#6a5436'};
+  --border: ${dark ? '#232730' : '#d8d1bd'};
+  --border-light: ${dark ? '#1c1f27' : '#e3ddca'};
+  --border-strong: ${dark ? '#2e333f' : '#b8ad92'};
+  /* Primary — antique gold (deeper in light for AAA contrast) */
+  --primary: ${dark ? '#c5a572' : '#8a7042'};
+  --primary-hover: ${dark ? '#b8965f' : '#6f5832'};
+  --primary-soft: ${dark ? 'rgba(197, 165, 114, 0.14)' : 'rgba(138, 112, 66, 0.12)'};
+  --primary-text: ${dark ? '#e0c896' : '#5a4528'};
   /* Success — muted sage */
-  --success: ${dark ? '#88a978' : '#6e8c61'};
-  --success-soft: ${dark ? 'rgba(136, 169, 120, 0.14)' : 'rgba(110, 140, 97, 0.1)'};
-  --success-text: ${dark ? '#a5c298' : '#4a6242'};
+  --success: ${dark ? '#88a978' : '#5d7a52'};
+  --success-soft: ${dark ? 'rgba(136, 169, 120, 0.14)' : 'rgba(93, 122, 82, 0.12)'};
+  --success-text: ${dark ? '#a5c298' : '#3d543a'};
   /* Danger — muted terracotta */
-  --danger: ${dark ? '#c47158' : '#ad5f48'};
-  --danger-soft: ${dark ? 'rgba(196, 113, 88, 0.14)' : 'rgba(173, 95, 72, 0.1)'};
-  --danger-text: ${dark ? '#e0917a' : '#8a4632'};
+  --danger: ${dark ? '#c47158' : '#9a5340'};
+  --danger-soft: ${dark ? 'rgba(196, 113, 88, 0.14)' : 'rgba(154, 83, 64, 0.12)'};
+  --danger-text: ${dark ? '#e0917a' : '#763d2c'};
   /* Warning */
-  --warning: ${dark ? '#d4a554' : '#b5872c'};
-  --warning-soft: ${dark ? 'rgba(212, 165, 84, 0.14)' : 'rgba(181, 135, 44, 0.1)'};
-  --warning-text: ${dark ? '#e8be7a' : '#806020'};
+  --warning: ${dark ? '#d4a554' : '#a07728'};
+  --warning-soft: ${dark ? 'rgba(212, 165, 84, 0.14)' : 'rgba(160, 119, 40, 0.12)'};
+  --warning-text: ${dark ? '#e8be7a' : '#6e511c'};
   /* Purple — used for joint accounts */
-  --purple: ${dark ? '#9d8bb5' : '#7d6c95'};
-  --purple-soft: ${dark ? 'rgba(157, 139, 181, 0.14)' : 'rgba(125, 108, 149, 0.1)'};
-  /* Info — muted slate-blue (used by 50/30/20 needs segment, etc.) */
-  --info: ${dark ? '#7a8aa8' : '#5b6a85'};
-  --info-soft: ${dark ? 'rgba(122, 138, 168, 0.14)' : 'rgba(91, 106, 133, 0.1)'};
+  --purple: ${dark ? '#9d8bb5' : '#6b5b82'};
+  --purple-soft: ${dark ? 'rgba(157, 139, 181, 0.14)' : 'rgba(107, 91, 130, 0.12)'};
+  /* Info — muted slate-blue */
+  --info: ${dark ? '#7a8aa8' : '#4d5a73'};
+  --info-soft: ${dark ? 'rgba(122, 138, 168, 0.14)' : 'rgba(77, 90, 115, 0.12)'};
   /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0,0,0,${dark ? '0.4' : '0.04'});
-  --shadow-md: 0 4px 12px -1px rgba(0,0,0,${dark ? '0.32' : '0.06'});
-  --shadow-lg: 0 16px 40px -10px rgba(0,0,0,${dark ? '0.45' : '0.08'});
-  --shadow-xl: 0 24px 60px -15px rgba(0,0,0,${dark ? '0.55' : '0.1'});
+  --shadow-sm: 0 1px 2px 0 rgba(20,18,12,${dark ? '0.4' : '0.05'});
+  --shadow-md: 0 4px 14px -1px rgba(20,18,12,${dark ? '0.32' : '0.07'});
+  --shadow-lg: 0 18px 44px -10px rgba(20,18,12,${dark ? '0.45' : '0.10'});
+  --shadow-xl: 0 24px 60px -15px rgba(20,18,12,${dark ? '0.55' : '0.12'});
   /* Gradients — sober, no startup-y blue/purple */
-  --gradient-hero: linear-gradient(135deg, ${dark ? '#c5a572' : '#a08555'} 0%, ${dark ? '#a08555' : '#7a6440'} 100%);
-  --gradient-success: linear-gradient(135deg, ${dark ? '#88a978' : '#6e8c61'} 0%, ${dark ? '#6e8c61' : '#516948'} 100%);
+  --gradient-hero: linear-gradient(135deg, ${dark ? '#c5a572' : '#8a7042'} 0%, ${dark ? '#a08555' : '#6f5832'} 100%);
+  --gradient-success: linear-gradient(135deg, ${dark ? '#88a978' : '#5d7a52'} 0%, ${dark ? '#6e8c61' : '#43583a'} 100%);
 }
 * { box-sizing: border-box; }
 .app { font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; background: var(--bg-page); color: var(--text-primary); min-height: 100vh; letter-spacing: -0.01em; -webkit-font-smoothing: antialiased; }

@@ -48,6 +48,13 @@ _DEFAULT_RULES = [
     (r"commission|frais|cotisation carte|agios", "fees"),
     (r"ecole|creche|nounou|assistante mater|cantine|periscolaire", "children"),
     (r"cultura|udemy|coursera|formation", "education"),
+    # Generic virements — must be LAST so more specific rules above
+    # (salary, savings, investment) win first.
+    (
+        r"virement (re[cç]u de|de la part de|en faveur de|au profit de|à |a |internet|sepa|instantan|inst |ordinaire|external|familial|interne)"
+        r"|virement\s+\w+|^vir\.?\s|prelevement.*virement|annulation virement",
+        "transfer",
+    ),
 ]
 
 

@@ -68,40 +68,47 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-/* Light mode — warm cream background, deeper gold for contrast.
+/* Light mode — sober paper, deep ink, refined gold.
+   Inspired by Pictet / Edmond de Rothschild printed reports.
    Activated by `data-theme="light"` on <html>. */
 :root[data-theme="light"] {
-  --color-w-bg: #faf8f3;
-  --color-w-surface: #ffffff;
-  --color-w-surface-2: #f5f1e6;
-  --color-w-surface-3: #ebe5d3;
+  /* Surfaces — soft warm grey background, slightly tinted card to avoid the
+     cheap pure-white look. The hierarchy bg-page < bg-card stays inverted
+     compared to dark mode (cards are LIGHTER than the page). */
+  --color-w-bg: #efece4;
+  --color-w-surface: #f7f5ef;
+  --color-w-surface-2: #e8e3d4;
+  --color-w-surface-3: #ddd5bf;
 
-  --color-w-border: #e8e3d6;
-  --color-w-border-strong: #cfc8b6;
+  /* Borders — visible without being heavy */
+  --color-w-border: #d8d1bd;
+  --color-w-border-strong: #b8ad92;
 
-  --color-w-text: #1a1812;
-  --color-w-muted: #6a6357;
-  --color-w-faint: #9a9285;
+  /* Ink — near-black with a brown undertone, more contrast than before */
+  --color-w-text: #14110b;
+  --color-w-muted: #4a4538;
+  --color-w-faint: #837d6e;
 
-  --color-w-accent: #a08555;
-  --color-w-accent-hover: #8a7146;
-  --color-w-accent-soft: rgba(160, 133, 85, 0.1);
+  /* Accent — deeper antique gold for AAA legibility on the lighter bg */
+  --color-w-accent: #8a7042;
+  --color-w-accent-hover: #6f5832;
+  --color-w-accent-soft: rgba(138, 112, 66, 0.12);
 
-  --color-w-success: #6e8c61;
-  --color-w-danger: #ad5f48;
-  --color-w-warning: #b5872c;
-  --color-w-info: #5b6a85;
+  --color-w-success: #5d7a52;
+  --color-w-danger: #9a5340;
+  --color-w-warning: #a07728;
+  --color-w-info: #4d5a73;
 
-  --color-w-asset-realestate: #a8643d;
-  --color-w-asset-equity: #5b6a85;
-  --color-w-asset-bond: #6f7472;
-  --color-w-asset-crypto: #b5872c;
-  --color-w-asset-cash: #a08555;
-  --color-w-asset-pension: #7d6c95;
+  --color-w-asset-realestate: #985733;
+  --color-w-asset-equity: #4d5a73;
+  --color-w-asset-bond: #5e6360;
+  --color-w-asset-crypto: #a07728;
+  --color-w-asset-cash: #8a7042;
+  --color-w-asset-pension: #6b5b82;
 
-  --shadow-w-sm: 0 1px 2px rgba(20, 18, 12, 0.04);
-  --shadow-w-md: 0 4px 12px rgba(20, 18, 12, 0.06);
-  --shadow-w-lg: 0 16px 40px rgba(20, 18, 12, 0.08);
+  --shadow-w-sm: 0 1px 2px rgba(20, 18, 12, 0.05);
+  --shadow-w-md: 0 4px 14px rgba(20, 18, 12, 0.07);
+  --shadow-w-lg: 0 18px 44px rgba(20, 18, 12, 0.10);
 }
 
 /* Tabular numerals for any element marked with .w-num — used for KPIs,
