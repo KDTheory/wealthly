@@ -14,8 +14,9 @@ import { ASSET_CLASS_MAP } from '../constants.js';
 import { formatCurrency } from '../utils.js';
 import { AnimatedNumber } from '../components/AnimatedNumber.jsx';
 import { NetWorthChart } from '../components/NetWorthChart.jsx';
+import { HealthScore } from '../components/HealthScore.jsx';
 
-export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, thisMonthStats, monthlyEvolution, visibleAccounts, accountBalances, visibleAssets, visibleLiabilities, members, activeMemberId, transactions, categories, fmt, memberShare, categoryAnalysis, anomalies, cashflowProjection, goals, wealthHistory = [], recurringGroups, currentMonth, setView }) {
+export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, thisMonthStats, monthlyEvolution, visibleAccounts, accountBalances, visibleAssets, visibleLiabilities, members, activeMemberId, transactions, categories, fmt, memberShare, categoryAnalysis, anomalies, cashflowProjection, goals, budgets = {}, wealthHistory = [], recurringGroups, currentMonth, setView }) {
   const last12Months = monthlyEvolution.slice(-12);
   const recentTx = [...transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
   const activeMember = members.find(m => m.id === activeMemberId);
@@ -275,6 +276,19 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
           <div className="text-[11px] text-[var(--color-w-faint)] mt-1">disponibles immédiatement</div>
         </div>
       </section>
+
+      {/* Score santé financière — gauge + 5-criteria breakdown */}
+      <div className="mb-5">
+        <HealthScore
+          monthlyEvolution={monthlyEvolution}
+          liquidWealth={liquidWealth}
+          assetsValue={assetsValue}
+          liabilitiesValue={liabilitiesValue}
+          visibleAssets={visibleAssets}
+          budgets={budgets}
+          categoryAnalysis={categoryAnalysis}
+        />
+      </div>
 
       {/* Anomalies — alert strip */}
       {anomalies.length > 0 && (

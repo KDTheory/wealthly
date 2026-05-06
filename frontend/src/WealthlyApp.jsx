@@ -1023,7 +1023,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             transactions={visibleTransactions} categories={categories} fmt={fmt}
             memberShare={memberShare} categoryAnalysis={categoryAnalysis}
             anomalies={anomalies} cashflowProjection={cashflowProjection}
-            goals={goals} wealthHistory={wealthHistory}
+            goals={goals} budgets={budgets} wealthHistory={wealthHistory}
             recurringGroups={recurringGroups} currentMonth={currentMonth}
             setView={setView}
           />

@@ -329,6 +329,33 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; transition: border-color .2s; }
 .card-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
 .card-header h3 { font-size: 11px; font-weight: 500; margin: 0; display: flex; align-items: center; gap: 6px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-tertiary); }
+
+/* HealthScore card — gauge on the left, breakdown on the right. */
+.health-score-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 22px; transition: border-color .2s; }
+.health-score-card:hover { border-color: var(--border-strong); }
+.health-score-body { display: grid; grid-template-columns: 220px 1fr; gap: 26px; align-items: center; margin-top: 6px; }
+.health-gauge-wrap { position: relative; width: 220px; height: 220px; display: flex; align-items: center; justify-content: center; }
+.health-gauge { width: 100%; height: 100%; display: block; }
+.health-gauge-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+.health-score-value { font-family: 'DM Mono', ui-monospace, monospace; font-size: 56px; font-weight: 500; line-height: 1; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.health-score-suffix { font-size: 11px; color: var(--text-tertiary); margin-top: 4px; letter-spacing: 0.06em; }
+.health-score-rating { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; margin-top: 10px; }
+
+.health-criteria { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.health-criteria li { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 8px; cursor: help; transition: background .15s; }
+.health-criteria li:hover { background: var(--bg-subtle); }
+.health-criteria-icon { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; }
+.health-criteria-icon.ok { background: var(--success-soft); color: var(--success); }
+.health-criteria-icon.ko { background: var(--danger-soft); color: var(--danger); }
+.health-criteria-label { font-size: 13px; color: var(--text-primary); font-weight: 500; }
+.health-criteria-value { font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.health-criteria-pts { font-size: 11px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; min-width: 42px; text-align: right; }
+@media (max-width: 760px) {
+  .health-score-body { grid-template-columns: 1fr; gap: 16px; }
+  .health-gauge-wrap { width: 180px; height: 180px; margin: 0 auto; }
+  .health-score-value { font-size: 48px; }
+  .health-criteria li { padding: 6px 8px; gap: 8px; }
+}
 .card-meta { font-size: 11px; color: var(--text-tertiary); font-weight: 400; }
 .chart-card { padding: 22px 16px 16px 8px; }
 .chart-empty { padding: 60px 20px; text-align: center; color: var(--text-tertiary); display: flex; flex-direction: column; align-items: center; gap: 12px; font-size: 13px; }
