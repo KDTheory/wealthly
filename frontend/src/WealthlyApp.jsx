@@ -6,6 +6,26 @@ import { getDemoData } from './demoData.js';
 
 const TaxSimulator = lazy(() => import('./TaxSimulator.jsx'));
 
+// Disable Recharts animations globally — they cause noticeable jank on iOS Safari
+// (SVG <animate> on every render) and add no UX value for static financial data.
+[Line, Bar, Area, Pie, RadialBar, Sankey].forEach((C) => {
+  if (C) C.defaultProps = { ...(C.defaultProps || {}), isAnimationActive: false };
+});
+
+// Tracks whether the viewport is below a breakpoint. Used by chart layouts
+// (e.g. Sankey margins) where CSS can't reach.
+function useIsNarrow(breakpoint = 760) {
+  const [narrow, setNarrow] = useState(
+    typeof window !== 'undefined' ? window.innerWidth <= breakpoint : false
+  );
+  useEffect(() => {
+    const onResize = () => setNarrow(window.innerWidth <= breakpoint);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [breakpoint]);
+  return narrow;
+}
+
 // ============================================================================
 // CONSTANTS
 // ============================================================================
@@ -2510,6 +2530,7 @@ function FixedChargeEditor({ charge, categories, members, currentMonth, onSave, 
 function Cashflow({ transactions, categories, accounts, memberShare, fmt, currentMonth }) {
   const [period, setPeriod] = useState('1M'); // 1M | 3M | 1A
   const [anchor, setAnchor] = useState(currentMonth); // YYYY-MM the period ends on (inclusive)
+  const isNarrow = useIsNarrow(760);
 
   const monthsInPeriod = period === '1M' ? 1 : period === '3M' ? 3 : 12;
 
@@ -2641,16 +2662,16 @@ function Cashflow({ transactions, categories, accounts, memberShare, fmt, curren
             <span className="card-meta">{filtered.length} transaction{filtered.length > 1 ? 's' : ''} sur la période</span>
           </div>
           {sankeyData ? (
-            <ResponsiveContainer width="100%" height={420}>
+            <ResponsiveContainer width="100%" height={isNarrow ? 520 : 420}>
               <Sankey
                 data={sankeyData}
-                nodePadding={28}
-                nodeWidth={12}
+                nodePadding={isNarrow ? 16 : 28}
+                nodeWidth={isNarrow ? 8 : 12}
                 linkCurvature={0.5}
                 iterations={64}
-                node={<SankeyNode/>}
+                node={<SankeyNode narrow={isNarrow}/>}
                 link={{ stroke: 'var(--border)', strokeOpacity: 0.4, fill: 'var(--primary-soft)' }}
-                margin={{ top: 12, right: 180, bottom: 12, left: 180 }}
+                margin={isNarrow ? { top: 8, right: 70, bottom: 8, left: 70 } : { top: 12, right: 180, bottom: 12, left: 180 }}
               >
                 <Tooltip
                   formatter={(v) => fmt(v)}
@@ -2764,11 +2785,15 @@ function Cashflow({ transactions, categories, accounts, memberShare, fmt, curren
 }
 
 // Custom Sankey node — colored bar with label outside the diagram
-function SankeyNode({ x, y, width, height, index, payload }) {
+function SankeyNode({ x, y, width, height, index, payload, narrow }) {
   const isLeft = payload.kind === 'income';
   const color = payload.color || (payload.kind === 'hub' ? 'var(--primary)' : payload.kind === 'savings' ? 'var(--primary)' : payload.kind === 'income' ? 'var(--success)' : 'var(--danger)');
-  const labelOffset = 8;
+  const labelOffset = narrow ? 5 : 8;
+  const fontSize = narrow ? 10 : 12;
   const valueLabel = payload.value ? Math.round(payload.value).toLocaleString('fr-FR') + ' €' : '';
+  // On narrow viewports the sankey margins are tight (~70px each side), so we
+  // drop the value suffix from labels to keep them readable.
+  const labelText = narrow ? payload.name : `${payload.name}${valueLabel ? ` · ${valueLabel}` : ''}`;
   return (
     <Layer key={`node-${index}`}>
       <Rectangle x={x} y={y} width={width} height={height} fill={color} fillOpacity={payload.kind === 'hub' ? 0.9 : 0.75} stroke="none"/>
@@ -2778,10 +2803,10 @@ function SankeyNode({ x, y, width, height, index, payload }) {
           x={isLeft ? x - labelOffset : x + width + labelOffset}
           y={y + height / 2}
           dy={4}
-          fontSize={12}
+          fontSize={fontSize}
           fill="var(--text-primary)"
         >
-          {payload.name}{valueLabel ? ` · ${valueLabel}` : ''}
+          {labelText}
         </text>
       )}
       {payload.kind === 'hub' && (
@@ -6186,15 +6211,27 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 
   /* Toast spans full width minus padding */
   .toast { left: 12px; right: 12px; top: 12px; max-width: none; }
+
+  /* Recent additions — keep 3-col grids from overflowing on phones */
+  .loan-summary-grid { grid-template-columns: 1fr; }
+  .cashflow-kpi-row { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .cashflow-period-label { min-width: 0; flex: 1; font-size: 12px; }
+  .rest-hero-stats { min-width: 0; align-items: flex-start; }
+}
+
+/* Phones — 8 nav items don't fit text labels under ~520px, drop to icons. */
+@media (max-width: 520px) {
+  .main-nav button span { display: none; }
+  .main-nav button svg { width: 20px; height: 20px; }
+  .main-nav button { padding: 8px 4px; }
+  .nav-alert-dot { top: 2px; right: 8px; }
 }
 
 /* Very narrow phones — extra tightening */
 @media (max-width: 380px) {
   .monthly-kpis { grid-template-columns: 1fr; }
   .wealth-kpis { grid-template-columns: 1fr; }
-  .main-nav button span { display: none; }
-  .main-nav button svg { width: 20px; height: 20px; }
-  .main-nav button { padding: 8px 4px; }
+  .cashflow-kpi-row { grid-template-columns: 1fr; }
 }
 `;
   return <style>{css}</style>;
