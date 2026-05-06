@@ -64,19 +64,40 @@ frontend/
     icon-maskable.svg     Android adaptive icon
     sw.js                 Service worker (network-first shell)
   src/
-    main.jsx              Entry, registers SW in prod only
-    App.jsx               Auth gate + demo mode + reset_token URL handler
-    AuthScreen.jsx        Login | Register | Forgot | Reset modes
-    BankCallback.jsx      Landing page after the bank OAuth redirect
-    WealthlyApp.jsx       🐉 ~4500 lignes monolith — toutes les vues + Styles
-    TaxSimulator.jsx      Vue Impôts
-    taxFr.js              Pure tax engine (barème + parts + crédits)
-    pdfReport.js          jsPDF bilan generator
-    demoData.js           Seed for demo mode
-    api.js                HTTP client. Demo-aware: GET returns null, POST throws.
-    index.css             Tailwind v4 + custom @theme tokens
-  vite.config.js          Tailwind plugin + /api proxy (dev only)
-  index.html              PWA + iOS metadata
+    main.jsx                       Entry, registers SW in prod only
+    App.jsx                        Auth gate + demo mode + reset_token URL handler
+    AuthScreen.jsx                 Login | Register | Forgot | Reset modes
+    BankCallback.jsx               Landing page after the bank OAuth redirect
+    WealthlyApp.jsx                Main shell — data layer + sidebar/nav + view router (~1100 lines)
+    TaxSimulator.jsx               Vue Impôts (lazy-loaded)
+    Styles.jsx                     Global CSS-in-JS — pairs with index.css
+    constants.js                   STORAGE_KEYS, DEFAULT_CATEGORIES/RULES, BANK_PROFILES, ASSET/LIABILITY_TYPES, MEMBER_PALETTE
+    storage.js                     Tiny localStorage wrapper for UI prefs
+    utils.js                       formatCurrency/Date, CSV parse, categorize, detectRecurring (no React)
+    taxFr.js                       Pure tax engine (barème + parts + crédits)
+    pdfReport.js                   jsPDF bilan generator (dynamic import on click)
+    demoData.js                    Seed for demo mode
+    api.js                         HTTP client. Demo-aware: GET returns null, POST throws.
+    index.css                      Tailwind v4 + custom @theme tokens
+    components/
+      Toast.jsx                    Stateless toast renderer
+      AnimatedNumber.jsx           rAF-tweened currency display (memoized)
+      NetWorthChart.jsx            Brut/Net/Financier toggle + period selector (used by Dashboard + Wealth)
+    hooks/
+      useIsNarrow.js               Viewport breakpoint hook (used by Cashflow Sankey)
+    views/
+      Onboarding.jsx               3-step first-launch wizard
+      Dashboard.jsx                Net worth hero + KPIs + composition + recent
+      Wealth.jsx                   Patrimoine + all asset/liability editors + 5-step wizards
+      Monthly.jsx                  Suivi mensuel + FixedChargeEditor (modal)
+      Cashflow.jsx                 Sankey + donut + SankeyNode (memoized)
+      Budgets.jsx                  50/30/20 + GoalEditor (modal)
+      Transactions.jsx             Searchable + filterable + sortable list
+      Analysis.jsx                 Évolution + top marchands + per-category drill
+      Settings.jsx                 SettingsView + CustomRules + BankConnections + InstitutionPicker + MemberEditor
+      ImportFlow.jsx               4-step CSV wizard + MappingField (local helper)
+  vite.config.js                   Tailwind plugin + /api proxy (dev only) + manualChunks for recharts/lucide/jspdf
+  index.html                       PWA + iOS metadata + dark-flash prevention inline style
 
 .github/workflows/test.yml     pytest on push/PR
 
@@ -137,14 +158,20 @@ Default `EMAIL_FROM` is `Wealthly <onboarding@resend.dev>`. With this sender, Re
 2. Railway → Logs — look for `[email]` lines
 3. Solution: either test with the Resend account's email, or verify a domain on Resend
 
-**3. WealthlyApp is a 4500-line monolith.**
-The user wants it split (see ROADMAP), but the découpe is risky if rushed. When it happens, do it in levels:
-- L1: extract pure utils + constants + AnimatedNumber + Toast + Styles
-- L2: views (Dashboard, Wealth, Monthly, Transactions, Budgets, Settings, Import, Onboarding)
-- L3: modals (MemberEditor, AssetEditor, LiabilityEditor…)
-- L4: data hooks (useMembers, useReload…)
+**3. WealthlyApp is no longer a monolith.**
+L1+L2 of the découpe shipped (commits 955143b → 8663654, 2026-05). The
+file dropped from 6386 to ~1100 lines and now owns only the data layer
++ shell + view router. Sub-views live in `src/views/`, leaf components
+in `src/components/`, hooks in `src/hooks/`. Sed-based extraction is
+risky — the L2.4 Dashboard removal accidentally chewed into the start
+of `WEALTH_SUBVIEWS` (fixed in bdd7ed3); always grep the boundary
+before deleting.
 
-Each level = one commit. Verify the build still works on Vercel between levels.
+Remaining work if/when needed:
+- L3: split the data layer into hooks (`useMembers`, `useReload`,
+  `useTransactions`…) so views can move to a context provider instead
+  of receiving everything via props.
+- L4: TypeScript? Tests? Out of scope for now.
 
 **4. The frontend tax engine is in `taxFr.js` and is critical.**
 - French income brackets 2025 (declared 2026): 0 / 11 497 / 29 315 / 83 823 / 180 294 / ∞
