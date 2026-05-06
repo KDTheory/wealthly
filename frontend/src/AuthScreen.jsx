@@ -91,13 +91,13 @@ export default function AuthScreen({ onAuth, onTryDemo }) {
           <div className="auth-tagline">Gestion de patrimoine privée</div>
 
           <div className="auth-pitch">
-            Suivez. Comprenez. Décidez. La vue consolidée de votre patrimoine familial — comptes, placements, immobilier, dettes — souveraine et chiffrée.
+            Une vue claire de votre patrimoine familial. Comptes, placements, immobilier, prêts — consolidés sur un seul écran, déclinés par membre du foyer.
           </div>
 
           <div className="auth-bullets">
-            <div className="auth-bullet"><span className="auth-bullet-dot"/>Auto-hébergé. Vos données ne sortent pas de chez vous.</div>
-            <div className="auth-bullet"><span className="auth-bullet-dot"/>Catégorisation par IA, optionnelle, avec votre clé.</div>
-            <div className="auth-bullet"><span className="auth-bullet-dot"/>Multi-membres. Une vue par foyer, une par personne.</div>
+            <div className="auth-bullet"><span className="auth-bullet-dot"/>Foyer multi-membres : une vue par personne, une vue famille.</div>
+            <div className="auth-bullet"><span className="auth-bullet-dot"/>Synchro bancaire DSP2 ou import CSV, simulateur d'impôt FR.</div>
+            <div className="auth-bullet"><span className="auth-bullet-dot"/>Données chiffrées en transit, infrastructure hébergée en Union européenne.</div>
           </div>
         </aside>
 
@@ -286,7 +286,10 @@ const authStyles = `
 .auth-screen {
   min-height: 100vh;
   display: flex; align-items: center; justify-content: center;
-  background: #0a0b0e;
+  /* Two-layer base: subtle vignette around an off-black canvas, so the page
+     reads warmer and less flat than a single solid colour. */
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 40%, #14161c 0%, #0d0f13 55%, #0a0b0e 100%);
   color: #ebe8e3;
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   position: relative; overflow: hidden;
@@ -295,20 +298,22 @@ const authStyles = `
   padding: 32px 24px;
 }
 
-/* Subtle radial glow + grid texture, very low contrast */
+/* Ambient gold glows — one large behind the form card, one small lifting the
+   brand column. Stronger than before so the page no longer feels flat. */
 .auth-bg {
   position: absolute; inset: 0; pointer-events: none; z-index: 0;
   background:
-    radial-gradient(ellipse 60% 40% at 70% 20%, rgba(197, 165, 114, 0.08), transparent 70%),
-    radial-gradient(ellipse 60% 40% at 20% 90%, rgba(197, 165, 114, 0.04), transparent 60%);
+    radial-gradient(ellipse 50% 55% at 78% 50%, rgba(197, 165, 114, 0.16), transparent 70%),
+    radial-gradient(ellipse 45% 35% at 18% 30%, rgba(197, 165, 114, 0.07), transparent 65%),
+    radial-gradient(ellipse 60% 30% at 50% 100%, rgba(197, 165, 114, 0.04), transparent 70%);
 }
 .auth-grid {
   position: absolute; inset: 0; pointer-events: none; z-index: 0;
   background-image:
-    linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
   background-size: 64px 64px;
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 30%, transparent 80%);
+  mask-image: radial-gradient(ellipse 75% 60% at 50% 50%, black 30%, transparent 80%);
 }
 
 .auth-shell {
@@ -346,24 +351,26 @@ const authStyles = `
   color: #c5a572;
 }
 .auth-pitch {
-  font-size: 16px; line-height: 1.6;
-  color: #b5b2ab;
-  max-width: 400px;
+  font-size: 16px; line-height: 1.65;
+  color: #c8c5be;                                          /* warmer, more readable than the previous muted gray */
+  max-width: 420px;
   margin-top: 28px;
   letter-spacing: -0.01em;
 }
 .auth-bullets {
-  display: flex; flex-direction: column; gap: 10px;
-  margin-top: 20px;
+  display: flex; flex-direction: column; gap: 12px;
+  margin-top: 24px;
 }
 .auth-bullet {
-  display: flex; align-items: center; gap: 10px;
-  font-size: 13px; color: #8c8a85;
+  display: flex; align-items: flex-start; gap: 12px;
+  font-size: 13.5px; color: #a8a59f;
+  line-height: 1.5; max-width: 420px;
 }
 .auth-bullet-dot {
-  width: 4px; height: 4px; border-radius: 50%;
+  width: 5px; height: 5px; border-radius: 50%;
   background: #c5a572;
-  flex-shrink: 0;
+  flex-shrink: 0; margin-top: 8px;
+  box-shadow: 0 0 0 4px rgba(197, 165, 114, 0.10);
 }
 
 /* Form column */
@@ -371,12 +378,16 @@ const authStyles = `
   display: flex; justify-content: center;
 }
 .auth-form-card {
-  background: #15171c;
-  border: 1px solid #232730;
-  border-radius: 12px;
+  background: #181a20;                                    /* slightly lighter than the page so the card lifts */
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 2px solid rgba(197, 165, 114, 0.85);        /* gold signature line, same language as the Dashboard hero */
+  border-radius: 14px;
   padding: 32px;
   width: 100%; max-width: 420px;
-  box-shadow: 0 24px 60px -20px rgba(0,0,0,0.5);
+  box-shadow:
+    0 24px 60px -20px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(197, 165, 114, 0.04) inset;
+  position: relative;
 }
 
 .auth-tabs {
