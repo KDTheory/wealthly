@@ -194,6 +194,43 @@ export const categorize = (tx, customRules = []) => {
   return 'uncategorized';
 };
 
+// Loan amortization schedule. Returns an array of monthly rows with
+// { idx, date, capital, interest, insurance, payment, remaining }.
+// paymentOverride lets the UI lock the row total to whatever the user actually
+// pays each month; without it we compute the standard annuity.
+export const buildAmortization = ({ principal, annualRate, durationM, insuranceRate, startDate, paymentOverride }) => {
+  const P = parseFloat(principal) || 0;
+  const n = parseInt(durationM, 10) || 0;
+  const r = (parseFloat(annualRate) || 0) / 100 / 12;
+  const ins = ((parseFloat(insuranceRate) || 0) / 100 / 12) * P;
+  if (P <= 0 || n <= 0) return [];
+
+  const monthlyKap = paymentOverride
+    ? Math.max(0, parseFloat(paymentOverride) - ins)
+    : (r > 0 ? P * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1) : P / n);
+
+  let remaining = P;
+  const start = startDate ? new Date(startDate) : new Date();
+  const rows = [];
+  for (let i = 0; i < n; i++) {
+    const interest = remaining * r;
+    let capital = monthlyKap - interest;
+    if (capital > remaining) capital = remaining;
+    remaining = Math.max(0, remaining - capital);
+    const d = new Date(start.getFullYear(), start.getMonth() + i, start.getDate());
+    rows.push({
+      idx: i + 1,
+      date: d.toISOString().slice(0, 10),
+      capital,
+      interest,
+      insurance: ins,
+      payment: capital + interest + ins,
+      remaining,
+    });
+  }
+  return rows;
+};
+
 export const detectRecurring = (transactions, overrides = {}) => {
   const groups = {};
   transactions.forEach(tx => {

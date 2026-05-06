@@ -17,6 +17,7 @@
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { buildAmortization } from './utils.js';
 
 // ---------- Palette (RGB tuples for jsPDF) ----------
 const C = {
@@ -260,6 +261,48 @@ function drawAllocBar(doc, y, segments) {
   });
   const rows = Math.ceil(segments.length / 2);
   return legendY + rows * 14 + 8;
+}
+
+// Vertical bars chart: each bar = one row's value, plus an optional horizontal
+// reference line drawn at `refValue` (used for the "Mensualité" overlay on
+// the loan amortization page).
+function drawBarSeries(doc, x, y, w, h, values, opts = {}) {
+  if (!values || values.length === 0) {
+    doc.setFont(FONT, 'normal'); doc.setFontSize(9); doc.setTextColor(...C.faint);
+    doc.text('Pas de données', x, y + h / 2);
+    return y + h;
+  }
+  const min = 0;
+  const max = Math.max(...values);
+  const range = max - min || 1;
+
+  // Soft baseline grid
+  doc.setDrawColor(...C.hairline);
+  doc.setLineWidth(0.3);
+  doc.line(x, y + h, x + w, y + h);
+
+  // Bars
+  const barW = Math.max(0.6, (w / values.length) * 0.85);
+  const step = w / values.length;
+  values.forEach((v, i) => {
+    const bx = x + i * step + (step - barW) / 2;
+    const bh = ((v - min) / range) * h;
+    doc.setFillColor(...C.gold);
+    doc.rect(bx, y + h - bh, barW, bh, 'F');
+  });
+
+  // Reference line (e.g. monthly payment)
+  if (opts.refValue != null && opts.refMax) {
+    const refY = y + h - (opts.refValue / opts.refMax) * h;
+    doc.setDrawColor(...C.goldDark);
+    doc.setLineWidth(0.6);
+    doc.line(x, refY, x + w, refY);
+    doc.setFont(FONT, 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...C.goldDark);
+    if (opts.refLabel) doc.text(opts.refLabel, x + w + 4, refY + 2);
+  }
+  return y + h;
 }
 
 // Sparkline polyline of monthly balances inside a small rect. Returns next y.
@@ -752,6 +795,86 @@ export function generateBilanPdf({
   }
 
   drawFooter(doc, doc.internal.getNumberOfPages(), 5);
+
+  // ----- AMORTIZATION PAGES (one per liability) -----
+  visibleLiabilities.forEach((l) => {
+    const schedule = buildAmortization({
+      principal: l.initialCapital,
+      annualRate: l.interestRate,
+      durationM: l.durationMonths,
+      insuranceRate: l.insuranceRate,
+      startDate: l.startDate,
+      paymentOverride: l.monthlyPayment,
+    });
+    if (schedule.length === 0) return; // skip — not enough data to render
+
+    const today = new Date().toISOString().slice(0, 10);
+    const paid = schedule.filter((r) => r.date <= today);
+    const remainingRows = schedule.filter((r) => r.date > today);
+    const totalCost = schedule.reduce((s, r) => s + r.payment, 0) + (parseFloat(l.applicationFees) || 0);
+    const totalCapPaid = paid.reduce((s, r) => s + r.capital, 0);
+    const totalIntPaid = paid.reduce((s, r) => s + r.interest, 0);
+    const totalInsPaid = paid.reduce((s, r) => s + r.insurance, 0);
+    const totalPaid = totalCapPaid + totalIntPaid + totalInsPaid;
+    const totalRemaining = remainingRows.reduce((s, r) => s + r.payment, 0);
+    const principal = parseFloat(l.initialCapital) || 0;
+    const remainingCap = parseFloat(l.remainingCapital) > 0
+      ? parseFloat(l.remainingCapital)
+      : (remainingRows[0] ? remainingRows[0].remaining + remainingRows[0].capital : 0);
+    const pctRepaid = principal > 0 ? Math.min(100, ((principal - remainingCap) / principal) * 100) : 0;
+    const monthly = parseFloat(l.monthlyPayment) || (schedule[0]?.payment ?? 0);
+
+    doc.addPage(); paintBackground(doc); drawHeader(doc, headerSubtitle);
+    let yy = 90;
+    drawTitle(doc, yy, l.name || 'Emprunt', `${l.type || 'Crédit'} · taux ${l.interestRate ? parseFloat(l.interestRate).toFixed(2) + ' %' : '—'}`);
+    yy += 50;
+
+    drawSection(doc, yy, "Caractéristiques de l'emprunt"); yy += 14;
+    yy = drawKpiCards(doc, yy, [
+      { label: 'Capital emprunté', value: fmtEUR(principal) },
+      { label: 'Capital restant dû', value: fmtEUR(remainingCap), color: C.terracotta },
+      { label: 'Mensualité', value: fmtEUR(monthly) },
+      { label: "Taux d'intérêt", value: l.interestRate ? `${parseFloat(l.interestRate).toFixed(2)} %` : '—' },
+      { label: 'Coût total', value: fmtEUR(totalCost), hint: 'capital + intérêts + assurance + frais' },
+      { label: 'Remboursé', value: `${pctRepaid.toFixed(0)} %`, color: pctRepaid >= 50 ? C.sage : C.amber, hint: `${paid.length} échéance${paid.length > 1 ? 's' : ''} sur ${schedule.length}` },
+    ]);
+
+    yy += 4;
+    drawSection(doc, yy, "Capital restant mois par mois"); yy += 14;
+    drawBarSeries(doc, PAGE_M, yy + 6, pageW - PAGE_M * 2 - 60, 110, schedule.map((r) => r.remaining), {
+      refValue: monthly, refMax: principal, refLabel: 'Mensualité',
+    });
+    yy += 130;
+
+    drawSection(doc, yy, 'Synthèse financière'); yy += 14;
+    const synthRows = [
+      ["Capital remboursé à ce jour", fmtEUR(totalCapPaid)],
+      ["Intérêts payés à ce jour", fmtEUR(totalIntPaid)],
+      ["Assurance payée à ce jour", fmtEUR(totalInsPaid)],
+      ["Total versé à ce jour", fmtEUR(totalPaid)],
+      ["Restant à rembourser", fmtEUR(totalRemaining)],
+      ["Frais de dossier", l.applicationFees ? fmtEUR(parseFloat(l.applicationFees)) : '—'],
+    ];
+    yy = table(doc, [['Poste', 'Montant']], synthRows, yy, {
+      columnStyles: { 1: { halign: 'right', fontStyle: 'bold' } },
+    });
+
+    drawFooter(doc, doc.internal.getNumberOfPages(), doc.internal.getNumberOfPages());
+  });
+
+  // After amortization pages, retroactively rewrite the footer "page X / Y"
+  // on every page so the count is final. (jsPDF doesn't auto-update.)
+  const finalTotal = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= finalTotal; p++) {
+    doc.setPage(p);
+    // White out the old footer count area (right side) and redraw.
+    const w = doc.internal.pageSize.getWidth();
+    const h = doc.internal.pageSize.getHeight();
+    doc.setFillColor(...C.paper);
+    doc.rect(w - 90, h - 32, 50, 14, 'F');
+    doc.setFont(FONT, 'normal'); doc.setFontSize(8); doc.setTextColor(...C.faint);
+    doc.text(`${p} / ${finalTotal}`, w - PAGE_M, h - 22, { align: 'right' });
+  }
 
   // Save with a name like "wealthly-bilan-raphael-2026-05.pdf"
   const monthSuffix = currentMonth || new Date().toISOString().slice(0, 7);
