@@ -1,6 +1,6 @@
 # Wealthly — Roadmap
 
-État au **2026-05-06** — sortie de session "investor-ready" (refonte UI + sécu + features signature).
+État au **2026-05-06 (soir)** — sortie de session "investor-ready" (refonte UI + sécu + features signature + i18n + PDF dark + Finary loan view).
 
 ---
 
@@ -50,6 +50,14 @@
 - [x] **Mot de passe oublié** : table dédiée (SHA-256, single-use, 60 min), email Resend, écran reset auto-déclenché par `?reset_token=`.
 - [x] **Mode démo** : seed client-side (Alice + Bob + Léa, 6 mois de données réalistes).
 - [x] **Synchro bancaire DSP2** : intégration GoCardless Bank Account Data, dédup sur `external_id`.
+- [x] **Plus-values latentes** sur actifs (`purchase_price` + `purchase_date` via Alembic) : affichage PV € + % dans Patrimoine.
+- [x] **Plafonds régulés** : barres de progression PEA / PEA-PME / Livret A / LDDS / LEP avec détection par regex sur le nom + warn à 90 % / over à 99 %.
+- [x] **Comparaison N vs N-1** sur Suivi mensuel : sub-label "+12 % vs mai 2025" sous chaque KPI.
+- [x] **Drawer compte** : panneau latéral droit au clic sur un compte (sparkline 3 mois + 10 dernières tx + CTA "voir toutes" qui pré-applique le filtre dans Transactions).
+- [x] **Vue prêt façon Finary** : refonte complète de `LiabilityDetail` (top bar, KPI strip remboursé/taux/mensualité/restant, onglets Synthèse/Mensualités, BarChart amortissement avec ReferenceLine mensualité, panneau hiérarchique).
+- [x] **PDF bilan rebuild** : 5+ pages (cover hero net worth + score santé, Synthèse KPIs + allocation bar, Évolution sparkline + table, Trésorerie, Détail avec PV latente, 1 page d'amortissement par dette avec graphe). **Thème dark** mirror du site (encre profonde + or sobre).
+- [x] **i18n FR / EN** : `react-i18next` setup, locales `fr/` `en/`, persistance localStorage, bouton FR · EN inline dans la sidebar utilities + header mobile (sortie de Réglages).
+- [x] **AuthScreen polish** : page sortie du noir absolu (radial vignette + glows or), copy honnête (suppression du "Auto-hébergé" trompeur), card surface lifted avec border-top or 2 px.
 
 ### Sécurité
 - [x] **Rate limiting** sur `/auth/login` (10 req/min IP), `/auth/register` (5 req/min), `/auth/forgot-password` (5 req/min) via slowapi.
@@ -73,16 +81,16 @@
 - [ ] **Journal de connexion** : table `login_events` (IP, UA, timestamp), vue admin.
 
 ### Features produit (prio 2)
-- [ ] **Plus-values latentes** sur les actifs : champ `purchase_price` + `purchase_date` (alembic revision), affichage PV € + % dans Patrimoine.
-- [ ] **Plafonds régulés** : alertes barres de progression PEA (150 k€), Livret A (22 950 €), LDDS (12 000 €).
-- [ ] **Comparaison N vs N-1** sur Suivi mensuel (vs même mois année précédente, sémantique color-coded).
-- [ ] **Aperçu de compte** : drawer latéral au clic sur un compte (sparkline 3 mois + 10 dernières transactions + lien vers Transactions filtré).
 - [ ] **Tooltips contextuels** sur les KPIs gestion privée.
+- [ ] **Étendre i18n** au-delà de la nav + Settings : Dashboard / Wealth / erreurs API / ImportFlow / toasts.
 
-### Internationalisation (prio 2 stratégique)
-- [ ] **Setup i18n** (`react-i18next` + `i18next`), `src/locales/fr/en/`, internationaliser nav + Dashboard + erreurs API + ImportFlow d'abord.
-- [ ] **Sélecteur de langue** dans Réglages (FR / EN), persistance localStorage.
-- [ ] **Multi-currency formatting** : centraliser `formatMoney(amount, currency, locale)`, ajouter `currency` sur la table `households` (alembic revision).
+### PDF — itération suivante (prio 2)
+- [ ] **Embed de screenshots de la plateforme** dans le bilan PDF (à la Finary annual report) : html2canvas → PNG dataURL → `doc.addImage`. Capturer Dashboard, courbe patrimoine, score santé, allocation Sankey. Page dédiée "Tableau de bord" insérée après la cover.
+- [ ] **Cover graphique** : ajouter un graphe sparkline net worth en filigrane derrière le hero, ou un mini donut composition d'actifs.
+
+### Stratégie business (prio 1 hors code)
+- [ ] **Trademark check Wealthly** : EUIPO / INPI / USPTO (wealthly.com existe déjà). Décision rebrand → si oui, candidats hébreu : Kéren, Otsar, Segula, Nahala, Yesod.
+- [ ] **Multi-currency** : `currency` sur households + `formatMoney(amount, currency, locale)` centralisé + Alembic revision. Utile dès qu'on sort de la France.
 
 ### Infra (prio 3)
 - [ ] **Tests frontend** : vitest sur `taxFr.js` (couverture rigoureuse du moteur fiscal).
@@ -110,6 +118,9 @@ Audit benchmarking Finary / Monarch / Kubera / Copilot. Diagnostic : direction o
 
 **2026-05-06 (après-midi) — Sécu basique + features signature**
 Rate limiting auth, alembic infra (auto-stamp baseline), filtres transactions multi-critères avec panel, score santé financière 0-100 avec jauge SVG hand-rolled.
+
+**2026-05-06 (soir) — Features patrimoniales + i18n + PDF dark + bug-bash**
+Plus-values latentes, plafonds régulés (PEA/Livret A/LDDS), YoY sur Suivi mensuel, drawer compte avec cross-view filter, refonte LiabilityDetail façon Finary, AuthScreen polish, PDF rebuild en thème dark mirror du site (cover hero + amortissement par dette + sanitize Unicode pour fixer les glyphs `/` et `"` venant de `Intl.NumberFormat`). i18n FR/EN setup avec bouton FR · EN inline (sortie de Réglages). Hotfixes : `WEALTH_SUBVIEWS` résiduel post-sed, SW cache version bump, `formatDate` manquant dans Dashboard (écran noir post-login).
 
 **2026-05-05 — Synchro bancaire DSP2**
 Intégration GoCardless Bank Account Data. Tables `bank_connections`, `bank_account_links`. Dédup sur `external_id`.

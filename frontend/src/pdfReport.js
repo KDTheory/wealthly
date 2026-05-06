@@ -497,91 +497,147 @@ export function generateBilanPdf({
   const scoreColor = score.total < 40 ? C.terracotta : score.total < 70 ? C.amber : C.sage;
 
   // ----- COVER -----
+  // Inspired by Pictet / Lombard Odier / Edmond de Rothschild annual reports:
+  // generous white-space (er, black-space), oversized typography, a single
+  // hairline gold rule as signature, hero KPI carved in the centre, mini
+  // stat grid at the bottom — feels institutional rather than dashboardy.
   paintBackground(doc);
-  // Big monogram top center-ish
+
+  const ownerName = activeMember ? activeMember.name : 'Foyer';
+  const yearMonth = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }).toUpperCase();
+
+  // === Top band — wordmark left, period right, gold rule beneath ===
+  // Monogram (stroke-only, dark fill = page bg shows through)
   doc.setDrawColor(...C.gold);
-  doc.setFillColor(...C.cardFill);
-  doc.setLineWidth(1);
-  doc.roundedRect(PAGE_M, 70, 38, 38, 4, 4, 'FD');
-  doc.setDrawColor(...C.goldDark);
-  doc.setLineWidth(1.2);
-  doc.lines([[5, 13], [5, -10], [5, 10], [5, -13]], PAGE_M + 7, 81);
-
-  doc.setFont(FONT, 'normal');
-  doc.setFontSize(11);
-  doc.setTextColor(...C.gold);
-  doc.text('WEALTHLY', PAGE_M + 50, 95, { charSpace: 2 });
-
-  // Big title block, centered vertically
-  doc.setFont(FONT, 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(...C.gold);
-  doc.text('BILAN PATRIMONIAL', PAGE_M, 220, { charSpace: 3 });
+  doc.setLineWidth(0.7);
+  doc.roundedRect(PAGE_M, 56, 26, 26, 3, 3, 'S');
+  doc.setLineWidth(0.8);
+  // W glyph inside the square
+  doc.lines([[4, 11], [4, -8], [4, 8], [4, -11]], PAGE_M + 5, 64);
 
   doc.setFont(FONT, 'bold');
-  doc.setFontSize(48);
+  doc.setFontSize(13);
   doc.setTextColor(...C.ink);
-  const titleLines = [activeMember ? activeMember.name : 'Foyer', 'Synthèse au'];
-  doc.text(titleLines[0], PAGE_M, 270);
+  doc.text('Wealthly', PAGE_M + 36, 74, { charSpace: 0.4 });
+
   doc.setFont(FONT, 'normal');
-  doc.setFontSize(34);
+  doc.setFontSize(8.5);
+  doc.setTextColor(...C.muted);
+  doc.text(yearMonth, pageW - PAGE_M, 74, { align: 'right', charSpace: 2.4 });
+
+  doc.setDrawColor(...C.gold);
+  doc.setLineWidth(0.4);
+  doc.line(PAGE_M, 96, pageW - PAGE_M, 96);
+
+  // === Eyebrow — formal classification line ===
+  doc.setFont(FONT, 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(...C.gold);
+  doc.text('BILAN PATRIMONIAL  ·  CONFIDENTIEL', PAGE_M, 200, { charSpace: 2.4 });
+
+  // === Title block — owner name oversized, date a tier below ===
+  doc.setFont(FONT, 'bold');
+  doc.setFontSize(58);
+  doc.setTextColor(...C.ink);
+  doc.text(ownerName, PAGE_M, 256);
+
+  doc.setFont(FONT, 'normal');
+  doc.setFontSize(15);
   doc.setTextColor(...C.body);
-  doc.text(todayLong(), PAGE_M, 312);
+  doc.text(`Synthèse arrêtée au ${todayLong()}`, PAGE_M, 286);
 
-  // Net worth hero on the cover
+  // Short signature gold rule below the title (Pictet / EdR signature)
+  doc.setDrawColor(...C.gold);
+  doc.setLineWidth(0.8);
+  doc.line(PAGE_M, 308, PAGE_M + 56, 308);
+
+  // === Hero — patrimoine net, the single biggest number on the document ===
+  doc.setFont(FONT, 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(...C.muted);
+  doc.text('PATRIMOINE NET CONSOLIDÉ', PAGE_M, 392, { charSpace: 2.4 });
+
+  doc.setFont(FONT, 'bold');
+  doc.setFontSize(72);
+  doc.setTextColor(...C.ink);
+  doc.text(fmtEUR(netWorth), PAGE_M, 462);
+
+  // Performance pill if we have one
+  if (perf1m != null) {
+    const perfTxt = `${perf1m >= 0 ? '+' : ''}${perf1m.toFixed(2)} %  sur le mois`;
+    const perfColor = perf1m >= 0 ? C.sage : C.terracotta;
+    doc.setFont(FONT, 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(...perfColor);
+    doc.text(perfTxt, PAGE_M, 488);
+  }
+
+  // === Stat grid — three mini-cards with a gold left strip each ===
+  const statY = 560;
+  const statH = 64;
+  const statGap = 12;
+  const statW = (pageW - PAGE_M * 2 - statGap * 2) / 3;
+  const statCards = [
+    { label: 'LIQUIDITÉS',     value: fmtEUR(liquidWealth),                                  meta: `${visibleAccounts.length} compte${visibleAccounts.length > 1 ? 's' : ''}` },
+    { label: 'ACTIFS',         value: fmtEUR(assetsValue),                                   meta: `${visibleAssets.length} ligne${visibleAssets.length > 1 ? 's' : ''}` },
+    {
+      label: liabilitiesValue > 0 ? 'DETTES' : 'SCORE SANTÉ',
+      value: liabilitiesValue > 0 ? `-${fmtEUR(liabilitiesValue)}` : `${score.total}`,
+      valueColor: liabilitiesValue > 0 ? C.terracotta : scoreColor,
+      meta: liabilitiesValue > 0
+        ? `${visibleLiabilities.length} prêt${visibleLiabilities.length > 1 ? 's' : ''}`
+        : (score.total < 40 ? 'À surveiller' : score.total < 70 ? 'Correct' : 'Solide'),
+    },
+  ];
+  statCards.forEach((s, i) => {
+    const x = PAGE_M + i * (statW + statGap);
+    doc.setFillColor(...C.cardFill);
+    doc.roundedRect(x, statY, statW, statH, 4, 4, 'F');
+    doc.setFillColor(...C.gold);
+    doc.rect(x, statY, 2, statH, 'F');
+    doc.setFont(FONT, 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...C.muted);
+    doc.text(s.label, x + 12, statY + 16, { charSpace: 1.6 });
+    doc.setFont(FONT, 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor(...(s.valueColor || C.ink));
+    doc.text(s.value, x + 12, statY + 40);
+    doc.setFont(FONT, 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...C.faint);
+    doc.text(s.meta, x + 12, statY + 54);
+  });
+
+  // === Bottom — "préparé pour" + confidentiality + pagination ===
+  // Hairline rule + two info lines + page mark
   doc.setDrawColor(...C.hairline);
-  doc.setLineWidth(0.5);
-  doc.line(PAGE_M, 360, pageW - PAGE_M, 360);
+  doc.setLineWidth(0.3);
+  doc.line(PAGE_M, pageH - 78, pageW - PAGE_M, pageH - 78);
 
   doc.setFont(FONT, 'bold');
   doc.setFontSize(7);
   doc.setTextColor(...C.gold);
-  doc.text('PATRIMOINE NET', PAGE_M, 388, { charSpace: 2 });
+  doc.text('PRÉPARÉ POUR', PAGE_M, pageH - 60, { charSpace: 1.8 });
   doc.setFont(FONT, 'bold');
-  doc.setFontSize(56);
-  doc.setTextColor(...C.ink);
-  doc.text(fmtEUR(netWorth), PAGE_M, 446);
-
-  // Mini stats row
-  doc.setFont(FONT, 'normal');
   doc.setFontSize(10);
-  doc.setTextColor(...C.muted);
-  const stats = [
-    `${fmtEUR(liquidWealth)} liquidités`,
-    `${fmtEUR(assetsValue)} actifs`,
-    liabilitiesValue > 0 ? `−${fmtEUR(liabilitiesValue)} dettes` : null,
-  ].filter(Boolean);
-  doc.text(stats.join('   ·   '), PAGE_M, 470);
+  doc.setTextColor(...C.ink);
+  doc.text(ownerName, PAGE_M, pageH - 46);
 
-  // Score santé bottom-right pill
-  doc.setFillColor(...C.cardFill);
-  doc.roundedRect(PAGE_M, 510, 240, 50, 6, 6, 'F');
-  doc.setFillColor(...scoreColor);
-  doc.rect(PAGE_M, 510, 3, 50, 'F');
-  doc.setFont(FONT, 'bold');
-  doc.setFontSize(7);
-  doc.setTextColor(...C.muted);
-  doc.text('SCORE DE SANTÉ', PAGE_M + 12, 525, { charSpace: 2 });
-  doc.setFont(FONT, 'bold');
-  doc.setFontSize(28);
-  doc.setTextColor(...scoreColor);
-  doc.text(`${score.total}`, PAGE_M + 12, 552);
-  doc.setFont(FONT, 'normal');
-  doc.setFontSize(11);
-  doc.setTextColor(...C.muted);
-  doc.text('/ 100', PAGE_M + 56, 552);
-  const ratingLabel = score.total < 40 ? 'À surveiller' : score.total < 70 ? 'Correct' : 'Solide';
-  doc.setFont(FONT, 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(...scoreColor);
-  doc.text(ratingLabel.toUpperCase(), PAGE_M + 100, 552, { charSpace: 1.5 });
-
-  // Footer of cover: confidential mention + page count placeholder
   doc.setFont(FONT, 'normal');
   doc.setFontSize(8);
   doc.setTextColor(...C.faint);
-  doc.text('Document confidentiel · à conserver', PAGE_M, pageH - 50);
-  doc.text(`Généré le ${todayLong()}`, pageW - PAGE_M, pageH - 50, { align: 'right' });
+  doc.text('Document strictement confidentiel — usage interne au foyer.', PAGE_M, pageH - 30);
+
+  // Page mark right-aligned, mono-style
+  doc.setFont(FONT, 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(...C.muted);
+  doc.text('PAGE', pageW - PAGE_M - 32, pageH - 60, { charSpace: 1.8 });
+  doc.setFont(FONT, 'bold');
+  doc.setFontSize(20);
+  doc.setTextColor(...C.gold);
+  doc.text('01', pageW - PAGE_M, pageH - 42, { align: 'right' });
 
   // ----- PAGE 2 — Synthèse -----
   doc.addPage(); paintBackground(doc); drawHeader(doc, headerSubtitle);

@@ -228,13 +228,12 @@ toast pipeline surfaces it without a special case. Limiter lives in
 
 ---
 
-## Last work session — 2026-05-06 (investor-ready push)
+## Last work session — 2026-05-06 (investor-ready push, 3 phases)
 
-Two-phase session. **Morning**: full visual refonte (hero overhaul, sidebar
-desktop, mobile bottom-nav 6 items, palette refinement, DM Sans/Mono fonts,
-modale modernization, sober empty states) + complete WealthlyApp découpe
-(6 386 → 1 139 lignes via L1 utils/constants/Styles + L2 all 10 views as
-separate files).
+**Morning**: full visual refonte (hero overhaul, sidebar desktop, mobile
+bottom-nav 6 items, palette refinement, DM Sans/Mono fonts, modale
+modernization, sober empty states) + complete WealthlyApp découpe
+(6 386 → 1 139 lignes via L1 utils/constants/Styles + L2 all 10 views).
 
 **Afternoon**: backend security baseline (slowapi rate limiting on auth),
 Alembic infrastructure with auto-stamp baseline, advanced transaction
@@ -242,10 +241,25 @@ filters panel (multi-cat / accs / members / dates / amounts / type),
 financial health score widget on Dashboard (0-100 SVG gauge + 5-criteria
 breakdown).
 
-Roadmap not done from the prompt PDF: JWT → httpOnly cookies (3.2),
-2FA TOTP (3.3), unrealized gains (4.2), regulatory caps (4.3), N vs N-1
-comparison (4.4), account detail drawer (4.6), i18n setup (5.x), tests
-frontend vitest (6.2), bank sync cron (6.3).
+**Evening**: unrealized gains (purchase_price/date via Alembic + PV %
+display), regulatory caps (PEA/Livret A/LDDS), YoY comparison on Suivi
+mensuel, account drawer (right slide-in + cross-view tx filter), Finary
+loan view rebuild, i18n FR/EN setup with inline FR · EN button (sidebar +
+mobile header — out of Settings), AuthScreen polish (radial vignette,
+honest copy, gold border-top), PDF rebuild — full dark theme matching the
+app, premium Pictet/EdR-style cover (oversized typo + signature gold
+rule + 3-card stat grid + "préparé pour" footer + page mark), per-debt
+amortization page with capital chart, Unicode sanitize at the doc.text
+seam (kills the `/` and `"` glyphs from `Intl.NumberFormat fr-FR`
+narrow-NBSP and U+2212 minus). Hotfixes: WEALTH_SUBVIEWS leftover
+post-sed crashing the build, SW cache version bump after broken-build
+streak, formatDate import missing in Dashboard (black screen post-login).
+
+Roadmap not yet done: JWT → httpOnly cookies (3.2), 2FA TOTP (3.3),
+multi-currency (5.3), tests frontend vitest on taxFr.js (6.2), bank
+sync cron (6.3), trademark research on "Wealthly" + Hebrew rebrand
+candidates, **PDF screenshots embed** à la Finary annual report
+(html2canvas → addImage). See ROADMAP.md.
 
 ## Previous session — 2026-05-05
 
