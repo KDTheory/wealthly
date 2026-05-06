@@ -447,6 +447,21 @@ export function generateBilanPdf({
   ASSET_CLASS_MAP,
 }) {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+
+  // jsPDF's default helvetica is WinAnsi-encoded — Unicode chars outside that
+  // table render as garbage glyphs (`/` for U+202F narrow nbsp from
+  // Intl.NumberFormat fr-FR, `"` for U+2212 minus, etc.). Sanitize every
+  // string at the doc.text seam so the rest of the file can stay readable.
+  const sanitize = (s) => typeof s === 'string'
+    ? s.replace(/ | /g, ' ').replace(/−/g, '-').replace(/–/g, '-')
+    : s;
+  const _origText = doc.text.bind(doc);
+  doc.text = (text, ...rest) => {
+    if (Array.isArray(text)) text = text.map(sanitize);
+    else text = sanitize(text);
+    return _origText(text, ...rest);
+  };
+
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const activeMember = members.find((m) => m.id === activeMemberId);

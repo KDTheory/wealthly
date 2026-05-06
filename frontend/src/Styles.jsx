@@ -968,14 +968,13 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .loan-finary-status.paid { background: var(--success-soft); color: var(--success); }
 .loan-finary-status.pending { background: var(--bg-subtle); color: var(--text-tertiary); }
 
-/* Language picker — FR / EN segmented pills in Settings */
-.lang-switch { display: inline-flex; gap: 4px; padding: 4px; background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: 10px; align-self: flex-start; margin-bottom: 12px; }
-.lang-pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; background: transparent; border: 1px solid transparent; color: var(--text-secondary); font-size: 12.5px; font-weight: 500; border-radius: 7px; cursor: pointer; font-family: inherit; transition: color .15s, background .15s, border-color .15s; }
-.lang-pill:hover { color: var(--text-primary); }
-.lang-pill.active { background: var(--bg-card); color: var(--text-primary); border-color: var(--border); }
-.lang-pill-code { font-family: 'DM Mono', ui-monospace, monospace; font-size: 11px; padding: 2px 6px; border-radius: 4px; background: var(--primary-soft); color: var(--primary); letter-spacing: 0.04em; }
-.lang-pill.active .lang-pill-code { background: var(--primary); color: var(--bg-page); }
-.lang-pill-name { font-weight: 500; }
+/* Language switcher — small inline FR · EN toggle in sidebar utilities + mobile header */
+.lang-btn { display: inline-flex; align-items: center; gap: 4px; height: 36px; padding: 0 10px; border-radius: 10px; background: var(--bg-subtle); border: 1px solid var(--border); color: var(--text-tertiary); font-family: 'DM Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.06em; cursor: pointer; transition: background .15s, color .15s, border-color .15s; }
+.lang-btn:hover { background: var(--bg-card-hover); border-color: var(--border-strong, var(--border)); }
+.lang-btn-side { color: var(--text-tertiary); transition: color .15s; }
+.lang-btn-side.on { color: var(--primary); font-weight: 600; }
+.lang-btn-sep { color: var(--text-faint, var(--text-tertiary)); opacity: 0.5; }
+@media (max-width: 1023px) { .lang-btn { height: 32px; padding: 0 8px; font-size: 10.5px; } }
 
 @media (max-width: 900px) {
   .loan-finary-kpi-strip { grid-template-columns: 1fr; align-items: start; }

@@ -3,6 +3,7 @@ import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, X
 import { Upload, Plus, TrendingUp, TrendingDown, Wallet, Home, Coins, CreditCard, Users, Settings, Search, Download, Trash2, Edit3, Check, X, ChevronRight, ChevronLeft, AlertCircle, AlertTriangle, Repeat, Calendar, ArrowUpDown, Eye, EyeOff, Sparkles, PiggyBank, Bitcoin, Banknote, Landmark, BarChart3, Target, Heart, Sun, Moon, Zap, Activity, ArrowUp, ArrowDown, Minus, PartyPopper, Lightbulb, Bell, ChevronUp, Play, Lock, Unlock, LogOut, Cloud, RefreshCw, FileText, Calculator, Link2, Unlink } from 'lucide-react';
 import * as api from './api.js';
 import { useTranslation } from 'react-i18next';
+import { LangButton } from './components/LangButton.jsx';
 import { getDemoData } from './demoData.js';
 import {
   APP_NAME, STORAGE_KEYS, DEFAULT_CATEGORIES, DEFAULT_RULES, BANK_PROFILES,
@@ -964,6 +965,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
               <Upload size={14}/> <span>{t('nav.import')}</span>
             </button>
             <div className="sidebar-utilities">
+              <LangButton />
               <button className="icon-btn" onClick={() => setHideAmounts(!hideAmounts)} title="Masquer/afficher">
                 {hideAmounts ? <EyeOff size={16}/> : <Eye size={16}/>}
               </button>
@@ -987,6 +989,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
               <div className="brand-name">{APP_NAME}</div>
             </div>
             <div className="header-actions">
+              <LangButton />
               <button className="icon-btn" onClick={() => setHideAmounts(!hideAmounts)} title="Masquer/afficher">
                 {hideAmounts ? <EyeOff size={16}/> : <Eye size={16}/>}
               </button>
