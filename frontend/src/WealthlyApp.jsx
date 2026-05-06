@@ -1789,19 +1789,24 @@ function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, this
 
   if (visibleAccounts.length === 0 && visibleAssets.length === 0 && visibleLiabilities.length === 0) {
     return (
-      <div className="w-redesign min-h-[60vh] flex flex-col items-center justify-center text-center px-6">
-        <div className="w-14 h-14 rounded-full bg-[var(--color-w-accent-soft)] flex items-center justify-center mb-5 text-[var(--color-w-accent)]">
-          <Sparkles size={24}/>
-        </div>
-        <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-w-text)] mb-2">{activeMember ? `Bonjour ${activeMember.name}` : 'Bienvenue'}</h1>
-        <p className="text-[var(--color-w-muted)] max-w-md mb-6">Aucune donnée pour l'instant. Importez votre premier CSV ou ajoutez un actif pour commencer.</p>
-        <div className="flex gap-3">
-          <button onClick={() => setView('import')} className="inline-flex items-center gap-2 px-4 h-10 rounded-[var(--radius-w-md)] bg-[var(--color-w-accent)] text-[#0a0a0c] font-medium hover:bg-[var(--color-w-accent-hover)] transition-colors">
-            <Upload size={15}/> Importer un CSV
-          </button>
-          <button onClick={() => setView('wealth')} className="inline-flex items-center gap-2 px-4 h-10 rounded-[var(--radius-w-md)] border border-[var(--color-w-border-strong)] text-[var(--color-w-text)] hover:bg-[var(--color-w-surface-2)] transition-colors">
-            <Plus size={14}/> Ajouter un actif
-          </button>
+      <div className="w-redesign min-h-[60vh] flex items-center justify-center px-6">
+        <div className="max-w-xl w-full">
+          <div className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-w-accent)] font-medium mb-4">Bienvenue chez Wealthly</div>
+          <h1 className="text-[clamp(34px,5vw,52px)] leading-[1.05] font-medium tracking-[-0.04em] text-[var(--color-w-text)] mb-4">
+            {activeMember ? `Bonjour ${activeMember.name}.` : 'Votre patrimoine,'}<br/>
+            <span className="text-[var(--color-w-muted)]">consolidé en quelques minutes.</span>
+          </h1>
+          <p className="text-[var(--color-w-muted)] leading-relaxed mb-7 max-w-md">
+            Importez vos relevés ou saisissez vos actifs. Tout reste chiffré, hébergé chez vous.
+          </p>
+          <div className="flex gap-3 flex-wrap">
+            <button onClick={() => setView('import')} className="inline-flex items-center gap-2 px-5 h-11 rounded-[var(--radius-w-md)] bg-[var(--color-w-accent)] text-[#0a0a0c] font-medium hover:bg-[var(--color-w-accent-hover)] transition-colors">
+              <Upload size={15}/> Importer un relevé
+            </button>
+            <button onClick={() => setView('wealth')} className="inline-flex items-center gap-2 px-5 h-11 rounded-[var(--radius-w-md)] border border-[var(--color-w-border-strong)] text-[var(--color-w-text)] hover:bg-[var(--color-w-surface-2)] transition-colors">
+              <Plus size={14}/> Saisir un actif
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -5380,17 +5385,17 @@ function Styles({ theme }) {
 .icon-btn-sm { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: transparent; border: 1px solid transparent; color: var(--text-tertiary); cursor: pointer; transition: all 0.15s; }
 .icon-btn-sm:hover { background: var(--bg-subtle); color: var(--text-primary); }
 
-.primary-btn, .primary-btn-large, .secondary-btn, .danger-btn, .danger-btn-sm { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; border: 1px solid transparent; font-family: inherit; letter-spacing: 0.01em; }
-.primary-btn { background: var(--primary); color: ${dark ? '#0c0d10' : '#ffffff'}; }
+.primary-btn, .primary-btn-large, .secondary-btn, .danger-btn, .danger-btn-sm { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; border: 1px solid transparent; font-family: inherit; letter-spacing: -0.005em; }
+.primary-btn { background: var(--primary); color: ${dark ? '#0c0d10' : '#ffffff'}; height: 36px; padding: 0 16px; }
 .primary-btn:hover { background: var(--primary-hover); }
 .primary-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.primary-btn-large { background: var(--primary); color: ${dark ? '#0c0d10' : '#ffffff'}; padding: 11px 22px; font-size: 14px; }
+.primary-btn-large { background: var(--primary); color: ${dark ? '#0c0d10' : '#ffffff'}; height: 44px; padding: 0 22px; font-size: 14px; font-weight: 500; }
 .primary-btn-large:hover { background: var(--primary-hover); }
-.secondary-btn { background: transparent; border: 1px solid var(--border-strong); color: var(--text-primary); }
+.secondary-btn { background: transparent; border: 1px solid var(--border-strong); color: var(--text-primary); height: 36px; padding: 0 16px; }
 .secondary-btn:hover { background: var(--bg-subtle); border-color: var(--text-tertiary); }
-.danger-btn { background: var(--danger-soft); color: var(--danger-text); border: 1px solid transparent; }
+.danger-btn { background: var(--danger-soft); color: var(--danger-text); border: 1px solid transparent; height: 36px; padding: 0 14px; }
 .danger-btn:hover { background: var(--danger); color: white; }
-.danger-btn-sm { padding: 5px 9px; background: var(--danger-soft); color: var(--danger-text); font-size: 12px; }
+.danger-btn-sm { padding: 5px 9px; background: var(--danger-soft); color: var(--danger-text); font-size: 12px; border-radius: 6px; }
 .link-btn { background: transparent; border: none; color: var(--primary); font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; padding: 4px 8px; border-radius: 4px; }
 .link-btn:hover { background: var(--primary-soft); }
 
@@ -5468,14 +5473,16 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .onboarding-actions { display: flex; gap: 12px; justify-content: space-between; }
 
 /* EMPTY */
-.empty-state { padding: 60px 20px; text-align: center; max-width: 480px; margin: 0 auto; }
-.empty-illustration { margin-bottom: 24px; }
-.empty-circle { width: 64px; height: 64px; border-radius: 8px; background: var(--primary-soft); border: 1px solid ${dark ? 'rgba(197, 165, 114, 0.32)' : 'rgba(160, 133, 85, 0.28)'}; display: inline-flex; align-items: center; justify-content: center; color: var(--primary); }
-.empty-state h1 { font-size: 28px; font-weight: 700; margin: 0 0 8px; }
-.empty-lead { font-size: 14px; color: var(--text-secondary); margin: 0 0 24px; line-height: 1.6; }
-.empty-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-.empty-mini { padding: 32px 20px; text-align: center; color: var(--text-tertiary); display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.empty-state { padding: 80px 20px; text-align: left; max-width: 560px; margin: 0 auto; }
+.empty-illustration { margin-bottom: 20px; }
+.empty-circle { display: none; }
+.empty-eyebrow { font-size: 10px; text-transform: uppercase; letter-spacing: 0.2em; color: var(--primary); font-weight: 500; margin-bottom: 14px; }
+.empty-state h1 { font-size: clamp(30px, 4vw, 42px); font-weight: 500; margin: 0 0 12px; letter-spacing: -0.035em; line-height: 1.1; }
+.empty-lead { font-size: 14px; color: var(--text-secondary); margin: 0 0 28px; line-height: 1.6; max-width: 440px; }
+.empty-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.empty-mini { padding: 32px 20px; text-align: center; color: var(--text-tertiary); display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .empty-mini p { margin: 0; font-size: 13px; max-width: 320px; line-height: 1.5; }
+.empty-mini svg { color: var(--text-tertiary); opacity: 0.5; }
 
 /* DASHBOARD */
 .dashboard { display: flex; flex-direction: column; gap: 24px; }

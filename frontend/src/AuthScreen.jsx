@@ -88,16 +88,16 @@ export default function AuthScreen({ onAuth, onTryDemo }) {
             </svg>
           </div>
           <div className="auth-wordmark">Wealthly</div>
-          <div className="auth-tagline">Patrimoine privé</div>
+          <div className="auth-tagline">Gestion de patrimoine privée</div>
 
           <div className="auth-pitch">
-            Vue consolidée de votre patrimoine familial. Comptes, placements, immobilier, dettes — souverain, chiffré, vôtre.
+            Suivez. Comprenez. Décidez. La vue consolidée de votre patrimoine familial — comptes, placements, immobilier, dettes — souveraine et chiffrée.
           </div>
 
           <div className="auth-bullets">
-            <div className="auth-bullet"><span className="auth-bullet-dot"/>Auto-hébergé · vos données chez vous</div>
-            <div className="auth-bullet"><span className="auth-bullet-dot"/>Catégorisation IA optionnelle (BYOK)</div>
-            <div className="auth-bullet"><span className="auth-bullet-dot"/>Multi-membres · vue par foyer</div>
+            <div className="auth-bullet"><span className="auth-bullet-dot"/>Auto-hébergé. Vos données ne sortent pas de chez vous.</div>
+            <div className="auth-bullet"><span className="auth-bullet-dot"/>Catégorisation par IA, optionnelle, avec votre clé.</div>
+            <div className="auth-bullet"><span className="auth-bullet-dot"/>Multi-membres. Une vue par foyer, une par personne.</div>
           </div>
         </aside>
 
@@ -336,20 +336,21 @@ const authStyles = `
   margin-bottom: 4px;
 }
 .auth-wordmark {
-  font-size: 32px; font-weight: 600; letter-spacing: -0.03em;
+  font-size: 44px; font-weight: 500; letter-spacing: -0.04em;
   color: #ebe8e3;
   line-height: 1;
 }
 .auth-tagline {
-  font-size: 11px; font-weight: 500;
-  text-transform: uppercase; letter-spacing: 0.18em;
+  font-size: 10px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.22em;
   color: #c5a572;
 }
 .auth-pitch {
-  font-size: 15px; line-height: 1.6;
+  font-size: 16px; line-height: 1.6;
   color: #b5b2ab;
-  max-width: 380px;
+  max-width: 400px;
   margin-top: 28px;
+  letter-spacing: -0.01em;
 }
 .auth-bullets {
   display: flex; flex-direction: column; gap: 10px;
@@ -559,6 +560,6 @@ const authStyles = `
   }
   .auth-pitch { display: none; }
   .auth-bullets { display: none; }
-  .auth-wordmark { font-size: 28px; }
+  .auth-wordmark { font-size: 36px; }
 }
 `;
