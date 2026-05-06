@@ -90,6 +90,55 @@ def _run_lightweight_migrations() -> None:
 
 _run_lightweight_migrations()
 
+
+def _alembic_sync() -> None:
+    """Bring the alembic_version table into agreement with the live schema.
+
+    Two cases the startup hook handles automatically so deploys are safe:
+    1. Existing prod DB (Supabase) with tables but no alembic_version row →
+       stamp 'head'. Treats the current schema as the alembic baseline so
+       future migrations can run cleanly.
+    2. Any DB already at some revision → upgrade head, applying any new
+       migrations shipped in this deploy.
+
+    Non-fatal: if alembic isn't installed or alembic.ini is missing, we log
+    and continue; create_all() + the lightweight migrations above already
+    keep the DB usable.
+    """
+    try:
+        from alembic.config import Config as AlembicConfig
+        from alembic import command as alembic_command
+    except ImportError:
+        logger.warning("[alembic] alembic package not installed — skipping sync")
+        return
+
+    import os
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    cfg_path = os.path.join(project_root, "alembic.ini")
+    if not os.path.exists(cfg_path):
+        logger.warning("[alembic] %s missing — skipping sync", cfg_path)
+        return
+
+    cfg = AlembicConfig(cfg_path)
+    cfg.set_main_option("script_location", os.path.join(project_root, "alembic"))
+
+    try:
+        with engine.connect() as conn:
+            has_version_table = conn.execute(text(
+                "SELECT 1 FROM information_schema.tables "
+                "WHERE table_name = 'alembic_version'"
+            )).first() is not None
+        if not has_version_table:
+            logger.info("[alembic] no alembic_version table — stamping head")
+            alembic_command.stamp(cfg, "head")
+        else:
+            alembic_command.upgrade(cfg, "head")
+    except Exception as e:
+        logger.warning("[alembic] sync failed (non-fatal): %s", e)
+
+
+_alembic_sync()
+
 # Surface GoCardless config status at startup so Railway logs make it obvious
 # whether the env vars are loaded inside the container.
 if settings.GOCARDLESS_SECRET_ID and settings.GOCARDLESS_SECRET_KEY:
