@@ -1279,7 +1279,13 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   // ============================================================================
   // RENDER
   // ============================================================================
-  const fmt = (v, opts) => hideAmounts ? '••••' : formatCurrency(v, opts);
+  // Stable across renders so memoized children aren't invalidated when only
+  // an unrelated piece of state changes. Identity flips only when the user
+  // toggles "masquer montants".
+  const fmt = useCallback(
+    (v, opts) => hideAmounts ? '••••' : formatCurrency(v, opts),
+    [hideAmounts]
+  );
 
   if (loading) return <div className="loading-screen"><Styles theme={theme}/><div className="spinner"/><span>Chargement…</span></div>;
 
@@ -1505,7 +1511,7 @@ function Confetti() {
   );
 }
 
-function AnimatedNumber({ value, format, duration = 800 }) {
+const AnimatedNumber = React.memo(function AnimatedNumber({ value, format, duration = 800 }) {
   const [display, setDisplay] = useState(value);
   const startRef = useRef(null);
   const startValueRef = useRef(value);
@@ -1531,7 +1537,7 @@ function AnimatedNumber({ value, format, duration = 800 }) {
   }, [value, duration]);
 
   return <>{format ? format(display) : display}</>;
-}
+});
 
 // ============================================================================
 // ONBOARDING
@@ -2779,7 +2785,7 @@ function Cashflow({ transactions, categories, accounts, memberShare, fmt, curren
 }
 
 // Custom Sankey node — colored bar with label outside the diagram
-function SankeyNode({ x, y, width, height, index, payload, narrow }) {
+const SankeyNode = React.memo(function SankeyNode({ x, y, width, height, index, payload, narrow }) {
   const isLeft = payload.kind === 'income';
   const color = payload.color || (payload.kind === 'hub' ? 'var(--primary)' : payload.kind === 'savings' ? 'var(--primary)' : payload.kind === 'income' ? 'var(--success)' : 'var(--danger)');
   const labelOffset = narrow ? 5 : 8;
@@ -2816,7 +2822,7 @@ function SankeyNode({ x, y, width, height, index, payload, narrow }) {
       )}
     </Layer>
   );
-}
+});
 
 function Budgets({ categories, budgets, setBudget, categoryAnalysis, fiftyThirtyTwenty, thisMonthStats, cashflowProjection, goals, saveGoal, deleteGoal, fmt }) {
   const [showGoalEditor, setShowGoalEditor] = useState(null);
@@ -3811,7 +3817,7 @@ const NW_MODES = [
   { key: 'financial', label: 'Patrimoine financier' },
 ];
 
-function NetWorthChart({ snapshots = [], fmt }) {
+const NetWorthChart = React.memo(function NetWorthChart({ snapshots = [], fmt }) {
   const [mode, setMode] = useState('net');
   const [view, setView] = useState('evolution'); // evolution | performance
   const [period, setPeriod] = useState('TOUT');
@@ -3923,7 +3929,7 @@ function NetWorthChart({ snapshots = [], fmt }) {
       </div>
     </div>
   );
-}
+});
 
 // ============================================================================
 // LIABILITY WIZARD (5 steps — inspired by Finary)
