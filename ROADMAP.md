@@ -1,103 +1,117 @@
 # Wealthly — Roadmap
 
-État au **2026-05-05** (synchro bancaire ajoutée).
+État au **2026-05-06** — sortie de session "investor-ready" (refonte UI + sécu + features signature).
 
 ---
 
 ## ✅ Fait
 
+### Architecture & code
+- [x] **Découpe du monolithe** `WealthlyApp.jsx` : 6 386 → 1 139 lignes (-82 %), répartis en :
+  - `src/constants.js`, `src/storage.js`, `src/utils.js`
+  - `src/Styles.jsx` (CSS-in-JS isolé)
+  - `src/components/` : `Toast`, `AnimatedNumber`, `NetWorthChart`, `HealthScore`
+  - `src/hooks/` : `useIsNarrow`
+  - `src/views/` : `Dashboard`, `Wealth`, `Monthly`, `Cashflow`, `Budgets`, `Transactions`, `Analysis`, `Settings`, `ImportFlow`, `Onboarding`
+- [x] **Code-splitting** : recharts / lucide / jspdf en chunks séparés via Vite `manualChunks`. `TaxSimulator`, `BankCallback` et `pdfReport` chargés en `lazy` / `import()` dynamiques.
+- [x] **Memoization** : `AnimatedNumber`, `NetWorthChart`, `SankeyNode` en `React.memo`, `fmt` stabilisé via `useCallback`.
+
 ### Visuel & design system
-- [x] Tailwind v4 + design tokens (CSS vars) — palette "encre profonde + or sobre" type banque privée
-- [x] Refonte complète du Dashboard (Tailwind utilities, tokens-based)
-- [x] Propagation de la palette sur toutes les pages via le CSS-in-JS existant (rewiring des `--bg-card`, `--primary`…)
-- [x] Boutons / inputs / cartes adoucis (radii sharper, pas de glow bleu, pas de transform hover)
-- [x] Nouveau monogramme W or (favicon + brand mark + AuthScreen + onboarding)
-- [x] AuthScreen entièrement refait — layout 2 colonnes, sombre, branded, modes login/register/forgot/reset
-- [x] Onboarding : palette membres harmonisée, ready-icon sobre, copy resserrée, progress dots inversés sur or
-- [x] Rename "Trésorerie" → "Suivi mensuel"
+- [x] Direction "encre profonde + or sobre + sage / terracotta sourds" stabilisée (Pictet / Edmond de Rothschild mood).
+- [x] **Sidebar gauche persistante** sur desktop (≥ 1024 px), bottom-nav 6 items sur mobile.
+- [x] Refonte hero Dashboard : net worth en `clamp(46→84px)` sur sparkline gold, perf pill 1M inline, secondary KPI strip sobre.
+- [x] **Polices DM Sans + DM Mono** (variable, single woff2 chacune), tabular-nums sur tous les chiffres.
+- [x] Palette refinée : `--bg-page` → `#0a0b0e`, borders en `rgba(255,255,255,0.07/0.12)`, success/danger/warning ré-saturés, nouveaux tokens `--num-positive` / `--num-negative` / `--bg-hover` / `--primary-dim`.
+- [x] **Hero card** : strip or 2 px en haut comme signature visuelle exclusive.
+- [x] Card titles en eyebrow Linear-style (small caps, 0.14em letter-spacing).
+- [x] Empty states refaits en typo statement gauche-aligné.
+- [x] Modales : backdrop blur 8 px + slide-in 180 ms cubic-bezier, header sober, footer sur surface secondaire.
+- [x] Boutons CTA hauteur fixe (36 / 44 px), radius 8 px.
+- [x] Mode dark forcé partout (mode clair retiré, plus de toggle, anti-flash inline dans `<head>`).
+- [x] Suppression du parc d'emojis dans le chrome (toasts, status pills, KPI metas) — émojis restent dans le contenu utilisateur (catégories).
+- [x] Suppression du composant Confetti (dead code).
 
 ### Mobile & PWA
-- [x] Mobile responsive : nav en barre du bas, header compact, modales plein écran, tableau transactions reflowé
-- [x] Safe-area-inset support (iPhone à encoche)
-- [x] PWA installable : manifest, icônes (gold W on dark + maskable variant), service worker minimal (network-first shell, cache-first hashed assets)
-- [x] Métadonnées iOS (`apple-mobile-web-app-capable`, viewport-fit=cover)
+- [x] Bottom-nav 6 items, blur(16px) saturate(180%), safe-area-inset-bottom, label visible.
+- [x] Sankey responsive (marges et nodes adaptés < 760 px).
+- [x] Anti-jank Recharts : `isAnimationActive: false` global (gros gain iOS Safari).
+- [x] Optimistic auth : `auth.me()` ne bloque plus le boot, l'app rentre direct.
+- [x] PWA installable (manifest, SW network-first, iOS metas, viewport-fit=cover).
 
 ### Features fonctionnelles
-- [x] **Export PDF bilan** mensuel (3 pages : Synthèse, Trésorerie, Détail) via jsPDF + jspdf-autotable
-- [x] **Simulateur d'impôt FR 2025** :
-  - Barème progressif, parts fiscales (couple / enfants), plafond du quotient familial, décote
-  - Salaires séparés conjoint A / conjoint B + primes exceptionnelles par conjoint
-  - Crédits d'impôt : garde d'enfants <6 ans (3 500 €/enfant) + emploi à domicile CESU (12 000 € + 1 500 €/personne, max 15 000 €)
-  - Plafond global niches fiscales 10 000 € (avec warning quand atteint)
-  - Pré-remplissage depuis l'historique transactions
-  - Solde à payer / trop-perçu vs PAS, taux PAS cible
-- [x] **Règles de catégorisation custom** (UI dans Réglages, validation regex client-side, pipe-separated patterns)
-- [x] **Historique patrimoine** : nouvelle table `wealth_snapshots`, snapshot mensuel auto-uploadé (debounced + idempotent), courbe d'évolution sur la page Patrimoine
-- [x] **Alerte budget** : badge rouge sur la nav avec le nombre de budgets dépassés ce mois
-- [x] **Mot de passe oublié** : table `password_reset_tokens` (SHA-256, single-use, 60 min), email via Resend, écran reset auto-déclenché par `?reset_token=` dans l'URL
-- [x] **Mode démo** : seed côté client pour explorer l'app sans inscription (Alice + Bob + Léa, 6 mois de données réalistes)
-- [x] **Synchro bancaire DSP2** : intégration GoCardless Bank Account Data (gratuit, EU). L'admin du foyer connecte ses banques depuis Réglages → flow OAuth bancaire → mapping comptes distants ↔ comptes Wealthly → sync auto 1×/jour à la connexion + bouton manuel. Dédup sur `external_id`, catégorisation appliquée à chaque tx synchronisée. Tables `bank_connections` + `bank_account_links`, colonnes `source` + `external_id` ajoutées sur `transactions`. Section désactivée si secrets non configurés.
+- [x] **Score santé financière** (Dashboard) : jauge SVG 270° + 5 critères pondérés (taux épargne 25 / fonds urgence 20 / dette/actif 20 / diversification 20 / budgets 15), couleur rouge → ambre → sage selon le seuil 40 / 70.
+- [x] **Filtres transactions avancés** : panel collapsible avec multi-cat (revenus / dépenses groupés, compteurs), multi-comptes, multi-membres (chips colorées), plage de dates, montant min/max, type (revenus / dépenses / tout). Badge or sur le bouton Filtres avec compte de filtres actifs.
+- [x] **Hub Mensuel** : Vue mensuelle / Cashflow / Budgets regroupés sous un seul item de nav avec segmented control interne.
+- [x] **Export PDF bilan** mensuel (3 pages, jsPDF dynamiquement importé).
+- [x] **Simulateur d'impôt FR 2025** : barème, parts, plafond quotient, décote, crédits garde enfants + CESU, plafond niches 10 000 €.
+- [x] **Règles de catégorisation custom** (UI dans Réglages, validation regex client-side).
+- [x] **Historique patrimoine** : `wealth_snapshots` mensuel auto, courbe avec toggle brut / net / financier + sélecteur de période.
+- [x] **Alerte budget** : badge rouge sur la nav avec nombre de budgets dépassés.
+- [x] **Mot de passe oublié** : table dédiée (SHA-256, single-use, 60 min), email Resend, écran reset auto-déclenché par `?reset_token=`.
+- [x] **Mode démo** : seed client-side (Alice + Bob + Léa, 6 mois de données réalistes).
+- [x] **Synchro bancaire DSP2** : intégration GoCardless Bank Account Data, dédup sur `external_id`.
+
+### Sécurité
+- [x] **Rate limiting** sur `/auth/login` (10 req/min IP), `/auth/register` (5 req/min), `/auth/forgot-password` (5 req/min) via slowapi.
+- [x] CORS regex pour matcher tous les déploiements Vercel.
+- [x] HTTPS partout, mots de passe bcrypt, JWT signé 7 jours.
 
 ### Backend & infra
-- [x] CORS regex pour matcher tous les déploiements Vercel (`wealthly(-…)?\.vercel\.app`)
-- [x] Tests pytest (25 tests couvrent auth, password reset, snapshots, rules)
-- [x] CI GitHub Actions sur chaque push + PR (notification mail si KO)
-- [x] Logging structuré du service email (Railway logs)
-
-### Bugs résolus
-- [x] Carte "Charges fixes" qui suivait au scroll (grid-row: span 2 retiré)
-- [x] Section "Composition" du Dashboard cassée (référence à `wealthComposition` undefined → utilise `allocationData`)
+- [x] **Alembic** : infrastructure posée (alembic.ini, env.py, baseline marker), auto-stamp au boot pour la DB existante. Future modifs schémas via revisions.
+- [x] Tests pytest (25+ tests : auth, password reset, snapshots, rules, banks).
+- [x] CI GitHub Actions sur chaque push + PR.
+- [x] Logging structuré email service (Railway logs).
 
 ---
 
 ## 🔜 À faire
 
-### Refactoring (prio 1, technique)
-- [ ] **Découpe du monolithe** `frontend/src/WealthlyApp.jsx` (~4500 lignes) en :
-  - `lib/constants.js`, `lib/format.js`, `lib/recurring.js`
-  - `components/AnimatedNumber.jsx`, `Toast.jsx`, `Confetti.jsx`, `Styles.jsx`
-  - `views/Dashboard.jsx`, `Wealth.jsx`, `Monthly.jsx`, `Transactions.jsx`, `Budgets.jsx`, `SettingsView.jsx`, `ImportFlow.jsx`, `Onboarding.jsx`
-  - `components/MemberEditor.jsx`, `AssetEditor.jsx`, `LiabilityEditor.jsx`
-  - `hooks/useReload.js`, `useMembers.js`, etc.
-  
-  À faire par niveaux pour limiter le risque (utils → composants → vues → modales).
-
 ### Sécurité (prio 1)
-- [ ] **Vérifier `SECRET_KEY`** sur Railway — toujours penser à la rotation périodique
-- [ ] **2FA** (TOTP via `pyotp` + QR code)
-- [ ] **Journal de connexion** : table `login_events` avec IP / user-agent / timestamp, vue admin
-- [ ] **Rate limiting** sur `/auth/login` et `/auth/forgot-password` (slowapi)
+- [ ] **JWT → httpOnly cookies** : migrer le token hors du `localStorage` (XSS-vulnerable). Setter cookie httpOnly+Secure+SameSite=Lax, middleware lit Bearer header OU cookie pendant la migration, endpoint `/auth/logout` pour clear server-side.
+- [ ] **2FA TOTP** : `pyotp` + `qrcode`, table `totp_secrets`, flow login en deux étapes (`requires_totp` + `partial_token`), backup codes, section dédiée dans Réglages.
+- [ ] **Vérifier `SECRET_KEY`** sur Railway (rotation périodique).
+- [ ] **Journal de connexion** : table `login_events` (IP, UA, timestamp), vue admin.
 
-### Features (prio 2)
-- [ ] **Tests frontend** — vitest sur `taxFr.js` (le moteur fiscal mérite une couverture rigoureuse vu sa criticité)
-- [ ] **Calcul plus-values latentes** sur les actifs (PEA, CTO) — saisir prix de revient, afficher PV en € et %
-- [ ] **Plafond annuel** sur PEA (150 000 €) et Livret A — alertes
-- [ ] **Comparaison mois N vs N-1** sur le suivi mensuel
-- [ ] **Score de santé financière** (style Finary) : note 0-100 sur taux d'épargne, ratio dette, fonds d'urgence, diversification
-- [ ] **Migrations Alembic** — actuellement `Base.metadata.create_all()` sur startup, qui rajoute des tables mais ne migre rien d'existant. Avant tout changement de colonne, basculer.
+### Features produit (prio 2)
+- [ ] **Plus-values latentes** sur les actifs : champ `purchase_price` + `purchase_date` (alembic revision), affichage PV € + % dans Patrimoine.
+- [ ] **Plafonds régulés** : alertes barres de progression PEA (150 k€), Livret A (22 950 €), LDDS (12 000 €).
+- [ ] **Comparaison N vs N-1** sur Suivi mensuel (vs même mois année précédente, sémantique color-coded).
+- [ ] **Aperçu de compte** : drawer latéral au clic sur un compte (sparkline 3 mois + 10 dernières transactions + lien vers Transactions filtré).
+- [ ] **Tooltips contextuels** sur les KPIs gestion privée.
 
-### UX (prio 3)
-- [ ] **Tooltips** sur les KPIs gestion privée (explication du concept)
-- [ ] **Aperçu de compte** : cliquer sur un compte ouvre ses transactions filtrées
-- [ ] **Tri / filtres avancés** dans Transactions : multi-catégories, plage de dates, montant min/max
-- [ ] **Onboarding** : preview live des KPIs mis à jour au fur et à mesure que l'utilisateur saisit ses comptes
+### Internationalisation (prio 2 stratégique)
+- [ ] **Setup i18n** (`react-i18next` + `i18next`), `src/locales/fr/en/`, internationaliser nav + Dashboard + erreurs API + ImportFlow d'abord.
+- [ ] **Sélecteur de langue** dans Réglages (FR / EN), persistance localStorage.
+- [ ] **Multi-currency formatting** : centraliser `formatMoney(amount, currency, locale)`, ajouter `currency` sur la table `households` (alembic revision).
+
+### Infra (prio 3)
+- [ ] **Tests frontend** : vitest sur `taxFr.js` (couverture rigoureuse du moteur fiscal).
+- [ ] **Cron Railway pour sync bancaire** : endpoint `/internal/sync-all-banks` protégé par secret header, déclenché 1×/jour à 6h UTC.
+- [ ] **Notif email J-7 expiration consentement DSP2** via Resend.
+
+### Refactoring (prio 4 — quand le besoin se fera sentir)
+- [ ] **Découpe data layer** : extraire les hooks `useReload`, `useMembers`, `useAccounts`, `useTransactions`, `useWealth` du shell `WealthlyApp.jsx` (~1100 lignes, encore prop-drillage).
+- [ ] **TypeScript** ? À discuter — pour l'instant pas de friction concrète.
 
 ---
-
-## 🔜 À faire (suite synchro bancaire)
-- [ ] **Cron Railway** pour sync auto en arrière-plan (v1 : sync uniquement à la connexion d'un admin)
-- [ ] **Notif email J-7 expiration consentement** via Resend (le consentement DSP2 dure 90 jours max)
-- [ ] **Migration Bridge** ou **Powens** si besoin de sync silencieux longue durée ou meilleure couverture des comptes titres
 
 ## 🚫 Hors scope (volontairement)
 
-- ❌ **Rebalancing d'allocation** — refusé
-- ❌ **Garde alternée** dans le simulateur d'impôt — supprimé sur demande utilisateur
+- ❌ **Rebalancing automatique d'allocation** — refusé.
+- ❌ **Garde alternée** dans le simulateur d'impôt — supprimée sur demande.
+- ❌ **Mode clair** — supprimé sur demande utilisateur (dark-only).
 
 ---
 
-## 📅 Notes session 2026-05-05
+## 📅 Notes des sessions
 
-Direction visuelle stabilisée : **encre profonde + or sobre + sage / terracotta sourds**. Inspirations : Finary (couleur, typo numéraire), Linear (sobriety craft), banque privée (mood général). Le user a explicitement validé après l'avoir vu en prod.
+**2026-05-06 (matin) — Refonte visuelle "investor-ready" + découpe complète**
+Audit benchmarking Finary / Monarch / Kubera / Copilot. Diagnostic : direction or-sobre OK mais exécution sous-spec. Sortie : hero dramatique, sidebar desktop, mobile bottom-nav 6 items, palette refinée, fonts DM Sans/Mono, modales modernisées, empty states sober. Découpe `WealthlyApp.jsx` 6 386 → 1 139 lignes (L1 utils/constants/Styles + L2 toutes les vues + leaf components).
 
-Email "mot de passe oublié" — point d'attention : avec l'expéditeur par défaut `onboarding@resend.dev`, **Resend free tier ne livre qu'à l'email du compte Resend**. Pour envoyer à n'importe qui, **vérifier un domaine** sur resend.com.
+**2026-05-06 (après-midi) — Sécu basique + features signature**
+Rate limiting auth, alembic infra (auto-stamp baseline), filtres transactions multi-critères avec panel, score santé financière 0-100 avec jauge SVG hand-rolled.
+
+**2026-05-05 — Synchro bancaire DSP2**
+Intégration GoCardless Bank Account Data. Tables `bank_connections`, `bank_account_links`. Dédup sur `external_id`.
+
+**Direction visuelle (stabilisée)** : encre profonde + or sobre + sage / terracotta sourds. Tabular-nums partout. Pas de translateY au hover. Or = signature unique sur les CTA et les trends positifs.

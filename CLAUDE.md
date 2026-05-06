@@ -52,9 +52,16 @@ backend/
       banks.py           GoCardless Bank Account Data — connect/sync flow
     services/
       gocardless.py      Thin httpx client over the GoCardless API
-  tests/                 pytest, in-memory SQLite, mocked Resend
+    rate_limit.py        slowapi Limiter + 429 handler (FR detail message)
+  alembic.ini            Alembic config (URL via env, never hardcoded)
+  alembic/
+    env.py               Loads Settings.DATABASE_URL, registers Base.metadata
+    script.py.mako       Revision template
+    versions/
+      0001_baseline.py   Marker — current schema is the baseline
+  tests/                 pytest, in-memory SQLite, mocked Resend, limiter disabled
   pytest.ini
-  requirements.txt       prod deps
+  requirements.txt       prod deps (now includes slowapi)
   requirements-dev.txt   + pytest, pytest-cov
 
 frontend/
@@ -83,6 +90,7 @@ frontend/
       Toast.jsx                    Stateless toast renderer
       AnimatedNumber.jsx           rAF-tweened currency display (memoized)
       NetWorthChart.jsx            Brut/Net/Financier toggle + period selector (used by Dashboard + Wealth)
+      HealthScore.jsx              0-100 SVG gauge + 5-criteria breakdown (Dashboard widget)
     hooks/
       useIsNarrow.js               Viewport breakpoint hook (used by Cashflow Sankey)
     views/
@@ -92,7 +100,7 @@ frontend/
       Monthly.jsx                  Suivi mensuel + FixedChargeEditor (modal)
       Cashflow.jsx                 Sankey + donut + SankeyNode (memoized)
       Budgets.jsx                  50/30/20 + GoalEditor (modal)
-      Transactions.jsx             Searchable + filterable + sortable list
+      Transactions.jsx             Searchable + sortable + advanced filter panel (multi-cat / accs / members / dates / amount / type)
       Analysis.jsx                 Évolution + top marchands + per-category drill
       Settings.jsx                 SettingsView + CustomRules + BankConnections + InstitutionPicker + MemberEditor
       ImportFlow.jsx               4-step CSV wizard + MappingField (local helper)
@@ -187,7 +195,25 @@ Update these constants when the law changes (typically late each year for the ne
 `WealthlyApp` posts a snapshot whenever net-worth math materially changes. Debounced 1.5s, gated by a useRef. Don't remove the gating — the deps array on the useEffect is intentionally `[netWorth, liquidWealth, assetsValue, liabilitiesValue]` and would otherwise spam the backend every render.
 
 **6. CI tests.**
-`pytest` runs against in-memory SQLite. The **email service is mocked** in conftest — DO NOT make password-reset endpoints depend on getting a real Resend response, the test patches `app.routers.auth.send_password_reset_email` and reads the captured emails via `client.sent_emails`.
+`pytest` runs against in-memory SQLite. The **email service is mocked** in conftest — DO NOT make password-reset endpoints depend on getting a real Resend response, the test patches `app.routers.auth.send_password_reset_email` and reads the captured emails via `client.sent_emails`. The **slowapi rate limiter is disabled** in conftest (`limiter.enabled = False`) — TestClient runs everything from one synthetic IP and would otherwise burn the budget within 2 cases.
+
+**7. Alembic is set up but not the source of truth (yet).**
+`Base.metadata.create_all()` still runs at startup as the fresh-DB safety
+net. Alembic infrastructure (alembic.ini, env.py, baseline marker) is
+posted in parallel: on first boot against a DB that has tables but no
+`alembic_version` row, the startup hook stamps head — treats the current
+schema as the baseline so future revisions can run cleanly. Going forward
+every schema change should be a real alembic revision; eventually we
+remove `create_all()` once we have a few real migrations validated in
+prod. **Don't write a "full initial migration"** that re-creates all 17
+tables — it would conflict with the existing schema.
+
+**8. Rate limiting on auth.**
+`slowapi` is wired on `/auth/login` (10/min), `/auth/register` (5/min),
+`/auth/forgot-password` (5/min) per IP. The 429 message is the FR string
+`"Trop de tentatives. Réessaie dans quelques instants."` — the existing
+toast pipeline surfaces it without a special case. Limiter lives in
+`app/rate_limit.py`; main.py and routers/auth.py share the same instance.
 
 ---
 
@@ -202,7 +228,26 @@ Update these constants when the law changes (typically late each year for the ne
 
 ---
 
-## Last work session — 2026-05-05
+## Last work session — 2026-05-06 (investor-ready push)
+
+Two-phase session. **Morning**: full visual refonte (hero overhaul, sidebar
+desktop, mobile bottom-nav 6 items, palette refinement, DM Sans/Mono fonts,
+modale modernization, sober empty states) + complete WealthlyApp découpe
+(6 386 → 1 139 lignes via L1 utils/constants/Styles + L2 all 10 views as
+separate files).
+
+**Afternoon**: backend security baseline (slowapi rate limiting on auth),
+Alembic infrastructure with auto-stamp baseline, advanced transaction
+filters panel (multi-cat / accs / members / dates / amounts / type),
+financial health score widget on Dashboard (0-100 SVG gauge + 5-criteria
+breakdown).
+
+Roadmap not done from the prompt PDF: JWT → httpOnly cookies (3.2),
+2FA TOTP (3.3), unrealized gains (4.2), regulatory caps (4.3), N vs N-1
+comparison (4.4), account detail drawer (4.6), i18n setup (5.x), tests
+frontend vitest (6.2), bank sync cron (6.3).
+
+## Previous session — 2026-05-05
 
 Massive session. Delivered (in order of commits):
 
