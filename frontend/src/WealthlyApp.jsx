@@ -407,7 +407,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   const [onboarded, setOnboarded] = useState(false);
   const [view, setView] = useState('dashboard');
   const [pendingTxAcc, setPendingTxAcc] = useState('all');
-  const [theme, setTheme] = useState('light');
+  const [theme, setTheme] = useState('dark');
   const [members, setMembers] = useState([]);
   const [activeMemberId, setActiveMemberId] = useState('all');
   const [accounts, setAccounts] = useState([]);
@@ -638,7 +638,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
       const [ov, am, th] = await Promise.all([
         storage.get(STORAGE_KEYS.RECURRING_OVERRIDES, {}),
         storage.get(STORAGE_KEYS.ACTIVE_MEMBER, 'all'),
-        storage.get(STORAGE_KEYS.THEME, 'light'),
+        storage.get(STORAGE_KEYS.THEME, 'dark'),
       ]);
       setRecurringOverrides(ov);
       setActiveMemberId(am);
@@ -1309,21 +1309,6 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             <div className="brand-tagline">Patrimoine privé</div>
           </div>
         </div>
-        <nav className="main-nav">
-          <button onClick={() => setView('dashboard')} className={view === 'dashboard' ? 'active' : ''}><Activity size={14}/> <span>Résumé</span></button>
-          <button onClick={() => setView('monthly')} className={view === 'monthly' ? 'active' : ''}><Calendar size={14}/> <span>Suivi mensuel</span></button>
-          <button onClick={() => setView('budgets')} className={view === 'budgets' ? 'active' : ''}>
-            <Target size={14}/> <span>Budgets</span>
-            {budgetsOverCount > 0 && (
-              <span className="nav-alert-dot" title={`${budgetsOverCount} budget${budgetsOverCount > 1 ? 's' : ''} dépassé${budgetsOverCount > 1 ? 's' : ''}`}>{budgetsOverCount}</span>
-            )}
-          </button>
-          <button onClick={() => setView('wealth')} className={view === 'wealth' ? 'active' : ''}><Landmark size={14}/> <span>Patrimoine</span></button>
-          <button onClick={() => setView('cashflow')} className={view === 'cashflow' ? 'active' : ''}><Activity size={14}/> <span>Cashflow</span></button>
-          <button onClick={() => { setView('transactions'); setPendingTxAcc('all'); }} className={view === 'transactions' ? 'active' : ''}><BarChart3 size={14}/> <span>Transactions</span></button>
-          <button onClick={() => setView('tax')} className={view === 'tax' ? 'active' : ''}><Calculator size={14}/> <span>Impôts</span></button>
-          <button onClick={() => setView('settings')} className={view === 'settings' ? 'active' : ''}><Settings size={14}/> <span>Réglages</span></button>
-        </nav>
         <div className="header-actions">
           <button className="icon-btn" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} title="Changer thème">
             {theme === 'light' ? <Moon size={16}/> : <Sun size={16}/>}
@@ -1339,6 +1324,23 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
           </button>
         </div>
       </header>
+
+      {/* Nav placed OUTSIDE the header to avoid iOS Safari backdrop-filter containing-block trap */}
+      <nav className="main-nav">
+        <button onClick={() => setView('dashboard')} className={view === 'dashboard' ? 'active' : ''}><Activity size={14}/> <span>Résumé</span></button>
+        <button onClick={() => setView('monthly')} className={view === 'monthly' ? 'active' : ''}><Calendar size={14}/> <span>Suivi mensuel</span></button>
+        <button onClick={() => setView('budgets')} className={view === 'budgets' ? 'active' : ''}>
+          <Target size={14}/> <span>Budgets</span>
+          {budgetsOverCount > 0 && (
+            <span className="nav-alert-dot" title={`${budgetsOverCount} budget${budgetsOverCount > 1 ? 's' : ''} dépassé${budgetsOverCount > 1 ? 's' : ''}`}>{budgetsOverCount}</span>
+          )}
+        </button>
+        <button onClick={() => setView('wealth')} className={view === 'wealth' ? 'active' : ''}><Landmark size={14}/> <span>Patrimoine</span></button>
+        <button onClick={() => setView('cashflow')} className={view === 'cashflow' ? 'active' : ''}><Activity size={14}/> <span>Cashflow</span></button>
+        <button onClick={() => { setView('transactions'); setPendingTxAcc('all'); }} className={view === 'transactions' ? 'active' : ''}><BarChart3 size={14}/> <span>Transactions</span></button>
+        <button onClick={() => setView('tax')} className={view === 'tax' ? 'active' : ''}><Calculator size={14}/> <span>Impôts</span></button>
+        <button onClick={() => setView('settings')} className={view === 'settings' ? 'active' : ''}><Settings size={14}/> <span>Réglages</span></button>
+      </nav>
 
       <div className="member-bar">
         <div className="member-tabs">
@@ -5366,13 +5368,12 @@ function Styles({ theme }) {
 .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
 .brand-name { font-size: 17px; font-weight: 700; letter-spacing: -0.025em; }
 .brand-tagline { font-size: 10px; color: var(--text-tertiary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 1px; }
-.main-nav { display: flex; gap: 2px; background: var(--bg-subtle); padding: 4px; border-radius: 10px; overflow-x: auto; border: 1px solid var(--border-light); }
-.main-nav button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: none; background: transparent; color: var(--text-secondary); font-size: 13px; font-weight: 500; border-radius: 7px; cursor: pointer; transition: color 0.18s, background 0.18s; font-family: inherit; white-space: nowrap; letter-spacing: -0.01em; }
-.main-nav button svg { color: var(--text-tertiary); transition: color 0.18s; }
-.main-nav button:hover { background: var(--bg-card); color: var(--text-primary); }
-.main-nav button:hover svg { color: var(--text-secondary); }
-.main-nav button.active { background: var(--bg-card); color: var(--primary); box-shadow: 0 1px 0 0 var(--border-light), inset 0 0 0 1px var(--border); font-weight: 600; }
-.main-nav button.active svg { color: var(--primary); }
+.main-nav { display: flex; align-items: stretch; gap: 0; padding: 0 20px; background: var(--bg-card); border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+.main-nav::-webkit-scrollbar { display: none; }
+.main-nav button { display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; height: 44px; border: none; border-bottom: 2px solid transparent; background: transparent; color: var(--text-tertiary); font-size: 13px; font-weight: 500; border-radius: 0; cursor: pointer; transition: color 0.18s, border-color 0.18s; font-family: inherit; white-space: nowrap; letter-spacing: -0.01em; }
+.main-nav button svg { color: currentColor; transition: color 0.18s; flex-shrink: 0; }
+.main-nav button:hover { color: var(--text-primary); }
+.main-nav button.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
 .nav-alert-dot { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px; padding: 0 5px; margin-left: 4px; border-radius: 8px; background: var(--danger); color: white; font-size: 10px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
 .header-actions { display: flex; align-items: center; gap: 8px; }
 .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; background: var(--bg-subtle); border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; transition: all 0.15s; }
@@ -6134,8 +6135,8 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
   .header-actions { gap: 4px; flex-shrink: 0; }
   .icon-btn { width: 32px; height: 32px; }
 
-  /* Page content: extra bottom padding to clear the bottom nav */
-  .content { padding: 16px 14px calc(96px + env(safe-area-inset-bottom, 0px)); }
+  /* Page content: extra bottom padding to clear the bottom nav (56px nav + safe area) */
+  .content { padding: 16px 14px calc(72px + env(safe-area-inset-bottom, 0px)); }
   .page-title { font-size: 22px; }
   .monthly-header h1 { font-size: 22px; }
 
@@ -6144,42 +6145,48 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
   .member-tab { padding: 6px 12px; font-size: 12px; }
   .member-context { font-size: 11px; padding: 8px 0; }
 
-  /* Main nav becomes a fixed bottom tab bar (native-app feel) */
+  /* Main nav: fixed bottom tab bar on mobile (nav is outside header — no iOS Safari stacking context trap) */
   .main-nav {
     position: fixed;
     left: 0; right: 0; bottom: 0;
-    z-index: 90;
+    z-index: 200;
     display: flex;
     justify-content: space-around;
-    background: ${dark ? 'rgba(21, 23, 28, 0.94)' : 'rgba(255, 255, 255, 0.95)'};
-    backdrop-filter: blur(14px);
+    align-items: stretch;
+    background: ${dark ? 'rgba(21, 23, 28, 0.96)' : 'rgba(247, 245, 239, 0.97)'};
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-top: 1px solid var(--border);
-    border-radius: 0;
-    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
-    overflow-x: visible;
-    gap: 0;
+    border-bottom: none;
+    padding: 0 0 env(safe-area-inset-bottom, 0px);
+    overflow-x: auto;
+    scrollbar-width: none;
+    height: calc(56px + env(safe-area-inset-bottom, 0px));
   }
+  .main-nav::-webkit-scrollbar { display: none; }
   .main-nav button {
     flex: 1;
     flex-direction: column;
     gap: 3px;
-    padding: 6px 4px;
-    font-size: 10px;
+    padding: 8px 4px;
+    height: auto;
+    font-size: 9px;
     font-weight: 500;
-    border-radius: 6px;
+    border-bottom: none;
+    border-radius: 0;
     color: var(--text-tertiary);
-    min-width: 0;
+    min-width: 44px;
     background: transparent;
+    position: relative;
   }
-  .main-nav button svg { width: 18px; height: 18px; }
-  .main-nav button span { font-size: 10px; line-height: 1.1; white-space: nowrap; }
+  .main-nav button svg { width: 20px; height: 20px; }
+  .main-nav button span { font-size: 9px; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 52px; }
   .main-nav button:hover { background: transparent; color: var(--text-secondary); }
-  .main-nav button.active { background: transparent; color: var(--primary); box-shadow: none; }
-  .main-nav button { position: relative; }
+  .main-nav button.active { background: transparent; color: var(--primary); border-bottom: none; font-weight: 600; }
   .nav-alert-dot {
     position: absolute;
-    top: 4px;
-    right: 16px;
+    top: 5px;
+    right: calc(50% - 16px);
     margin-left: 0;
     min-width: 14px;
     height: 14px;
