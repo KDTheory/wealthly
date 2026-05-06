@@ -1087,6 +1087,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
         {view === 'transactions' && (
           <Transactions
             transactions={visibleTransactions} accounts={accounts} categories={categories}
+            members={members}
             recurringIds={recurringIds} toggleRecurring={toggleRecurring}
             updateCategory={updateTransactionCategory} deleteTransaction={deleteTransaction} fmt={fmt}
           />
