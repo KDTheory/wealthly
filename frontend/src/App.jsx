@@ -36,12 +36,16 @@ export default function App() {
         setAuthState('unauthed');
         return;
       }
-      try {
-        await auth.me();
-        setAuthState('authed');
-      } catch {
+      // Optimistic auth: assume the token is valid and let WealthlyApp render
+      // immediately. This avoids a full UI freeze while a cold Railway backend
+      // takes 10-30s to respond to /auth/me. If the token is actually stale,
+      // the first real API call (reloadAll inside WealthlyApp) will throw 401
+      // and we'll catch it below to redirect.
+      setAuthState('authed');
+      auth.me().catch(() => {
+        // Token is invalid/expired — bounce back to AuthScreen.
         setAuthState('unauthed');
-      }
+      });
     })();
   }, [refreshKey]);
 
