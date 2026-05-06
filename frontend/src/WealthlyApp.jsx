@@ -1333,17 +1333,14 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
         </div>
         <nav className="main-nav">
           <button onClick={() => setView('dashboard')} className={view === 'dashboard' ? 'active' : ''}><Activity size={14}/> <span>Résumé</span></button>
-          <button onClick={() => setView('monthly')} className={view === 'monthly' ? 'active' : ''}><Calendar size={14}/> <span>Suivi mensuel</span></button>
-          <button onClick={() => setView('budgets')} className={view === 'budgets' ? 'active' : ''}>
-            <Target size={14}/> <span>Budgets</span>
+          <button onClick={() => setView('wealth')} className={view === 'wealth' ? 'active' : ''}><Landmark size={14}/> <span>Patrimoine</span></button>
+          <button onClick={() => setView('monthly')} className={['monthly','cashflow','budgets','tax'].includes(view) ? 'active' : ''}>
+            <Calendar size={14}/> <span>Mensuel</span>
             {budgetsOverCount > 0 && (
               <span className="nav-alert-dot" title={`${budgetsOverCount} budget${budgetsOverCount > 1 ? 's' : ''} dépassé${budgetsOverCount > 1 ? 's' : ''}`}>{budgetsOverCount}</span>
             )}
           </button>
-          <button onClick={() => setView('wealth')} className={view === 'wealth' ? 'active' : ''}><Landmark size={14}/> <span>Patrimoine</span></button>
-          <button onClick={() => setView('cashflow')} className={view === 'cashflow' ? 'active' : ''}><Activity size={14}/> <span>Cashflow</span></button>
           <button onClick={() => setView('transactions')} className={view === 'transactions' ? 'active' : ''}><BarChart3 size={14}/> <span>Transactions</span></button>
-          <button onClick={() => setView('tax')} className={view === 'tax' ? 'active' : ''}><Calculator size={14}/> <span>Impôts</span></button>
           <button onClick={() => setView('settings')} className={view === 'settings' ? 'active' : ''}><Settings size={14}/> <span>Réglages</span></button>
         </nav>
         <div className="header-actions">
@@ -1395,32 +1392,52 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             setView={setView}
           />
         )}
-        {view === 'monthly' && (
-          <Monthly
-            transactions={visibleTransactions} accounts={accounts} categories={categories} members={members}
-            recurringIds={recurringIds} recurringGroups={recurringGroups}
-            monthlyEvolution={monthlyEvolution} thisMonthStats={thisMonthStats}
-            anomalies={anomalies}
-            categoryAnalysis={categoryAnalysis}
-            fixedCharges={fixedCharges} saveFixedCharge={saveFixedCharge} deleteFixedCharge={deleteFixedCharge}
-            memberShare={memberShare}
-            currentMonth={currentMonth} fmt={fmt}
-          />
-        )}
-        {view === 'cashflow' && (
-          <Cashflow
-            transactions={visibleTransactions} categories={categories} accounts={accounts}
-            memberShare={memberShare} fmt={fmt} currentMonth={currentMonth}
-          />
-        )}
-        {view === 'budgets' && (
-          <Budgets
-            categories={categories} budgets={budgets} setBudget={setBudget}
-            categoryAnalysis={categoryAnalysis} fiftyThirtyTwenty={fiftyThirtyTwenty}
-            thisMonthStats={thisMonthStats} cashflowProjection={cashflowProjection}
-            goals={goals} saveGoal={saveGoal} deleteGoal={deleteGoal}
-            fmt={fmt}
-          />
+        {['monthly','cashflow','budgets','tax'].includes(view) && (
+          <div className="monthly-hub">
+            <nav className="hub-tabs">
+              <button onClick={() => setView('monthly')}   className={view === 'monthly'   ? 'active' : ''}><Calendar  size={13}/> <span>Vue mensuelle</span></button>
+              <button onClick={() => setView('cashflow')}  className={view === 'cashflow'  ? 'active' : ''}><Activity  size={13}/> <span>Cashflow</span></button>
+              <button onClick={() => setView('budgets')}   className={view === 'budgets'   ? 'active' : ''}>
+                <Target size={13}/> <span>Budgets</span>
+                {budgetsOverCount > 0 && (
+                  <span className="nav-alert-dot" style={{ marginLeft: 6 }}>{budgetsOverCount}</span>
+                )}
+              </button>
+              <button onClick={() => setView('tax')}       className={view === 'tax'       ? 'active' : ''}><Calculator size={13}/> <span>Impôts</span></button>
+            </nav>
+            {view === 'monthly' && (
+              <Monthly
+                transactions={visibleTransactions} accounts={accounts} categories={categories} members={members}
+                recurringIds={recurringIds} recurringGroups={recurringGroups}
+                monthlyEvolution={monthlyEvolution} thisMonthStats={thisMonthStats}
+                anomalies={anomalies}
+                categoryAnalysis={categoryAnalysis}
+                fixedCharges={fixedCharges} saveFixedCharge={saveFixedCharge} deleteFixedCharge={deleteFixedCharge}
+                memberShare={memberShare}
+                currentMonth={currentMonth} fmt={fmt}
+              />
+            )}
+            {view === 'cashflow' && (
+              <Cashflow
+                transactions={visibleTransactions} categories={categories} accounts={accounts}
+                memberShare={memberShare} fmt={fmt} currentMonth={currentMonth}
+              />
+            )}
+            {view === 'budgets' && (
+              <Budgets
+                categories={categories} budgets={budgets} setBudget={setBudget}
+                categoryAnalysis={categoryAnalysis} fiftyThirtyTwenty={fiftyThirtyTwenty}
+                thisMonthStats={thisMonthStats} cashflowProjection={cashflowProjection}
+                goals={goals} saveGoal={saveGoal} deleteGoal={deleteGoal}
+                fmt={fmt}
+              />
+            )}
+            {view === 'tax' && (
+              <Suspense fallback={<div className="chart-empty"><Calculator size={28}/><span>Chargement du simulateur…</span></div>}>
+                <TaxSimulator transactions={visibleTransactions} />
+              </Suspense>
+            )}
+          </div>
         )}
         {view === 'wealth' && (
           <Wealth
@@ -1445,11 +1462,6 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             recurringIds={recurringIds} recurringGroups={recurringGroups} monthlyEvolution={monthlyEvolution}
             accounts={accounts} memberShare={memberShare} fmt={fmt}
           />
-        )}
-        {view === 'tax' && (
-          <Suspense fallback={<div className="chart-empty"><Calculator size={28}/><span>Chargement du simulateur…</span></div>}>
-            <TaxSimulator transactions={visibleTransactions} />
-          </Suspense>
         )}
         {view === 'settings' && (
           <SettingsView
@@ -5412,6 +5424,17 @@ function Styles({ theme }) {
 .member-context strong { color: var(--text-secondary); }
 
 .content { padding: 28px 24px 60px; max-width: 1280px; margin: 0 auto; min-height: calc(100vh - 140px); }
+
+/* Monthly hub — groups Mensuel + Cashflow + Budgets + Impôts under one nav slot */
+.monthly-hub { display: flex; flex-direction: column; gap: 24px; }
+.hub-tabs { display: inline-flex; gap: 2px; padding: 3px; background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: 10px; align-self: flex-start; overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+.hub-tabs::-webkit-scrollbar { display: none; }
+.hub-tabs button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border: 1px solid transparent; background: transparent; color: var(--text-secondary); font-size: 12.5px; font-weight: 500; border-radius: 7px; cursor: pointer; transition: color .15s, background .15s, border-color .15s; font-family: inherit; white-space: nowrap; letter-spacing: -0.005em; }
+.hub-tabs button svg { color: var(--text-tertiary); transition: color .15s; }
+.hub-tabs button:hover { color: var(--text-primary); }
+.hub-tabs button.active { background: var(--bg-card); color: var(--primary); border-color: var(--border); }
+.hub-tabs button.active svg { color: var(--primary); }
+@media (max-width: 760px) { .hub-tabs { width: 100%; align-self: stretch; } .hub-tabs button { flex: 1; justify-content: center; } }
 .page-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
 .page-title { font-size: 36px; font-weight: 500; margin: 0 0 4px; letter-spacing: -0.035em; line-height: 1.05; }
 .page-subtitle { font-size: 13px; color: var(--text-tertiary); margin: 0; max-width: 580px; line-height: 1.5; }
