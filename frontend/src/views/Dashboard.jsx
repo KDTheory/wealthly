@@ -465,14 +465,3 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
     </div>
   );
 }
-// ============================================================================
-// WEALTH (Assets + Liabilities)
-// ============================================================================
-// Map of wealth sub-views to the asset types they include.
-// 'all' shows everything (the current Patrimoine page); others narrow the
-// view to a Finary-style class detail.
-const WEALTH_SUBVIEWS = [
-  { key: 'all',         label: 'Tout',         types: null,                                icon: BarChart3 },
-  { key: 'real_estate', label: 'Immobilier',   types: ['real_estate'],                     icon: Home },
-  { key: 'equities',    label: 'Actions & Fonds', types: ['pea', 'stocks'],                icon: Landmark },
-  { key: 'crypto',      label: 'Crypto',       types: ['crypto'],                          icon: Bitcoin },
