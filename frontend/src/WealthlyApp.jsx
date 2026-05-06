@@ -1318,64 +1318,92 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
         </div>
       )}
 
-      <header className="app-header">
-        <div className="brand" onClick={() => setView('dashboard')}>
-          <div className="brand-mark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" strokeLinejoin="miter" width="22" height="22">
-              <rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/>
-              <path d="M7 9 L9.5 15.5 L12 10.5 L14.5 15.5 L17 9"/>
-            </svg>
-          </div>
-          <div className="brand-text">
+      <div className="app-shell">
+        {/* Desktop sidebar (≥1024px) */}
+        <aside className="app-sidebar">
+          <div className="sidebar-brand" onClick={() => setView('dashboard')}>
+            <div className="brand-mark">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" strokeLinejoin="miter" width="22" height="22">
+                <rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/>
+                <path d="M7 9 L9.5 15.5 L12 10.5 L14.5 15.5 L17 9"/>
+              </svg>
+            </div>
             <div className="brand-name">{APP_NAME}</div>
           </div>
-        </div>
-        <nav className="main-nav">
-          <button onClick={() => setView('dashboard')} className={view === 'dashboard' ? 'active' : ''}><Activity size={14}/> <span>Résumé</span></button>
-          <button onClick={() => setView('wealth')} className={view === 'wealth' ? 'active' : ''}><Landmark size={14}/> <span>Patrimoine</span></button>
-          <button onClick={() => setView('monthly')} className={['monthly','cashflow','budgets','tax'].includes(view) ? 'active' : ''}>
-            <Calendar size={14}/> <span>Mensuel</span>
-            {budgetsOverCount > 0 && (
-              <span className="nav-alert-dot" title={`${budgetsOverCount} budget${budgetsOverCount > 1 ? 's' : ''} dépassé${budgetsOverCount > 1 ? 's' : ''}`}>{budgetsOverCount}</span>
-            )}
-          </button>
-          <button onClick={() => setView('transactions')} className={view === 'transactions' ? 'active' : ''}><BarChart3 size={14}/> <span>Transactions</span></button>
-          <button onClick={() => setView('settings')} className={view === 'settings' ? 'active' : ''}><Settings size={14}/> <span>Réglages</span></button>
-        </nav>
-        <div className="header-actions">
-          <button className="icon-btn" onClick={() => setHideAmounts(!hideAmounts)} title="Masquer/afficher">
-            {hideAmounts ? <EyeOff size={16}/> : <Eye size={16}/>}
-          </button>
-          <button className="icon-btn" onClick={logout} title="Déconnexion">
-            <LogOut size={16}/>
-          </button>
-          <button className="primary-btn" onClick={() => { setView('import'); setImportStep('upload'); }}>
-            <Upload size={14}/> <span>Importer</span>
-          </button>
-        </div>
-      </header>
 
-      <div className="member-bar">
-        <div className="member-tabs">
-          <button className={`member-tab ${activeMemberId === 'all' ? 'active' : ''}`} onClick={() => setActiveMemberId('all')}>
-            <Users size={13}/> <span>Famille</span>
-          </button>
-          {members.map(m => (
-            <button key={m.id} className={`member-tab ${activeMemberId === m.id ? 'active' : ''}`} onClick={() => setActiveMemberId(m.id)}>
-              <span className="member-avatar" style={{ background: m.color }}>{m.name.charAt(0).toUpperCase()}</span>
-              <span>{m.name}</span>
-              {m.role === 'child' && <span className="role-badge">enfant</span>}
+          <nav className="sidebar-nav">
+            <button onClick={() => setView('dashboard')} className={view === 'dashboard' ? 'active' : ''}><Activity size={15}/> <span>Résumé</span></button>
+            <button onClick={() => setView('wealth')} className={view === 'wealth' ? 'active' : ''}><Landmark size={15}/> <span>Patrimoine</span></button>
+            <button onClick={() => setView('monthly')} className={['monthly','cashflow','budgets'].includes(view) ? 'active' : ''}>
+              <Calendar size={15}/> <span>Mensuel</span>
+              {budgetsOverCount > 0 && <span className="nav-alert-dot" title={`${budgetsOverCount} budget${budgetsOverCount > 1 ? 's' : ''} dépassé${budgetsOverCount > 1 ? 's' : ''}`}>{budgetsOverCount}</span>}
             </button>
-          ))}
-        </div>
-        {activeMember && (
-          <div className="member-context">
-            Vue de <strong>{activeMember.name}</strong> · comptes perso + comptes joints
-          </div>
-        )}
-      </div>
+            <button onClick={() => setView('transactions')} className={view === 'transactions' ? 'active' : ''}><BarChart3 size={15}/> <span>Transactions</span></button>
+            <button onClick={() => setView('tax')} className={view === 'tax' ? 'active' : ''}><Calculator size={15}/> <span>Impôts</span></button>
+            <button onClick={() => setView('settings')} className={view === 'settings' ? 'active' : ''}><Settings size={15}/> <span>Réglages</span></button>
+          </nav>
 
-      <main className="content">
+          <div className="sidebar-footer">
+            <button className="primary-btn sidebar-import" onClick={() => { setView('import'); setImportStep('upload'); }}>
+              <Upload size={14}/> <span>Importer</span>
+            </button>
+            <div className="sidebar-utilities">
+              <button className="icon-btn" onClick={() => setHideAmounts(!hideAmounts)} title="Masquer/afficher">
+                {hideAmounts ? <EyeOff size={16}/> : <Eye size={16}/>}
+              </button>
+              <button className="icon-btn" onClick={logout} title="Déconnexion">
+                <LogOut size={16}/>
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        <div className="app-main">
+          {/* Mobile-only top bar (<1024px) */}
+          <header className="app-header-mobile">
+            <div className="brand" onClick={() => setView('dashboard')}>
+              <div className="brand-mark">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" strokeLinejoin="miter" width="22" height="22">
+                  <rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/>
+                  <path d="M7 9 L9.5 15.5 L12 10.5 L14.5 15.5 L17 9"/>
+                </svg>
+              </div>
+              <div className="brand-name">{APP_NAME}</div>
+            </div>
+            <div className="header-actions">
+              <button className="icon-btn" onClick={() => setHideAmounts(!hideAmounts)} title="Masquer/afficher">
+                {hideAmounts ? <EyeOff size={16}/> : <Eye size={16}/>}
+              </button>
+              <button className="icon-btn" onClick={logout} title="Déconnexion">
+                <LogOut size={16}/>
+              </button>
+              <button className="primary-btn" onClick={() => { setView('import'); setImportStep('upload'); }}>
+                <Upload size={14}/> <span>Importer</span>
+              </button>
+            </div>
+          </header>
+
+          <div className="member-bar">
+            <div className="member-tabs">
+              <button className={`member-tab ${activeMemberId === 'all' ? 'active' : ''}`} onClick={() => setActiveMemberId('all')}>
+                <Users size={13}/> <span>Famille</span>
+              </button>
+              {members.map(m => (
+                <button key={m.id} className={`member-tab ${activeMemberId === m.id ? 'active' : ''}`} onClick={() => setActiveMemberId(m.id)}>
+                  <span className="member-avatar" style={{ background: m.color }}>{m.name.charAt(0).toUpperCase()}</span>
+                  <span>{m.name}</span>
+                  {m.role === 'child' && <span className="role-badge">enfant</span>}
+                </button>
+              ))}
+            </div>
+            {activeMember && (
+              <div className="member-context">
+                Vue de <strong>{activeMember.name}</strong> · comptes perso + comptes joints
+              </div>
+            )}
+          </div>
+
+          <main className="content">
         {view === 'dashboard' && (
           <Dashboard
             netWorth={netWorth} liquidWealth={liquidWealth} assetsValue={assetsValue} liabilitiesValue={liabilitiesValue}
@@ -1391,7 +1419,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             setView={setView}
           />
         )}
-        {['monthly','cashflow','budgets','tax'].includes(view) && (
+        {['monthly','cashflow','budgets'].includes(view) && (
           <div className="monthly-hub">
             <nav className="hub-tabs">
               <button onClick={() => setView('monthly')}   className={view === 'monthly'   ? 'active' : ''}><Calendar  size={13}/> <span>Vue mensuelle</span></button>
@@ -1402,7 +1430,6 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
                   <span className="nav-alert-dot" style={{ marginLeft: 6 }}>{budgetsOverCount}</span>
                 )}
               </button>
-              <button onClick={() => setView('tax')}       className={view === 'tax'       ? 'active' : ''}><Calculator size={13}/> <span>Impôts</span></button>
             </nav>
             {view === 'monthly' && (
               <Monthly
@@ -1431,12 +1458,12 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
                 fmt={fmt}
               />
             )}
-            {view === 'tax' && (
-              <Suspense fallback={<div className="chart-empty"><Calculator size={28}/><span>Chargement du simulateur…</span></div>}>
-                <TaxSimulator transactions={visibleTransactions} />
-              </Suspense>
-            )}
           </div>
+        )}
+        {view === 'tax' && (
+          <Suspense fallback={<div className="chart-empty"><Calculator size={28}/><span>Chargement du simulateur…</span></div>}>
+            <TaxSimulator transactions={visibleTransactions} />
+          </Suspense>
         )}
         {view === 'wealth' && (
           <Wealth
@@ -1483,7 +1510,22 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             setStep={setImportStep} fmt={fmt}
           />
         )}
-      </main>
+          </main>
+        </div>
+      </div>
+
+      {/* Mobile bottom nav (<1024px) — fixed bottom bar */}
+      <nav className="bottom-nav">
+        <button onClick={() => setView('dashboard')} className={view === 'dashboard' ? 'active' : ''}><Activity size={18}/> <span>Résumé</span></button>
+        <button onClick={() => setView('wealth')} className={view === 'wealth' ? 'active' : ''}><Landmark size={18}/> <span>Patrimoine</span></button>
+        <button onClick={() => setView('monthly')} className={['monthly','cashflow','budgets'].includes(view) ? 'active' : ''}>
+          <Calendar size={18}/> <span>Mensuel</span>
+          {budgetsOverCount > 0 && <span className="nav-alert-dot">{budgetsOverCount}</span>}
+        </button>
+        <button onClick={() => setView('transactions')} className={view === 'transactions' ? 'active' : ''}><BarChart3 size={18}/> <span>Transac.</span></button>
+        <button onClick={() => setView('tax')} className={view === 'tax' ? 'active' : ''}><Calculator size={18}/> <span>Impôts</span></button>
+        <button onClick={() => setView('settings')} className={view === 'settings' ? 'active' : ''}><Settings size={18}/> <span>Réglages</span></button>
+      </nav>
     </div>
   );
 }
@@ -5422,7 +5464,86 @@ function Styles({ theme }) {
 .member-context { padding: 10px 0; font-size: 12px; color: var(--text-tertiary); }
 .member-context strong { color: var(--text-secondary); }
 
-.content { padding: 28px 24px 60px; max-width: 1280px; margin: 0 auto; min-height: calc(100vh - 140px); }
+/* ============================================================================
+ * APP SHELL — desktop sidebar + main column
+ * ============================================================================ */
+.app-shell { display: flex; align-items: stretch; min-height: 100vh; }
+.app-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+.app-sidebar { width: 244px; flex-shrink: 0; height: 100vh; position: sticky; top: 0; border-right: 1px solid var(--border); background: var(--bg-page); padding: 22px 14px 18px; display: flex; flex-direction: column; gap: 16px; z-index: 50; overflow-y: auto; scrollbar-width: thin; }
+.sidebar-brand { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 8px 18px; }
+.sidebar-brand:hover { opacity: 0.85; }
+.sidebar-brand .brand-mark { width: 36px; height: 36px; border-radius: 6px; background: var(--primary-soft); border: 1px solid ${dark ? 'rgba(197, 165, 114, 0.32)' : 'rgba(160, 133, 85, 0.3)'}; display: flex; align-items: center; justify-content: center; color: var(--primary); }
+.sidebar-brand .brand-name { font-size: 17px; font-weight: 600; letter-spacing: -0.025em; color: var(--text-primary); }
+
+.sidebar-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.sidebar-nav button { position: relative; display: inline-flex; align-items: center; gap: 11px; width: 100%; padding: 9px 12px; border: 1px solid transparent; background: transparent; color: var(--text-secondary); font-size: 13.5px; font-weight: 500; border-radius: 8px; cursor: pointer; transition: color .15s, background .15s, border-color .15s; font-family: inherit; letter-spacing: -0.005em; text-align: left; }
+.sidebar-nav button svg { color: var(--text-tertiary); transition: color .15s; flex-shrink: 0; }
+.sidebar-nav button:hover { color: var(--text-primary); background: var(--bg-subtle); }
+.sidebar-nav button:hover svg { color: var(--text-secondary); }
+.sidebar-nav button.active { background: var(--bg-card); color: var(--primary); border-color: var(--border); }
+.sidebar-nav button.active svg { color: var(--primary); }
+.sidebar-nav button.active::before { content: ''; position: absolute; left: -2px; top: 8px; bottom: 8px; width: 2px; background: var(--primary); border-radius: 2px; }
+.sidebar-nav button .nav-alert-dot { margin-left: auto; }
+
+.sidebar-footer { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--border-light); }
+.sidebar-import { width: 100%; justify-content: center; }
+.sidebar-utilities { display: flex; gap: 6px; }
+.sidebar-utilities .icon-btn { flex: 1; }
+
+/* Mobile-only top header — hidden on desktop, shown <1024px */
+.app-header-mobile { display: none; }
+
+/* Mobile bottom nav — hidden on desktop, shown <1024px */
+.bottom-nav { display: none; }
+
+@media (max-width: 1023px) {
+  .app-sidebar { display: none; }
+  .app-header-mobile {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; gap: 8px; flex-wrap: nowrap;
+    background: ${dark ? 'rgba(12, 13, 16, 0.78)' : 'rgba(247, 245, 239, 0.82)'};
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .app-header-mobile .brand { display: flex; align-items: center; gap: 10px; cursor: pointer; min-width: 0; }
+  .app-header-mobile .brand-mark { width: 32px; height: 32px; border-radius: 6px; background: var(--primary-soft); border: 1px solid ${dark ? 'rgba(197, 165, 114, 0.32)' : 'rgba(160, 133, 85, 0.3)'}; display: flex; align-items: center; justify-content: center; color: var(--primary); flex-shrink: 0; }
+  .app-header-mobile .brand-name { font-size: 15px; font-weight: 600; letter-spacing: -0.025em; }
+  .app-header-mobile .header-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .app-header-mobile .icon-btn { width: 32px; height: 32px; }
+  .app-header-mobile .primary-btn span { display: none; }
+  .app-header-mobile .primary-btn { padding: 0 10px; height: 32px; }
+
+  .bottom-nav {
+    display: flex;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
+    justify-content: space-around;
+    background: ${dark ? 'rgba(21, 23, 28, 0.94)' : 'rgba(255, 255, 255, 0.95)'};
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--border);
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+    gap: 0;
+  }
+  .bottom-nav button {
+    flex: 1; position: relative;
+    display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    padding: 6px 4px; border: none; background: transparent;
+    color: var(--text-tertiary); font-size: 10px; font-weight: 500; line-height: 1.1;
+    border-radius: 6px; cursor: pointer; font-family: inherit; transition: color .15s;
+    min-width: 0;
+  }
+  .bottom-nav button svg { color: var(--text-tertiary); transition: color .15s; }
+  .bottom-nav button:hover { color: var(--text-secondary); }
+  .bottom-nav button.active { color: var(--primary); }
+  .bottom-nav button.active svg { color: var(--primary); }
+  .bottom-nav button .nav-alert-dot { position: absolute; top: 4px; right: 16px; min-width: 14px; height: 14px; padding: 0 4px; font-size: 9px; }
+}
+
+.content { padding: 28px 32px 60px; max-width: 1280px; margin: 0 auto; min-height: calc(100vh - 140px); width: 100%; }
+@media (max-width: 1023px) {
+  .content { padding: 16px 14px calc(96px + env(safe-area-inset-bottom, 0px)); max-width: none; }
+}
 
 /* Monthly hub — groups Mensuel + Cashflow + Budgets + Impôts under one nav slot */
 .monthly-hub { display: flex; flex-direction: column; gap: 24px; }
