@@ -936,7 +936,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
       }
       await reloadAll();
       setOnboarded(true);
-      showToast('🎉 Foyer configuré !', 'success');
+      showToast('Foyer configuré.', 'success');
     } catch (err) {
       showToast('Erreur : ' + err.message, 'error');
     }
@@ -997,7 +997,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             }
           });
           const aiCount = txs.filter(t => t.aiCategorized).length;
-          showToast(`✨ ${aiCount} transaction${aiCount > 1 ? 's' : ''} catégorisée${aiCount > 1 ? 's' : ''} par IA`, 'success');
+          showToast(`${aiCount} transaction${aiCount > 1 ? 's' : ''} catégorisée${aiCount > 1 ? 's' : ''} par IA.`, 'success');
         }
       } catch {
         // AI unavailable — silent fallback, uncategorized stays as-is
@@ -3073,7 +3073,7 @@ function Budgets({ categories, budgets, setBudget, categoryAnalysis, fiftyThirty
                           <Lightbulb size={10}/> Suggérer {fmt(suggestion)}
                         </button>
                       )}
-                      {pct > 80 && pct < 100 && <span className="budget-warning">⚠️ Bientôt dépassé</span>}
+                      {pct > 80 && pct < 100 && <span className="budget-warning">Bientôt dépassé</span>}
                       {pct >= 100 && <span className="budget-danger">🚨 Dépassé de {fmt(spent - budget)}</span>}
                     </div>
                   </>
@@ -3130,7 +3130,7 @@ function Budgets({ categories, budgets, setBudget, categoryAnalysis, fiftyThirty
                   <div className="goal-meta">
                     <span className="goal-pct">{progress.toFixed(0)}%</span>
                     {remaining > 0 && <span>encore {fmt(remaining)}</span>}
-                    {progress >= 100 && <span className="goal-complete">🎉 Atteint !</span>}
+                    {progress >= 100 && <span className="goal-complete">Atteint</span>}
                   </div>
                 </div>
               );
@@ -3327,14 +3327,14 @@ function Wealth({ assets, liabilities, members, activeMemberId, visibleAssets, v
             <div className={`wk-card ${debtRatioWealth > 50 ? 'warn' : ''}`}>
               <div className="wk-label">Ratio d'endettement</div>
               <div className="wk-value">{debtRatioWealth.toFixed(1)}%</div>
-              <div className="wk-meta">{debtRatioWealth < 30 ? '✓ faible' : debtRatioWealth < 50 ? '⚡ modéré' : '⚠ élevé'}</div>
+              <div className="wk-meta">{debtRatioWealth < 30 ? 'Faible' : debtRatioWealth < 50 ? 'Modéré' : 'Élevé'}</div>
             </div>
           )}
           {illiquidRatio !== null && (
             <div className="wk-card">
               <div className="wk-label">Part immobilier</div>
               <div className="wk-value">{illiquidRatio.toFixed(1)}%</div>
-              <div className="wk-meta">{illiquidRatio > 70 ? 'peu diversifié' : '✓ équilibré'}</div>
+              <div className="wk-meta">{illiquidRatio > 70 ? 'Peu diversifié' : 'Équilibré'}</div>
             </div>
           )}
           {totalMonthlyDebt > 0 && (
@@ -5878,11 +5878,12 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 /* WEALTH */
 .wealth-view { display: flex; flex-direction: column; gap: 20px; }
 .wealth-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
-.wk-card { padding: 16px 18px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-sm); }
-.wk-card.warn { border-color: var(--warning-text); background: var(--warning-soft); }
-.wk-label { font-size: 11px; color: var(--text-tertiary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
-.wk-value { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; margin-top: 4px; line-height: 1.1; }
-.wk-meta { font-size: 11px; color: var(--text-tertiary); margin-top: 3px; }
+.wk-card { padding: 18px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; box-shadow: none; transition: border-color .2s; }
+.wk-card:hover { border-color: var(--border-strong); }
+.wk-card.warn { border-color: var(--warning); background: var(--bg-card); }
+.wk-label { font-size: 10px; color: var(--text-tertiary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.16em; }
+.wk-value { font-size: 26px; font-weight: 500; letter-spacing: -0.025em; font-variant-numeric: tabular-nums; margin-top: 8px; line-height: 1.05; color: var(--text-primary); }
+.wk-meta { font-size: 11.5px; color: var(--text-tertiary); margin-top: 4px; }
 .allocation-card .card-header { border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px; }
 .allocation-body { display: flex; align-items: center; gap: 32px; flex-wrap: wrap; }
 .allocation-legend { flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 8px; }
@@ -5892,15 +5893,16 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .alloc-pct { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-secondary); min-width: 42px; text-align: right; }
 .alloc-val { font-size: 13px; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--text-tertiary); min-width: 90px; text-align: right; }
 .wealth-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
-.ws-card { display: flex; align-items: center; gap: 14px; padding: 18px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-sm); }
-.ws-icon { width: 44px; height: 44px; border-radius: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.ws-card.positive .ws-icon { background: var(--success-soft); color: var(--success-text); }
-.ws-card.negative .ws-icon { background: var(--danger-soft); color: var(--danger-text); }
-.ws-card.net .ws-icon { background: var(--primary-soft); color: var(--primary-text); }
+.ws-card { display: flex; align-items: center; gap: 14px; padding: 18px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; transition: border-color .2s; }
+.ws-card:hover { border-color: var(--border-strong); }
+.ws-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ws-card.positive .ws-icon { background: var(--success-soft); color: var(--success); }
+.ws-card.negative .ws-icon { background: var(--danger-soft); color: var(--danger); }
+.ws-card.net .ws-icon { background: var(--primary-soft); color: var(--primary); }
 .ws-content { flex: 1; min-width: 0; }
-.ws-label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.04em; }
-.ws-value { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; margin-top: 2px; }
-.ws-meta { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+.ws-label { font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; font-weight: 500; letter-spacing: 0.16em; }
+.ws-value { font-size: 24px; font-weight: 500; letter-spacing: -0.025em; font-variant-numeric: tabular-nums; line-height: 1.1; margin-top: 4px; color: var(--text-primary); }
+.ws-meta { font-size: 11.5px; color: var(--text-tertiary); margin-top: 3px; }
 .wealth-empty { padding: 24px; }
 .wealth-empty p { font-size: 13px; color: var(--text-secondary); margin: 0 0 16px; font-weight: 400; }
 .asset-types-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
