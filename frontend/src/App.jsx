@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { getToken, auth } from './api.js';
 import AuthScreen from './AuthScreen.jsx';
 import WealthlyApp from './WealthlyApp.jsx';
-import BankCallback from './BankCallback.jsx';
 import { isDemoMode, disableDemoMode } from './demoData.js';
+
+const BankCallback = lazy(() => import('./BankCallback.jsx'));
 
 export default function App() {
   const [authState, setAuthState] = useState('checking'); // checking | authed | unauthed | demo
@@ -77,12 +78,14 @@ export default function App() {
 
   if (isBankCallback) {
     return (
-      <BankCallback
-        onDone={() => {
-          setIsBankCallback(false);
-          setRefreshKey((k) => k + 1);
-        }}
-      />
+      <Suspense fallback={<div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0c0d10',color:'#8c8a85',fontFamily:'Inter, system-ui, sans-serif',fontSize:14}}>Chargement…</div>}>
+        <BankCallback
+          onDone={() => {
+            setIsBankCallback(false);
+            setRefreshKey((k) => k + 1);
+          }}
+        />
+      </Suspense>
     );
   }
 

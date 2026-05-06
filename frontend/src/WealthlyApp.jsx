@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadialBarChart, RadialBar, ComposedChart, Sankey, Layer, Rectangle } from 'recharts';
 import { Upload, Plus, TrendingUp, TrendingDown, Wallet, Home, Coins, CreditCard, Users, Settings, Search, Download, Trash2, Edit3, Check, X, ChevronRight, ChevronLeft, AlertCircle, AlertTriangle, Repeat, Calendar, ArrowUpDown, Eye, EyeOff, Sparkles, PiggyBank, Bitcoin, Banknote, Landmark, BarChart3, Target, Heart, Sun, Moon, Zap, Activity, ArrowUp, ArrowDown, Minus, PartyPopper, Lightbulb, Bell, ChevronUp, Play, Lock, Unlock, LogOut, Cloud, RefreshCw, FileText, Calculator, Link2, Unlink } from 'lucide-react';
 import * as api from './api.js';
-import { generateBilanPdf } from './pdfReport.js';
-import TaxSimulator from './TaxSimulator.jsx';
 import { getDemoData } from './demoData.js';
+
+const TaxSimulator = lazy(() => import('./TaxSimulator.jsx'));
 
 // ============================================================================
 // CONSTANTS
@@ -1427,7 +1427,9 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
           />
         )}
         {view === 'tax' && (
-          <TaxSimulator transactions={visibleTransactions} />
+          <Suspense fallback={<div className="chart-empty"><Calculator size={28}/><span>Chargement du simulateur…</span></div>}>
+            <TaxSimulator transactions={visibleTransactions} />
+          </Suspense>
         )}
         {view === 'settings' && (
           <SettingsView
@@ -1817,15 +1819,18 @@ function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, this
             </div>
           )}
           <button
-            onClick={() => generateBilanPdf({
-              netWorth, liquidWealth, assetsValue, liabilitiesValue,
-              thisMonthStats, monthlyEvolution,
-              visibleAccounts, accountBalances, visibleAssets, visibleLiabilities,
-              members, activeMemberId,
-              recurringGroups, categoryAnalysis, categories,
-              memberShare, currentMonth,
-              ASSET_CLASS_MAP,
-            })}
+            onClick={async () => {
+              const { generateBilanPdf } = await import('./pdfReport.js');
+              generateBilanPdf({
+                netWorth, liquidWealth, assetsValue, liabilitiesValue,
+                thisMonthStats, monthlyEvolution,
+                visibleAccounts, accountBalances, visibleAssets, visibleLiabilities,
+                members, activeMemberId,
+                recurringGroups, categoryAnalysis, categories,
+                memberShare, currentMonth,
+                ASSET_CLASS_MAP,
+              });
+            }}
             className="inline-flex items-center gap-2 px-3 h-8 rounded-md border border-[var(--color-w-border-strong)] bg-[var(--color-w-surface)] text-xs text-[var(--color-w-text)] hover:bg-[var(--color-w-surface-2)] transition-colors"
             title="Télécharger le bilan en PDF"
           >
