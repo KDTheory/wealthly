@@ -16,31 +16,36 @@
 @import "tailwindcss/utilities.css" layer(utilities);
 
 @theme {
-  /* Surfaces — warm near-black, very subtle blue-grey cast */
-  --color-w-bg: #0c0d10;
-  --color-w-surface: #15171c;
-  --color-w-surface-2: #1b1d24;
-  --color-w-surface-3: #232730;
+  /* Surfaces — deeper page contrast against cards */
+  --color-w-bg: #0a0b0e;
+  --color-w-surface: #13151a;
+  --color-w-surface-2: #1a1d24;
+  --color-w-surface-3: #1f2229;
 
-  /* Borders */
-  --color-w-border: #232730;
-  --color-w-border-strong: #2e333f;
+  /* Borders — translucent so they sit on any card depth */
+  --color-w-border: rgba(255, 255, 255, 0.07);
+  --color-w-border-strong: rgba(255, 255, 255, 0.12);
 
-  /* Text — cream-tinted off-white for warmth */
-  --color-w-text: #ebe8e3;
-  --color-w-muted: #8c8a85;
-  --color-w-faint: #5a5a55;
+  /* Text — cream-tinted off-white, warmer secondary tone */
+  --color-w-text: #edeae4;
+  --color-w-muted: #9b9691;
+  --color-w-faint: #5c5955;
 
   /* Accent — muted antique gold (private banking signature) */
   --color-w-accent: #c5a572;
-  --color-w-accent-hover: #b8965f;
+  --color-w-accent-hover: #d4b483;
   --color-w-accent-soft: rgba(197, 165, 114, 0.14);
+  --color-w-accent-dim: rgba(197, 165, 114, 0.12);
 
   /* Semantic — desaturated, never alarming */
-  --color-w-success: #88a978;
-  --color-w-danger: #c47158;
-  --color-w-warning: #d4a554;
+  --color-w-success: #7a9e6a;
+  --color-w-danger: #b8644a;
+  --color-w-warning: #c49a44;
   --color-w-info: #7a8aa8;
+
+  /* Numerical semantic colours (positive / negative deltas in tables) */
+  --color-w-num-positive: #88b070;
+  --color-w-num-negative: #c47158;
 
   /* Asset class palette — desaturated, all in the same temperature family */
   --color-w-asset-realestate: #c8855a;
@@ -64,8 +69,8 @@
   --shadow-w-glow-accent: 0 0 0 1px rgba(197, 165, 114, 0.25);
 
   /* Typography */
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 /* Light mode — sober paper, deep ink, refined gold.

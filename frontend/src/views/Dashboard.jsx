@@ -151,7 +151,7 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
 
       {/* HERO — net worth giant + sparkline backdrop */}
       <section className="mb-4">
-        <div className="relative overflow-hidden bg-[var(--color-w-surface)] border border-[var(--color-w-border)] rounded-[var(--radius-w-xl)] px-6 sm:px-10 pt-7 sm:pt-9 pb-7 sm:pb-9">
+        <div className="relative overflow-hidden bg-[var(--color-w-surface)] border border-[var(--color-w-border-strong)] rounded-[var(--radius-w-xl)] px-6 sm:px-10 pt-7 sm:pt-9 pb-7 sm:pb-9 border-t-2 border-t-[var(--color-w-accent)]">
           {/* Subtle area sparkline behind the value */}
           {monthlyEvolution.length >= 2 && (
             <div className="absolute inset-x-0 bottom-0 h-[62%] pointer-events-none opacity-90" aria-hidden="true">

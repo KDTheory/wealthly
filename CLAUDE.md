@@ -120,8 +120,8 @@ Tokens live in two places that must stay in sync:
 2. `frontend/src/WealthlyApp.jsx` `Styles({ theme })` `:root` block — used by the monolith CSS-in-JS (`var(--bg-card)`, `var(--primary)`)
 
 Key colors (dark, the primary mode):
-- `--color-w-bg` / `--bg-page`: `#0c0d10`
-- `--color-w-surface` / `--bg-card`: `#15171c`
+- `--color-w-bg` / `--bg-page`: `#0a0b0e`
+- `--color-w-surface` / `--bg-card`: `#13151a`
 - `--color-w-text` / `--text-primary`: `#ebe8e3` (cream-tinted, NOT pure white — warmth matters)
 - `--color-w-accent` / `--primary`: **`#c5a572`** (the signature gold)
 - `--color-w-success` / `--success`: `#88a978` (muted sage)

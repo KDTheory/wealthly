@@ -286,7 +286,7 @@ const authStyles = `
 .auth-screen {
   min-height: 100vh;
   display: flex; align-items: center; justify-content: center;
-  background: #0c0d10;
+  background: #0a0b0e;
   color: #ebe8e3;
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   position: relative; overflow: hidden;
@@ -485,7 +485,7 @@ const authStyles = `
 .auth-submit {
   margin-top: 6px; padding: 11px;
   background: #c5a572;
-  color: #0c0d10;
+  color: #0a0b0e;
   border: none;
   border-radius: 6px;
   font-size: 13px; font-weight: 600;
