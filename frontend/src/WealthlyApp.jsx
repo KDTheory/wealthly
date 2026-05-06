@@ -1328,7 +1328,6 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
           </div>
           <div className="brand-text">
             <div className="brand-name">{APP_NAME}</div>
-            <div className="brand-tagline">Patrimoine privé</div>
           </div>
         </div>
         <nav className="main-nav">
@@ -1362,7 +1361,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             <Users size={13}/> <span>Famille</span>
           </button>
           {members.map(m => (
-            <button key={m.id} className={`member-tab ${activeMemberId === m.id ? 'active' : ''}`} onClick={() => setActiveMemberId(m.id)} style={activeMemberId === m.id ? { background: m.color, color: '#fff', borderColor: m.color } : {}}>
+            <button key={m.id} className={`member-tab ${activeMemberId === m.id ? 'active' : ''}`} onClick={() => setActiveMemberId(m.id)}>
               <span className="member-avatar" style={{ background: m.color }}>{m.name.charAt(0).toUpperCase()}</span>
               <span>{m.name}</span>
               {m.role === 'child' && <span className="role-badge">enfant</span>}
@@ -1608,36 +1607,36 @@ function Onboarding({ onComplete }) {
                   <path d="M7 9 L9.5 15.5 L12 10.5 L14.5 15.5 L17 9"/>
                 </svg>
               </div>
-              <h1>Bienvenue chez Wealthly</h1>
-              <p className="onboarding-lead">Vue consolidée de votre patrimoine familial — comptes, placements, immobilier, prêts. Souverain, chiffré, vôtre.</p>
+              <h1>Bienvenue chez Wealthly.</h1>
+              <p className="onboarding-lead">Suivez. Comprenez. Décidez. La vue consolidée de votre patrimoine familial, hébergée chez vous.</p>
             </div>
             <div className="onboarding-features-grid">
               <div className="ob-feature-card">
                 <div className="ob-feature-icon" style={{ background: 'var(--primary-soft)', color: 'var(--primary)' }}><Users size={18}/></div>
                 <div className="ob-feature-text">
-                  <strong>Famille intelligente</strong>
-                  <span>Espaces privés par adulte, comptes joints partagés automatiquement</span>
+                  <strong>Foyer multi-membres</strong>
+                  <span>Une vue par personne, une vue famille. Comptes joints partagés automatiquement.</span>
                 </div>
               </div>
               <div className="ob-feature-card">
-                <div className="ob-feature-icon" style={{ background: 'var(--success-soft)', color: 'var(--success)' }}><Sparkles size={18}/></div>
+                <div className="ob-feature-icon" style={{ background: 'var(--primary-soft)', color: 'var(--primary)' }}><Sparkles size={18}/></div>
                 <div className="ob-feature-text">
-                  <strong>Catégorisation automatique</strong>
-                  <span>Détection des marchands français, apprentissage de vos corrections</span>
+                  <strong>Catégorisation par IA</strong>
+                  <span>Détection des marchands français. Vos corrections deviennent des règles.</span>
                 </div>
               </div>
               <div className="ob-feature-card">
-                <div className="ob-feature-icon" style={{ background: 'var(--warning-soft)', color: 'var(--warning)' }}><Activity size={18}/></div>
+                <div className="ob-feature-icon" style={{ background: 'var(--primary-soft)', color: 'var(--primary)' }}><Activity size={18}/></div>
                 <div className="ob-feature-text">
-                  <strong>Suivi mensuel intelligent</strong>
-                  <span>Charges fixes auto-détectées, anomalies signalées, projections</span>
+                  <strong>Suivi mensuel</strong>
+                  <span>Charges fixes détectées, anomalies signalées, reste à vivre projeté.</span>
                 </div>
               </div>
               <div className="ob-feature-card">
-                <div className="ob-feature-icon" style={{ background: 'var(--purple-soft)', color: 'var(--purple)' }}><Landmark size={18}/></div>
+                <div className="ob-feature-icon" style={{ background: 'var(--primary-soft)', color: 'var(--primary)' }}><Landmark size={18}/></div>
                 <div className="ob-feature-text">
-                  <strong>Patrimoine complet</strong>
-                  <span>Immobilier, AV, PEA, crypto, prêts — pas que du bancaire</span>
+                  <strong>Patrimoine consolidé</strong>
+                  <span>Immobilier, AV, PEA, crypto, prêts. Pas que du bancaire.</span>
                 </div>
               </div>
             </div>
@@ -5411,15 +5410,15 @@ function Styles({ theme }) {
 .link-btn { background: transparent; border: none; color: var(--primary); font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; padding: 4px 8px; border-radius: 4px; }
 .link-btn:hover { background: var(--primary-soft); }
 
-.member-bar { padding: 12px 24px 0; background: var(--bg-page); border-bottom: 1px solid var(--border); }
-.member-tabs { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.member-bar { padding: 14px 24px 0; background: var(--bg-page); border-bottom: 1px solid var(--border); }
+.member-tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
 .member-tabs::-webkit-scrollbar { display: none; }
-.member-tab { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 22px; font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: all 0.15s; flex-shrink: 0; font-family: inherit; }
-.member-tab:hover { background: var(--bg-card-hover); color: var(--text-primary); }
-.member-tab.active { color: white; box-shadow: var(--shadow-md); }
-.member-avatar { width: 22px; height: 22px; border-radius: 50%; color: white; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.member-tab { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 8px; background: transparent; border: 1px solid transparent; border-radius: 999px; font-size: 12.5px; font-weight: 500; color: var(--text-tertiary); cursor: pointer; transition: color .15s, background .15s, border-color .15s; flex-shrink: 0; font-family: inherit; letter-spacing: -0.005em; }
+.member-tab:hover { color: var(--text-primary); }
+.member-tab.active { color: var(--text-primary); background: var(--bg-card); border-color: var(--border); box-shadow: none; }
+.member-avatar { width: 18px; height: 18px; border-radius: 50%; color: white; display: inline-flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; flex-shrink: 0; letter-spacing: 0; }
 .member-avatar.large { width: 36px; height: 36px; font-size: 14px; }
-.role-badge { font-size: 9px; font-weight: 700; padding: 2px 6px; background: rgba(255,255,255,0.25); border-radius: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+.role-badge { font-size: 9px; font-weight: 600; padding: 1px 6px; background: var(--bg-subtle); color: var(--text-tertiary); border: 1px solid var(--border-light); border-radius: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
 .member-context { padding: 10px 0; font-size: 12px; color: var(--text-tertiary); }
 .member-context strong { color: var(--text-secondary); }
 
@@ -5459,14 +5458,14 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .progress-step.active .progress-dot { background: var(--primary); color: ${dark ? '#0c0d10' : '#ffffff'}; border-color: var(--primary); }
 .progress-step.done .progress-dot { background: var(--primary-soft); color: var(--primary); border-color: var(--primary); }
 .progress-line { flex: 1; height: 2px; background: var(--border); border-radius: 1px; }
-.onboarding-step-content h1 { font-size: 26px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.025em; }
-.onboarding-step-content h2 { font-size: 22px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.02em; }
-.onboarding-lead { font-size: 14px; color: var(--text-secondary); margin: 0 0 24px; line-height: 1.6; }
+.onboarding-step-content h1 { font-size: 32px; font-weight: 500; margin: 0 0 10px; letter-spacing: -0.035em; line-height: 1.1; }
+.onboarding-step-content h2 { font-size: 24px; font-weight: 500; margin: 0 0 8px; letter-spacing: -0.03em; line-height: 1.15; }
+.onboarding-lead { font-size: 15px; color: var(--text-secondary); margin: 0 0 28px; line-height: 1.6; max-width: 460px; letter-spacing: -0.005em; }
 .onboarding-hero { text-align: center; margin-bottom: 32px; }
 .ob-mark-large { width: 64px; height: 64px; border-radius: 8px; background: var(--primary-soft); border: 1px solid ${dark ? 'rgba(197, 165, 114, 0.32)' : 'rgba(160, 133, 85, 0.28)'}; display: inline-flex; align-items: center; justify-content: center; color: var(--primary); margin-bottom: 20px; }
 .onboarding-features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }
-.ob-feature-card { display: flex; gap: 12px; padding: 16px; background: var(--bg-subtle); border-radius: 14px; border: 1px solid var(--border-light); transition: all 0.2s; }
-.ob-feature-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.ob-feature-card { display: flex; gap: 12px; padding: 16px; background: var(--bg-subtle); border-radius: 12px; border: 1px solid var(--border-light); transition: border-color 0.18s, background 0.18s; }
+.ob-feature-card:hover { border-color: var(--border-strong); background: var(--bg-card-hover); }
 .ob-feature-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .ob-feature-text { display: flex; flex-direction: column; gap: 2px; }
 .ob-feature-text strong { font-size: 13px; }
