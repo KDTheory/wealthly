@@ -5539,9 +5539,9 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .kpi-card--negative .kpi-card-icon { background: var(--danger-soft); color: var(--danger-text); }
 
 /* CARDS */
-.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; transition: border-color .2s; }
 .card-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
-.card-header h3 { font-size: 13px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 6px; letter-spacing: 0.01em; color: var(--text-primary); }
+.card-header h3 { font-size: 11px; font-weight: 500; margin: 0; display: flex; align-items: center; gap: 6px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-tertiary); }
 .card-meta { font-size: 11px; color: var(--text-tertiary); font-weight: 400; }
 .chart-card { padding: 22px 16px 16px 8px; }
 .chart-empty { padding: 60px 20px; text-align: center; color: var(--text-tertiary); display: flex; flex-direction: column; align-items: center; gap: 12px; font-size: 13px; }
@@ -6052,11 +6052,11 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .wealth-subnav-count { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; font-size: 10.5px; background: var(--bg-subtle); color: var(--text-tertiary); font-weight: 600; }
 .wealth-subnav-btn.active .wealth-subnav-count { background: var(--primary-soft); color: var(--primary); }
 
-.subview-hero { display: flex; align-items: center; justify-content: space-between; }
-.subview-hero-info { display: flex; flex-direction: column; gap: 4px; }
-.subview-hero-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
-.subview-hero-value { font-size: 32px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--text-primary); }
-.subview-hero-meta { font-size: 12px; color: var(--text-secondary); }
+.subview-hero { display: flex; align-items: flex-end; justify-content: space-between; padding: 26px 28px; }
+.subview-hero-info { display: flex; flex-direction: column; gap: 6px; }
+.subview-hero-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--text-tertiary); font-weight: 500; }
+.subview-hero-value { font-size: clamp(36px, 6vw, 56px); font-weight: 500; letter-spacing: -0.04em; line-height: 1.05; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.subview-hero-meta { font-size: 12.5px; color: var(--text-tertiary); margin-top: 4px; }
 
 /* Compléter mon patrimoine picker */
 .patrimoine-picker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; max-height: 420px; overflow-y: auto; padding-right: 4px; }
