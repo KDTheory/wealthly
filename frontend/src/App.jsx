@@ -64,7 +64,7 @@ export default function App() {
         justifyContent: 'center',
         background: '#0c0d10',
         color: '#8c8a85',
-        fontFamily: 'Inter, system-ui, sans-serif',
+        fontFamily: "'DM Sans', system-ui, sans-serif",
         fontSize: 14,
       }}>
         Chargement…
@@ -82,7 +82,7 @@ export default function App() {
 
   if (isBankCallback) {
     return (
-      <Suspense fallback={<div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0c0d10',color:'#8c8a85',fontFamily:'Inter, system-ui, sans-serif',fontSize:14}}>Chargement…</div>}>
+      <Suspense fallback={<div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0c0d10',color:'#8c8a85',fontFamily:"'DM Sans', system-ui, sans-serif",fontSize:14}}>Chargement…</div>}>
         <BankCallback
           onDone={() => {
             setIsBankCallback(false);

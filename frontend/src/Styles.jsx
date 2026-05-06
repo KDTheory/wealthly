@@ -59,7 +59,9 @@ export function Styles({ theme }) {
   --gradient-success: linear-gradient(135deg, ${dark ? '#88a978' : '#5d7a52'} 0%, ${dark ? '#6e8c61' : '#43583a'} 100%);
 }
 * { box-sizing: border-box; }
-.app { font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; background: var(--bg-page); color: var(--text-primary); min-height: 100vh; letter-spacing: -0.01em; -webkit-font-smoothing: antialiased; }
+.app { font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; background: var(--bg-page); color: var(--text-primary); min-height: 100vh; letter-spacing: -0.01em; -webkit-font-smoothing: antialiased; }
+/* Tabular numerals on every monetary number — DM Mono is the canonical face. */
+.w-num, .nw-current-value, .kpi-card-value, .subview-hero-value, .ws-value, .wk-value, .mk-value, .summary-num, .cashflow-kpi-value, .merchant-total, .rest-hero-value, .rest-stat-value, .nw-current-delta, .alloc-pct, .alloc-val, .td-amount, .td-date, .ratio-card-amount, .ratio-card-pct { font-family: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
 
 .loading-screen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: var(--bg-page); color: var(--text-secondary); }
 .spinner { width: 32px; height: 32px; border: 2.5px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }

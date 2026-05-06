@@ -288,7 +288,7 @@ const authStyles = `
   display: flex; align-items: center; justify-content: center;
   background: #0c0d10;
   color: #ebe8e3;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   position: relative; overflow: hidden;
   -webkit-font-smoothing: antialiased;
   letter-spacing: -0.01em;

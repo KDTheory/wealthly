@@ -14,11 +14,12 @@
     <title>Wealthly — Patrimoine privé</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Variable font: one download covers all weights instead of 5 separate woff2 files -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap" rel="stylesheet">
+    <!-- DM Sans (UI body, headings) + DM Mono (numbers, currency, tabular data).
+         Variable axes requested as ranges so a single woff2 covers each font. -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400..700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
       /* Prevents the white flash on first paint before React mounts */
-      html, body { background: #0c0d10; color: #ebe8e3; color-scheme: dark; margin: 0; }
+      html, body { background: #0c0d10; color: #ebe8e3; color-scheme: dark; margin: 0; font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
     </style>
   </head>
   <body>
