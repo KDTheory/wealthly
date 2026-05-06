@@ -23,6 +23,7 @@ import {
 import { formatCurrency, formatDate } from '../utils.js';
 import { AnimatedNumber } from '../components/AnimatedNumber.jsx';
 import { NetWorthChart } from '../components/NetWorthChart.jsx';
+import { RegulatoryCaps } from '../components/RegulatoryCaps.jsx';
 
 // ============================================================================
 // WEALTH (Assets + Liabilities)
@@ -183,6 +184,11 @@ export function Wealth({ assets, liabilities, members, activeMemberId, visibleAs
         </section>
       )}
 
+      {/* Plafonds régulés — only on 'all', renders nothing if no PEA/Livret A/LDDS detected */}
+      {isAll && (
+        <RegulatoryCaps visibleAssets={visibleAssets} memberShare={memberShare} fmt={fmt}/>
+      )}
+
       {/* Asset class allocation — only on 'all' */}
       {isAll && classAllocation.length > 0 && (
         <section className="card allocation-card">
@@ -282,6 +288,13 @@ export function Wealth({ assets, liabilities, members, activeMemberId, visibleAs
                 <div className="asset-list">
                   {list.map(a => {
                     const owners = (a.memberIds || []).map(id => members.find(m => m.id === id)?.name).filter(Boolean).join(' & ');
+                    const share = memberShare(a);
+                    const current = (parseFloat(a.currentValue) || 0) * share;
+                    const cost = (parseFloat(a.purchasePrice) || 0) * share;
+                    const hasCost = cost > 0;
+                    const gain = hasCost ? current - cost : null;
+                    const gainPct = hasCost ? (gain / cost) * 100 : null;
+                    const positive = gain != null && gain >= 0;
                     return (
                       <div key={a.id} className="asset-card-v2">
                         <div className="asset-card-main">
@@ -289,7 +302,17 @@ export function Wealth({ assets, liabilities, members, activeMemberId, visibleAs
                           <div className="asset-card-meta">{owners} · MAJ {formatDate(a.updatedAt)}</div>
                           {a.notes && <div className="asset-card-notes">{a.notes}</div>}
                         </div>
-                        <div className="asset-card-value">{fmt((parseFloat(a.currentValue) || 0) * memberShare(a))}</div>
+                        <div className="asset-card-value-block">
+                          <div className="asset-card-value">{fmt(current)}</div>
+                          {gain != null && (
+                            <div
+                              className={`asset-card-pv w-num ${positive ? 'positive' : 'negative'}`}
+                              title={`Prix de revient : ${fmt(cost)}${a.purchaseDate ? ` (${formatDate(a.purchaseDate, { format: 'long' })})` : ''}`}
+                            >
+                              {positive ? '+' : ''}{fmt(gain)} <span className="asset-card-pv-pct">({positive ? '+' : ''}{gainPct.toFixed(1)}%)</span>
+                            </div>
+                          )}
+                        </div>
                         <div className="asset-card-actions">
                           <button className="icon-btn-sm" onClick={() => setEditingAsset(a)}><Edit3 size={13}/></button>
                           <button className="icon-btn-sm" onClick={() => deleteAsset(a.id)}><Trash2 size={13}/></button>
@@ -457,6 +480,15 @@ function SimpleAssetEditor({ asset, members, onSave, onCancel }) {
           <label><span>Valeur actuelle (€)</span>
             <input type="number" value={draft.currentValue} onChange={(e) => setDraft({ ...draft, currentValue: e.target.value })} step="any"/>
           </label>
+          <div className="field-row">
+            <label><span>Prix de revient (€) <span className="hint">optionnel</span></span>
+              <input type="number" value={draft.purchasePrice ?? ''} onChange={(e) => setDraft({ ...draft, purchasePrice: e.target.value })} step="any" placeholder="ex: 12 500"/>
+            </label>
+            <label><span>Date d'acquisition <span className="hint">optionnel</span></span>
+              <input type="date" value={draft.purchaseDate || ''} onChange={(e) => setDraft({ ...draft, purchaseDate: e.target.value })}/>
+            </label>
+          </div>
+          <div className="field-help">Si renseigné, l'app calcule automatiquement la plus-value latente (€ et %) sur la fiche du patrimoine.</div>
           <label><span>Propriétaires</span>
             <div className="member-checks">
               {members.map(m => (

@@ -666,8 +666,31 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .asset-card-name { font-size: 14px; font-weight: 700; }
 .asset-card-meta { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
 .asset-card-notes { font-size: 11px; color: var(--text-secondary); margin-top: 4px; font-style: italic; }
-.asset-card-value { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.asset-card-value-block { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.asset-card-value { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.asset-card-pv { font-size: 11.5px; font-weight: 500; cursor: help; }
+.asset-card-pv.positive { color: var(--num-positive); }
+.asset-card-pv.negative { color: var(--num-negative); }
+.asset-card-pv-pct { color: var(--text-tertiary); font-weight: 400; margin-left: 1px; }
 .asset-card-actions { display: flex; gap: 4px; }
+
+/* RegulatoryCaps — PEA / Livret A / LDDS / LEP progress vs legal cap. */
+.reg-caps-card { padding: 18px 22px; }
+.reg-caps-list { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.reg-caps-row { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; border-bottom: 1px solid var(--border-light); }
+.reg-caps-row:last-child { border-bottom: none; padding-bottom: 0; }
+.reg-caps-row-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.reg-caps-label { font-size: 12.5px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.02em; }
+.reg-caps-value { font-size: 13px; font-weight: 500; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.reg-caps-cap { color: var(--text-tertiary); font-weight: 400; }
+.reg-caps-bar { height: 6px; background: var(--bg-subtle); border-radius: 3px; overflow: hidden; }
+.reg-caps-bar-fill { height: 100%; background: var(--success); border-radius: 3px; transition: width .3s ease, background .2s; }
+.state-warn .reg-caps-bar-fill { background: var(--warning); }
+.state-over .reg-caps-bar-fill { background: var(--danger); }
+.reg-caps-foot { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+.reg-caps-remaining { display: inline-flex; align-items: center; gap: 4px; }
+.state-warn .reg-caps-remaining { color: var(--warning-text); }
+.state-over .reg-caps-remaining { color: var(--danger-text); font-weight: 600; }
 
 .liability-list { display: flex; flex-direction: column; gap: 12px; }
 .liability-card-v2 { padding: 14px; background: var(--bg-subtle); border-radius: 12px; }
