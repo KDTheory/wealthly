@@ -5,11 +5,12 @@ import hashlib
 import secrets
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import User, Household, Category, PasswordResetToken
+from app.rate_limit import limiter
 from app.schemas import (
     UserCreate, UserLogin, Token, UserOut,
     ForgotPasswordRequest, ResetPasswordRequest, MessageOut,
@@ -32,7 +33,8 @@ def _hash_reset_token(token: str) -> str:
 
 
 @router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
-def register(payload: UserCreate, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def register(request: Request, payload: UserCreate, db: Session = Depends(get_db)):
     """Create a new household with its first admin user. Seeds default categories."""
     existing = db.query(User).filter(User.email == payload.email).first()
     if existing:
@@ -65,7 +67,8 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=Token)
-def login(payload: UserLogin, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def login(request: Request, payload: UserLogin, db: Session = Depends(get_db)):
     """Authenticate and return a JWT."""
     user = db.query(User).filter(User.email == payload.email, User.is_active == True).first()
     if not user or not verify_password(payload.password, user.hashed_password):
@@ -82,7 +85,8 @@ def me(current_user: User = Depends(get_current_user)):
 
 
 @router.post("/forgot-password", response_model=MessageOut)
-def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def forgot_password(request: Request, payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
     """Generate a single-use reset token and email it to the user.
 
     Always returns a generic success message — even if the email is unknown

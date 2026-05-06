@@ -8,10 +8,12 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
 from sqlalchemy import text
 
 from app.config import settings
 from app.database import engine, Base
+from app.rate_limit import limiter, rate_limit_handler
 from app.routers import auth, members, accounts, transactions, wealth, other, categorize, banks, fixed_charges
 
 logger = logging.getLogger("wealthly")
@@ -104,6 +106,10 @@ app = FastAPI(
     version="2.0.0",
     description="Self-hosted family finance tracker — backend API",
 )
+
+# Per-IP rate limiting (auth routes only — see app.rate_limit + routers.auth)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_handler)
 
 # CORS — allow the frontend to call this API
 app.add_middleware(
