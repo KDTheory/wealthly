@@ -11,7 +11,11 @@
  * when you change cache strategy or want to flush old assets.
  */
 
-const SW_VERSION = 'wealthly-v1';
+// Bump this whenever cache strategy changes OR when a stale shell is suspected
+// to be served (e.g. after a long broken-build streak that the SW cached). The
+// `activate` handler below deletes every cache that doesn't end with this
+// version, so users get a clean slate on the next page load.
+const SW_VERSION = 'wealthly-v2-2026-05';
 const RUNTIME = `wealthly-runtime-${SW_VERSION}`;
 const SHELL = `wealthly-shell-${SW_VERSION}`;
 const SHELL_ASSETS = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg', '/icon-maskable.svg'];
