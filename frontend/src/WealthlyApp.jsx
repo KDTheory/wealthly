@@ -282,7 +282,10 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
         storage.get(STORAGE_KEYS.ACTIVE_MEMBER, 'all'),
       ]);
       setRecurringOverrides(ov);
-      setActiveMemberId(am);
+      // In demo mode, force the family ("all") view — a stale per-member
+      // selection from a previous logged-in session would point to a member
+      // that doesn't exist in the demo dataset, leaving every screen empty.
+      setActiveMemberId(demoMode ? 'all' : am);
       setColumnMappings(await storage.get(STORAGE_KEYS.MAPPINGS, {}));
       // Then fetch server data (or load demo dataset if applicable)
       await reloadAll();
