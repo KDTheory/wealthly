@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadialBarChart, RadialBar, ComposedChart, Sankey, Layer, Rectangle } from 'recharts';
-import { Upload, Plus, TrendingUp, TrendingDown, Wallet, Home, Coins, CreditCard, Users, Settings, Search, Download, Trash2, Edit3, Check, X, ChevronRight, ChevronLeft, AlertCircle, AlertTriangle, Repeat, Calendar, ArrowUpDown, Eye, EyeOff, Sparkles, PiggyBank, Bitcoin, Banknote, Landmark, BarChart3, Target, Heart, Sun, Moon, Zap, Activity, ArrowUp, ArrowDown, Minus, PartyPopper, Lightbulb, Bell, ChevronUp, Play, Lock, Unlock, LogOut, Cloud, RefreshCw, FileText, Calculator, Link2, Unlink } from 'lucide-react';
+import { Upload, Plus, TrendingUp, TrendingDown, Wallet, Home, Coins, CreditCard, Users, Settings, Search, Download, Trash2, Edit3, Check, X, ChevronRight, ChevronLeft, ChevronDown, AlertCircle, AlertTriangle, Repeat, Calendar, ArrowUpDown, Eye, EyeOff, Sparkles, PiggyBank, Bitcoin, Banknote, Landmark, BarChart3, Target, Heart, Sun, Moon, Zap, Activity, ArrowUp, ArrowDown, Minus, PartyPopper, Lightbulb, Bell, ChevronUp, Play, Lock, Unlock, LogOut, Cloud, RefreshCw, FileText, Calculator, Link2, Unlink } from 'lucide-react';
 import * as api from './api.js';
 import { generateBilanPdf } from './pdfReport.js';
 import TaxSimulator from './TaxSimulator.jsx';
@@ -406,6 +406,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   const [loading, setLoading] = useState(true);
   const [onboarded, setOnboarded] = useState(false);
   const [view, setView] = useState('dashboard');
+  const [pendingTxAcc, setPendingTxAcc] = useState('all');
   const [theme, setTheme] = useState('light');
   const [members, setMembers] = useState([]);
   const [activeMemberId, setActiveMemberId] = useState('all');
@@ -1319,7 +1320,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
           </button>
           <button onClick={() => setView('wealth')} className={view === 'wealth' ? 'active' : ''}><Landmark size={14}/> <span>Patrimoine</span></button>
           <button onClick={() => setView('cashflow')} className={view === 'cashflow' ? 'active' : ''}><Activity size={14}/> <span>Cashflow</span></button>
-          <button onClick={() => setView('transactions')} className={view === 'transactions' ? 'active' : ''}><BarChart3 size={14}/> <span>Transactions</span></button>
+          <button onClick={() => { setView('transactions'); setPendingTxAcc('all'); }} className={view === 'transactions' ? 'active' : ''}><BarChart3 size={14}/> <span>Transactions</span></button>
           <button onClick={() => setView('tax')} className={view === 'tax' ? 'active' : ''}><Calculator size={14}/> <span>Impôts</span></button>
           <button onClick={() => setView('settings')} className={view === 'settings' ? 'active' : ''}><Settings size={14}/> <span>Réglages</span></button>
         </nav>
@@ -1373,6 +1374,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             goals={goals} wealthHistory={wealthHistory}
             recurringGroups={recurringGroups} currentMonth={currentMonth}
             setView={setView}
+            onAccountClick={(accId) => { setPendingTxAcc(accId); setView('transactions'); }}
           />
         )}
         {view === 'monthly' && (
@@ -1417,6 +1419,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             transactions={visibleTransactions} accounts={accounts} categories={categories}
             recurringIds={recurringIds} toggleRecurring={toggleRecurring}
             updateCategory={updateTransactionCategory} deleteTransaction={deleteTransaction} fmt={fmt}
+            initialAcc={pendingTxAcc}
           />
         )}
         {view === 'analysis' && (
@@ -1707,7 +1710,7 @@ function Onboarding({ onComplete }) {
 // ============================================================================
 // DASHBOARD
 // ============================================================================
-function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, thisMonthStats, monthlyEvolution, visibleAccounts, accountBalances, visibleAssets, visibleLiabilities, members, activeMemberId, transactions, categories, fmt, memberShare, categoryAnalysis, anomalies, cashflowProjection, goals, wealthHistory = [], recurringGroups, currentMonth, setView }) {
+function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, thisMonthStats, monthlyEvolution, visibleAccounts, accountBalances, visibleAssets, visibleLiabilities, members, activeMemberId, transactions, categories, fmt, memberShare, categoryAnalysis, anomalies, cashflowProjection, goals, wealthHistory = [], recurringGroups, currentMonth, setView, onAccountClick }) {
   const last12Months = monthlyEvolution.slice(-12);
   const recentTx = [...transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
   const activeMember = members.find(m => m.id === activeMemberId);
@@ -2042,7 +2045,7 @@ function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, this
                 const isJoint = a.memberIds && a.memberIds.length > 1;
                 const ownerColor = isJoint ? 'var(--color-w-asset-pension)' : (members.find(m => m.id === a.memberIds?.[0])?.color || 'var(--color-w-muted)');
                 return (
-                  <div key={a.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                  <div key={a.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 -mx-2 px-2 rounded-[var(--radius-w-sm)] transition-colors cursor-pointer hover:bg-[var(--color-w-surface-2)]" onClick={() => onAccountClick && onAccountClick(a.id)} title="Voir les transactions de ce compte">
                     <div className="w-9 h-9 rounded-[var(--radius-w-sm)] flex items-center justify-center text-xs font-semibold text-white shrink-0" style={{ background: ownerColor }}>
                       {isJoint ? <Users size={13}/> : (a.bank?.charAt(0)?.toUpperCase() || '·')}
                     </div>
@@ -2051,6 +2054,7 @@ function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, this
                       <div className="text-xs text-[var(--color-w-muted)] truncate">{a.bank} · {ownerNames}{isJoint ? ' · joint' : ''}</div>
                     </div>
                     <div className={`text-sm w-num ${sharedBalance < 0 ? 'text-[var(--color-w-danger)]' : 'text-[var(--color-w-text)]'}`}>{fmt(sharedBalance)}</div>
+                    <ChevronRight size={12} className="text-[var(--color-w-faint)] shrink-0"/>
                   </div>
                 );
               })}
@@ -4294,20 +4298,52 @@ function LiabilityDetail({ liability, assets, members, memberShare, fmt, onEdit,
 // ============================================================================
 // TRANSACTIONS
 // ============================================================================
-function Transactions({ transactions, accounts, categories, recurringIds, toggleRecurring, updateCategory, deleteTransaction, fmt }) {
+function Transactions({ transactions, accounts, categories, recurringIds, toggleRecurring, updateCategory, deleteTransaction, fmt, initialAcc = 'all' }) {
   const [search, setSearch] = useState('');
-  const [filterCat, setFilterCat] = useState('all');
-  const [filterAcc, setFilterAcc] = useState('all');
+  const [filterCats, setFilterCats] = useState([]);
+  const [filterAcc, setFilterAcc] = useState(initialAcc);
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
+  const [filterAmountMin, setFilterAmountMin] = useState('');
+  const [filterAmountMax, setFilterAmountMax] = useState('');
   const [sortKey, setSortKey] = useState('date');
   const [sortDir, setSortDir] = useState('desc');
   const [editingTx, setEditingTx] = useState(null);
+  const [catDropOpen, setCatDropOpen] = useState(false);
+  const catDropRef = useRef(null);
+
+  useEffect(() => { setFilterAcc(initialAcc); }, [initialAcc]);
+
+  useEffect(() => {
+    const handler = (e) => { if (catDropRef.current && !catDropRef.current.contains(e.target)) setCatDropOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const hasActiveFilters = search || filterCats.length > 0 || filterAcc !== 'all' || filterDateFrom || filterDateTo || filterAmountMin !== '' || filterAmountMax !== '';
+
+  const resetFilters = () => {
+    setSearch('');
+    setFilterCats([]);
+    setFilterAcc('all');
+    setFilterDateFrom('');
+    setFilterDateTo('');
+    setFilterAmountMin('');
+    setFilterAmountMax('');
+  };
 
   const filtered = useMemo(() => {
+    const amountMin = filterAmountMin !== '' ? parseFloat(filterAmountMin) : null;
+    const amountMax = filterAmountMax !== '' ? parseFloat(filterAmountMax) : null;
     return transactions
       .filter(t => {
         if (search && !(t.label || '').toLowerCase().includes(search.toLowerCase())) return false;
-        if (filterCat !== 'all' && t.categoryId !== filterCat) return false;
+        if (filterCats.length > 0 && !filterCats.includes(t.categoryId)) return false;
         if (filterAcc !== 'all' && t.accountId !== filterAcc) return false;
+        if (filterDateFrom && t.date < filterDateFrom) return false;
+        if (filterDateTo && t.date > filterDateTo) return false;
+        if (amountMin !== null && t.amount < amountMin) return false;
+        if (amountMax !== null && t.amount > amountMax) return false;
         return true;
       })
       .sort((a, b) => {
@@ -4317,12 +4353,18 @@ function Transactions({ transactions, accounts, categories, recurringIds, toggle
         else if (sortKey === 'label') cmp = (a.label || '').localeCompare(b.label || '');
         return sortDir === 'asc' ? cmp : -cmp;
       });
-  }, [transactions, search, filterCat, filterAcc, sortKey, sortDir]);
+  }, [transactions, search, filterCats, filterAcc, filterDateFrom, filterDateTo, filterAmountMin, filterAmountMax, sortKey, sortDir]);
 
   const toggleSort = (key) => {
     if (sortKey === key) setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
     else { setSortKey(key); setSortDir('desc'); }
   };
+
+  const catLabel = filterCats.length === 0
+    ? 'Toutes catégories'
+    : filterCats.length === 1
+      ? (categories.find(c => c.id === filterCats[0])?.name || '1 catégorie')
+      : `${filterCats.length} catégories`;
 
   return (
     <div className="transactions-view">
@@ -4337,14 +4379,42 @@ function Transactions({ transactions, accounts, categories, recurringIds, toggle
           <Search size={16}/>
           <input placeholder="Rechercher dans les libellés…" value={search} onChange={(e) => setSearch(e.target.value)}/>
         </div>
-        <select value={filterCat} onChange={(e) => setFilterCat(e.target.value)}>
-          <option value="all">Toutes catégories</option>
-          {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-        </select>
+        <div className="filter-cat-dropdown" ref={catDropRef}>
+          <button className={`filter-select-btn ${filterCats.length > 0 ? 'active' : ''}`} onClick={() => setCatDropOpen(o => !o)}>
+            {catLabel} <ChevronDown size={12}/>
+          </button>
+          {catDropOpen && (
+            <div className="filter-cat-menu">
+              <label className="filter-cat-item">
+                <input type="checkbox" readOnly checked={filterCats.length === 0} onClick={() => setFilterCats([])}/>
+                <span>Toutes</span>
+              </label>
+              {categories.map(c => (
+                <label key={c.id} className="filter-cat-item">
+                  <input type="checkbox" checked={filterCats.includes(c.id)} onChange={() => {
+                    setFilterCats(prev => prev.includes(c.id) ? prev.filter(id => id !== c.id) : [...prev, c.id]);
+                  }}/>
+                  <span>{c.icon} {c.name}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
         <select value={filterAcc} onChange={(e) => setFilterAcc(e.target.value)}>
           <option value="all">Tous comptes</option>
           {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
         </select>
+        <div className="filter-date-range">
+          <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} title="Date de début"/>
+          <span className="filter-range-sep">→</span>
+          <input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} title="Date de fin"/>
+        </div>
+        <div className="filter-amount-range">
+          <input type="number" placeholder="Min €" value={filterAmountMin} onChange={e => setFilterAmountMin(e.target.value)} step="any"/>
+          <span className="filter-range-sep">→</span>
+          <input type="number" placeholder="Max €" value={filterAmountMax} onChange={e => setFilterAmountMax(e.target.value)} step="any"/>
+        </div>
+        {hasActiveFilters && <button className="filter-reset-btn" onClick={resetFilters} title="Réinitialiser les filtres"><X size={13}/></button>}
         <span className="result-count">{filtered.length} transaction{filtered.length > 1 ? 's' : ''}</span>
       </div>
       <div className="tx-table">
@@ -5776,6 +5846,22 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .search-box input { border: none; background: transparent; padding: 8px 0; font-size: 13px; flex: 1; color: var(--text-primary); font-family: inherit; }
 .search-box input:focus { outline: none; box-shadow: none; }
 .result-count { font-size: 11px; color: var(--text-tertiary); margin-left: auto; }
+.filter-cat-dropdown { position: relative; }
+.filter-select-btn { display: flex; align-items: center; gap: 5px; padding: 7px 10px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--text-secondary); cursor: pointer; white-space: nowrap; font-family: inherit; }
+.filter-select-btn:hover { border-color: var(--border-strong); color: var(--text-primary); }
+.filter-select-btn.active { border-color: var(--primary); color: var(--primary-text); background: var(--primary-soft); }
+.filter-cat-menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 200; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-md); min-width: 190px; max-height: 260px; overflow-y: auto; padding: 6px; }
+.filter-cat-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--text-secondary); user-select: none; }
+.filter-cat-item:hover { background: var(--bg-subtle); color: var(--text-primary); }
+.filter-cat-item input[type="checkbox"] { accent-color: var(--primary); cursor: pointer; }
+.filter-date-range, .filter-amount-range { display: flex; align-items: center; gap: 4px; }
+.filter-date-range input, .filter-amount-range input { padding: 7px 8px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--text-secondary); font-family: inherit; }
+.filter-date-range input { width: 130px; }
+.filter-amount-range input { width: 76px; }
+.filter-date-range input:focus, .filter-amount-range input:focus { outline: none; border-color: var(--primary); color: var(--text-primary); }
+.filter-range-sep { font-size: 11px; color: var(--text-tertiary); }
+.filter-reset-btn { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; background: var(--bg-subtle); border: 1px solid var(--border); color: var(--text-tertiary); cursor: pointer; flex-shrink: 0; }
+.filter-reset-btn:hover { border-color: var(--danger); color: var(--danger); }
 .tx-table { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow-sm); }
 .tx-header, .tx-row { display: grid; grid-template-columns: 90px minmax(180px, 1fr) 160px 140px 110px 50px; gap: 12px; padding: 10px 16px; align-items: center; }
 .tx-header { background: var(--bg-subtle); border-bottom: 1px solid var(--border); font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700; }
@@ -6162,6 +6248,9 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
   .filters-bar { padding: 10px; gap: 6px; }
   .search-box { min-width: 0; flex: 1 1 100%; order: -1; }
   .result-count { display: none; }
+  .filter-date-range, .filter-amount-range { flex: 1 1 calc(50% - 4px); }
+  .filter-date-range input { width: auto; flex: 1; min-width: 0; }
+  .filter-amount-range input { width: auto; flex: 1; min-width: 0; }
 
   /* Onboarding: tighter padding */
   .onboarding { padding: 16px 12px; }
