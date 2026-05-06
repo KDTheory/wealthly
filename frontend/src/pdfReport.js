@@ -20,29 +20,31 @@ import autoTable from 'jspdf-autotable';
 import { buildAmortization } from './utils.js';
 
 // ---------- Palette (RGB tuples for jsPDF) ----------
+// Mirrors the app's dark "private banking" theme — encre profonde, or sobre.
+// Same hex roots as Styles.jsx so a printed page feels like the same product.
 const C = {
-  ink:        [22, 20, 14],
-  body:       [60, 56, 48],
-  muted:      [110, 102, 89],
-  faint:      [155, 146, 132],
-  rule:       [228, 222, 208],
-  hairline:   [238, 232, 218],
-  paper:      [253, 251, 246],
-  cream:      [248, 244, 234],
-  cardFill:   [251, 247, 238],
-  gold:       [160, 133, 85],
-  goldDark:   [122, 100, 62],
-  sage:       [110, 140, 97],
-  terracotta: [173, 95, 72],
-  amber:      [200, 160, 70],
+  ink:        [235, 232, 227],   // text-primary (cream)
+  body:       [200, 196, 188],   // text-secondary
+  muted:      [150, 145, 138],   // text-tertiary
+  faint:      [110, 106, 100],   // text-faint
+  rule:       [54, 56, 64],      // border-strong
+  hairline:   [38, 40, 46],      // border subtle
+  paper:      [10, 11, 14],      // bg-page #0a0b0e
+  cream:      [19, 21, 26],      // bg-card #13151a
+  cardFill:   [24, 26, 32],      // bg-card-hover (slightly lifted)
+  gold:       [197, 165, 114],   // primary
+  goldDark:   [157, 130, 88],    // primary-darker
+  sage:       [136, 169, 120],   // success
+  terracotta: [196, 113, 88],    // danger
+  amber:      [212, 165, 84],    // warning
   pieClasses: [
-    [160, 133, 85],   // gold
-    [122, 138, 168],  // slate-blue
-    [173, 95, 72],    // terracotta
-    [110, 140, 97],   // sage
-    [157, 139, 181],  // mauve
-    [200, 160, 70],   // amber
-    [148, 142, 138],  // warm gray
+    [197, 165, 114],  // gold
+    [140, 158, 188],  // slate-blue (lifted for dark bg)
+    [196, 113, 88],   // terracotta
+    [136, 169, 120],  // sage
+    [177, 159, 201],  // mauve (lifted)
+    [212, 165, 84],   // amber
+    [168, 162, 158],  // warm gray (lifted)
   ],
 };
 
@@ -86,70 +88,76 @@ function paintBackground(doc) {
 function drawHeader(doc, subtitle) {
   const w = doc.internal.pageSize.getWidth();
   const x = PAGE_M;
-  const y = 36;
+  const yBase = 50;          // baseline for the wordmark
+  const monogramSize = 22;
+  const monogramY = yBase - 16;
 
-  // Monogram square — gold stroke + interior W glyph
+  // Monogram square — gold stroke on the page bg, no fill (lets the dark show through)
   doc.setDrawColor(...C.gold);
-  doc.setFillColor(...C.cardFill);
+  doc.setLineWidth(0.6);
+  doc.roundedRect(x, monogramY, monogramSize, monogramSize, 2.5, 2.5, 'S');
+  // Interior W glyph — two clean strokes drawn from a baseline inside the square
+  doc.setDrawColor(...C.gold);
   doc.setLineWidth(0.7);
-  doc.roundedRect(x, y - 12, 18, 18, 2, 2, 'FD');
-  doc.setDrawColor(...C.goldDark);
-  doc.setLineWidth(0.7);
-  doc.lines([[2.4, 6.5], [2.4, -5], [2.4, 5], [2.4, -6.5]], x + 3, y - 5.5);
+  const wx = x + 4, wy = monogramY + 6, wh = 10, ww = monogramSize - 8;
+  doc.lines([[ww * 0.25, wh], [ww * 0.25, -wh + 3], [ww * 0.25, wh], [ww * 0.25, -wh + 3]], wx, wy);
 
-  // Wordmark
+  // Wordmark — slightly larger + tracked, no italic
   doc.setFont(FONT, 'bold');
-  doc.setFontSize(13);
+  doc.setFontSize(14);
   doc.setTextColor(...C.ink);
-  doc.text('Wealthly', x + 26, y);
+  doc.text('Wealthly', x + monogramSize + 12, yBase, { charSpace: 0.4 });
 
-  // Subtitle on the right
+  // Subtitle right-aligned, in muted ink
   if (subtitle) {
     doc.setFont(FONT, 'normal');
     doc.setFontSize(9);
     doc.setTextColor(...C.muted);
-    doc.text(subtitle, w - PAGE_M, y, { align: 'right' });
+    doc.text(subtitle, w - PAGE_M, yBase, { align: 'right' });
   }
 
-  // Hairline rule
-  doc.setDrawColor(...C.gold);
-  doc.setLineWidth(0.4);
-  doc.line(PAGE_M, y + 10, w - PAGE_M, y + 10);
+  // Hairline rule, breathing room before content
+  doc.setDrawColor(...C.rule);
+  doc.setLineWidth(0.35);
+  doc.line(PAGE_M, yBase + 18, w - PAGE_M, yBase + 18);
 }
+
+// Header takes up 68pt — content should start at HEADER_BOTTOM.
+const HEADER_BOTTOM = 96;
 
 function drawFooter(doc, page, total) {
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
   doc.setDrawColor(...C.hairline);
-  doc.setLineWidth(0.4);
-  doc.line(PAGE_M, h - 38, w - PAGE_M, h - 38);
+  doc.setLineWidth(0.3);
+  doc.line(PAGE_M, h - 42, w - PAGE_M, h - 42);
   doc.setFont(FONT, 'normal');
   doc.setFontSize(8);
   doc.setTextColor(...C.faint);
-  doc.text('Document confidentiel · Wealthly', PAGE_M, h - 22);
-  doc.text(`${page} / ${total}`, w - PAGE_M, h - 22, { align: 'right' });
+  doc.text('Document confidentiel · Wealthly', PAGE_M, h - 24, { charSpace: 0.2 });
+  doc.text(`${page} / ${total}`, w - PAGE_M, h - 24, { align: 'right' });
 }
 
 function drawSection(doc, y, title) {
   doc.setFont(FONT, 'bold');
   doc.setFontSize(8);
   doc.setTextColor(...C.gold);
-  doc.text(title.toUpperCase(), PAGE_M, y, { charSpace: 1.6 });
+  doc.text(title.toUpperCase(), PAGE_M, y, { charSpace: 1.8 });
   doc.setDrawColor(...C.gold);
-  doc.setLineWidth(0.6);
-  doc.line(PAGE_M, y + 3, PAGE_M + 16, y + 3);
+  doc.setLineWidth(0.5);
+  doc.line(PAGE_M, y + 4, PAGE_M + 18, y + 4);
 }
 
 function drawTitle(doc, y, title, sub) {
   doc.setFont(FONT, 'bold');
-  doc.setFontSize(24);
+  doc.setFontSize(26);
   doc.setTextColor(...C.ink);
   doc.text(title, PAGE_M, y);
   if (sub) {
     doc.setFont(FONT, 'normal');
-    doc.setFontSize(10);
+    doc.setFontSize(10.5);
     doc.setTextColor(...C.muted);
-    doc.text(sub, PAGE_M, y + 18);
+    doc.text(sub, PAGE_M, y + 20);
   }
 }
 
@@ -375,9 +383,18 @@ function table(doc, head, body, startY, opts = {}) {
       lineColor: C.hairline,
       ...((opts.bodyStyles) || {}),
     },
-    margin: { left: PAGE_M, right: PAGE_M },
-    didDrawPage: opts.didDrawPage,
-    ...opts,
+    margin: { left: PAGE_M, right: PAGE_M, top: HEADER_BOTTOM, bottom: 60 },
+    // autoTable creates fresh pages when content overflows. Repaint the dark
+    // background + redraw the header on every page, then chain the caller's
+    // own hook if any. Skip on the first call (handled by the page setup).
+    didDrawPage: (data) => {
+      if (data.pageNumber > 1) {
+        paintBackground(doc);
+        drawHeader(doc, opts._headerSubtitle || '');
+      }
+      if (opts.didDrawPage) opts.didDrawPage(data);
+    },
+    ...Object.fromEntries(Object.entries(opts).filter(([k]) => k !== 'didDrawPage' && k !== '_headerSubtitle')),
   });
   return doc.lastAutoTable.finalY;
 }
@@ -568,7 +585,7 @@ export function generateBilanPdf({
 
   // ----- PAGE 2 — Synthèse -----
   doc.addPage(); paintBackground(doc); drawHeader(doc, headerSubtitle);
-  let y = 90;
+  let y = 110;
   drawTitle(doc, y, 'Synthèse', `Composition du patrimoine au ${todayLong()}`);
   y += 50;
 
@@ -612,7 +629,7 @@ export function generateBilanPdf({
 
   // ----- PAGE 3 — Évolution -----
   doc.addPage(); paintBackground(doc); drawHeader(doc, headerSubtitle);
-  y = 90;
+  y = 110;
   drawTitle(doc, y, 'Évolution', sorted.length >= 2 ? `Sur ${Math.min(sorted.length, 12)} mois` : 'Historique disponible');
   y += 50;
 
@@ -650,7 +667,7 @@ export function generateBilanPdf({
 
   // ----- PAGE 4 — Trésorerie -----
   doc.addPage(); paintBackground(doc); drawHeader(doc, headerSubtitle);
-  y = 90;
+  y = 110;
   drawTitle(doc, y, 'Trésorerie', monthLong(currentMonth));
   y += 50;
 
@@ -724,7 +741,7 @@ export function generateBilanPdf({
 
   // ----- PAGE 5 — Détail -----
   doc.addPage(); paintBackground(doc); drawHeader(doc, headerSubtitle);
-  y = 90;
+  y = 110;
   drawTitle(doc, y, 'Détail', 'Comptes, actifs et dettes');
   y += 50;
 
@@ -840,7 +857,7 @@ export function generateBilanPdf({
     const monthly = parseFloat(l.monthlyPayment) || (schedule[0]?.payment ?? 0);
 
     doc.addPage(); paintBackground(doc); drawHeader(doc, headerSubtitle);
-    let yy = 90;
+    let yy = 110;
     drawTitle(doc, yy, l.name || 'Emprunt', `${l.type || 'Crédit'} · taux ${l.interestRate ? parseFloat(l.interestRate).toFixed(2) + ' %' : '—'}`);
     yy += 50;
 
