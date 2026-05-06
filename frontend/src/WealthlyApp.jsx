@@ -2137,6 +2137,23 @@ function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, this
     </div>
   );
 }
+// Small delta badge shown under a KPI value — "vs mois précédent"
+function MkDelta({ current, prev, invert = false, absolute = false, fmt }) {
+  if (prev == null || prev === 0) return null;
+  const pct = ((current - prev) / Math.abs(prev)) * 100;
+  if (Math.abs(pct) < 1) return <span className="mk-delta mk-delta--stable">= stable</span>;
+  const good = invert ? pct < 0 : pct > 0;
+  const sign = pct > 0 ? '+' : '';
+  const label = absolute
+    ? `${sign}${fmt(current - prev, { sign: true })}`
+    : `${sign}${pct.toFixed(0)}%`;
+  return (
+    <span className={`mk-delta ${good ? 'mk-delta--good' : 'mk-delta--bad'}`}>
+      {good ? <ArrowUp size={9}/> : <ArrowDown size={9}/>} {label} vs mois préc.
+    </span>
+  );
+}
+
 // ============================================================================
 // MONTHLY (Suivi Mensuel)
 // ============================================================================
@@ -2208,7 +2225,33 @@ function Monthly({ transactions, accounts, categories, members, recurringIds, re
   const restPct = restToLive > 0 ? Math.min(100, (variableSpent / restToLive) * 100) : 0;
   const savingsRate = monthData.income > 0 ? (monthData.net / monthData.income) * 100 : null;
 
+  // Previous month key + data for N vs N-1 comparison
+  const prevMonthKey = useMemo(() => {
+    const idx = availableMonths.indexOf(selectedMonth);
+    return idx < availableMonths.length - 1 ? availableMonths[idx + 1] : null;
+  }, [availableMonths, selectedMonth]);
+
+  const prevMonthData = useMemo(() =>
+    prevMonthKey ? (monthlyEvolution.find(m => m.month === prevMonthKey) || null) : null,
+    [monthlyEvolution, prevMonthKey]
+  );
+
+  const prevMonthCatSpend = useMemo(() => {
+    if (!prevMonthKey) return {};
+    const spend = {};
+    transactions
+      .filter(t => monthKey(t.date) === prevMonthKey && t.amount < 0)
+      .forEach(t => {
+        const acc = accounts.find(a => a.id === t.accountId);
+        const share = acc ? memberShare(acc) : 1;
+        spend[t.categoryId] = (spend[t.categoryId] || 0) + Math.abs(t.amount * share);
+      });
+    return spend;
+  }, [transactions, prevMonthKey, accounts, memberShare]);
+
   // Category comparison (this month vs prev 3-month avg)
+  const [compMode, setCompMode] = useState('n1'); // 'n1' | 'avg3m'
+
   const monthVsAvg = useMemo(() => {
     return Object.entries(categoryAnalysis)
       .filter(([_, data]) => data.current > 0 || data.avg3m > 30)
@@ -2220,6 +2263,25 @@ function Monthly({ transactions, accounts, categories, members, recurringIds, re
       .sort((a, b) => Math.abs(b.change) - Math.abs(a.change))
       .slice(0, 10);
   }, [categoryAnalysis, categories]);
+
+  const monthVsN1 = useMemo(() => {
+    const allCatIds = new Set([
+      ...Object.keys(categoryAnalysis),
+      ...Object.keys(prevMonthCatSpend),
+    ]);
+    return Array.from(allCatIds)
+      .map(catId => {
+        const cat = categories.find(c => c.id === catId);
+        const current = categoryAnalysis[catId]?.current || 0;
+        const prev = prevMonthCatSpend[catId] || 0;
+        if (current === 0 && prev === 0) return null;
+        const change = prev > 0 ? ((current - prev) / prev) * 100 : (current > 0 ? 100 : 0);
+        return { id: catId, name: cat?.name, icon: cat?.icon, color: cat?.color, current, prev, change };
+      })
+      .filter(Boolean)
+      .sort((a, b) => Math.abs(b.change) - Math.abs(a.change))
+      .slice(0, 10);
+  }, [categoryAnalysis, prevMonthCatSpend, categories]);
 
   const expenseCategories = categories.filter(c => c.type === 'expense');
 
@@ -2377,6 +2439,7 @@ function Monthly({ transactions, accounts, categories, members, recurringIds, re
           <div className="mk-info">
             <div className="mk-label">Revenus</div>
             <div className="mk-value"><AnimatedNumber value={monthData.income} format={(v) => fmt(v)}/></div>
+            <MkDelta current={monthData.income} prev={prevMonthData?.income} fmt={fmt}/>
           </div>
         </div>
         <div className="mk-card fixed">
@@ -2384,6 +2447,7 @@ function Monthly({ transactions, accounts, categories, members, recurringIds, re
           <div className="mk-info">
             <div className="mk-label">Charges fixes</div>
             <div className="mk-value"><AnimatedNumber value={totalFixedCharges} format={(v) => fmt(v)}/></div>
+            <MkDelta current={totalFixedCharges} prev={prevMonthData?.fixed} invert fmt={fmt}/>
           </div>
         </div>
         <div className="mk-card variable">
@@ -2391,6 +2455,7 @@ function Monthly({ transactions, accounts, categories, members, recurringIds, re
           <div className="mk-info">
             <div className="mk-label">Dépenses variables</div>
             <div className="mk-value"><AnimatedNumber value={variableSpent} format={(v) => fmt(v)}/></div>
+            <MkDelta current={variableSpent} prev={prevMonthData?.variable} invert fmt={fmt}/>
           </div>
         </div>
         <div className={`mk-card net ${monthData.net >= 0 ? 'positive' : 'negative'}`}>
@@ -2398,42 +2463,54 @@ function Monthly({ transactions, accounts, categories, members, recurringIds, re
           <div className="mk-info">
             <div className="mk-label">Solde net</div>
             <div className="mk-value"><AnimatedNumber value={monthData.net} format={(v) => fmt(v, { sign: true })}/></div>
+            <MkDelta current={monthData.net} prev={prevMonthData?.net} fmt={fmt} absolute/>
           </div>
         </div>
       </section>
 
-      {/* Month vs Average comparison */}
+      {/* Month comparison — toggle N-1 vs avg 3m */}
       <section className="card">
         <div className="card-header">
-          <h3>Ce mois vs moyenne</h3>
-          <span className="card-meta">moyenne 3 derniers mois</span>
+          <h3>Comparaison par catégorie</h3>
+          <div className="comp-toggle">
+            <button className={compMode === 'n1' ? 'active' : ''} onClick={() => setCompMode('n1')}>vs mois préc.</button>
+            <button className={compMode === 'avg3m' ? 'active' : ''} onClick={() => setCompMode('avg3m')}>vs moy. 3 mois</button>
+          </div>
         </div>
-        <div className="month-comparison">
-          {monthVsAvg.length === 0 ? (
-            <div className="empty-mini"><BarChart3 size={24}/><p>Plus de données nécessaires</p></div>
-          ) : (
-            monthVsAvg.map(c => (
-              <div key={c.id} className="comp-row">
-                <span className="comp-icon" style={{ background: (c.color || '#999') + '22' }}>{c.icon}</span>
-                <div className="comp-info">
-                  <div className="comp-name">{c.name}</div>
-                  <div className="comp-amounts">
-                    <span className="comp-current">{fmt(c.current)}</span>
-                    <span className="comp-avg">vs {fmt(c.avg)} moy.</span>
+        {compMode === 'n1' && !prevMonthKey ? (
+          <div className="empty-mini"><BarChart3 size={24}/><p>Pas encore de mois précédent disponible</p></div>
+        ) : (
+          <div className="month-comparison">
+            {(compMode === 'n1' ? monthVsN1 : monthVsAvg).length === 0 ? (
+              <div className="empty-mini"><BarChart3 size={24}/><p>Plus de données nécessaires</p></div>
+            ) : (
+              (compMode === 'n1' ? monthVsN1 : monthVsAvg).map(c => {
+                const refValue = compMode === 'n1' ? c.prev : c.avg;
+                const refLabel = compMode === 'n1' ? 'mois préc.' : 'moy.';
+                return (
+                  <div key={c.id} className="comp-row">
+                    <span className="comp-icon" style={{ background: (c.color || '#999') + '22' }}>{c.icon}</span>
+                    <div className="comp-info">
+                      <div className="comp-name">{c.name}</div>
+                      <div className="comp-amounts">
+                        <span className="comp-current">{fmt(c.current)}</span>
+                        <span className="comp-avg">vs {fmt(refValue)} {refLabel}</span>
+                      </div>
+                    </div>
+                    {Math.abs(c.change) > 5 ? (
+                      <div className={`comp-change ${c.change > 0 ? 'up' : 'down'}`}>
+                        {c.change > 0 ? <ArrowUp size={11}/> : <ArrowDown size={11}/>}
+                        {Math.abs(c.change).toFixed(0)}%
+                      </div>
+                    ) : (
+                      <div className="comp-change stable"><Minus size={11}/> stable</div>
+                    )}
                   </div>
-                </div>
-                {Math.abs(c.change) > 5 ? (
-                  <div className={`comp-change ${c.change > 0 ? 'up' : 'down'}`}>
-                    {c.change > 0 ? <ArrowUp size={11}/> : <ArrowDown size={11}/>}
-                    {Math.abs(c.change).toFixed(0)}%
-                  </div>
-                ) : (
-                  <div className="comp-change stable"><Minus size={11}/> stable</div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
+                );
+              })
+            )}
+          </div>
+        )}
       </section>
 
       {/* Income vs Expenses 6 month chart */}
@@ -5668,6 +5745,13 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .mk-label { font-size: 11px; color: var(--text-tertiary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
 .mk-value { font-size: 21px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.2; margin-top: 2px; }
 .mk-meta { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+.mk-delta { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 600; margin-top: 4px; padding: 2px 6px; border-radius: 4px; font-variant-numeric: tabular-nums; }
+.mk-delta--good { background: var(--success-soft); color: var(--success-text); }
+.mk-delta--bad { background: var(--danger-soft); color: var(--danger-text); }
+.mk-delta--stable { background: var(--bg-subtle); color: var(--text-tertiary); }
+.comp-toggle { display: flex; gap: 2px; background: var(--bg-subtle); padding: 3px; border-radius: 8px; border: 1px solid var(--border); }
+.comp-toggle button { padding: 4px 10px; font-size: 11px; font-weight: 500; border-radius: 5px; border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; font-family: inherit; transition: all 0.15s; white-space: nowrap; }
+.comp-toggle button.active { background: var(--bg-card); color: var(--text-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
 .mk-card.net.positive .mk-value { color: var(--success); }
 .mk-card.net.negative .mk-value { color: var(--danger); }
 .mk-card.savings-rate.positive .mk-icon { background: var(--success-soft); color: var(--success-text); }
