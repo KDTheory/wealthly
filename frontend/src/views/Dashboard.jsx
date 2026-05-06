@@ -11,7 +11,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { ASSET_CLASS_MAP } from '../constants.js';
-import { formatCurrency } from '../utils.js';
+import { formatCurrency, formatDate } from '../utils.js';
 import { AnimatedNumber } from '../components/AnimatedNumber.jsx';
 import { NetWorthChart } from '../components/NetWorthChart.jsx';
 import { HealthScore } from '../components/HealthScore.jsx';
