@@ -20,10 +20,21 @@ const EMPTY_FILTERS = {
   type: 'all',       // all | income | expense
 };
 
-export function Transactions({ transactions, accounts, categories, members = [], recurringIds, toggleRecurring, updateCategory, deleteTransaction, fmt }) {
+export function Transactions({ transactions, accounts, categories, members = [], recurringIds, toggleRecurring, updateCategory, deleteTransaction, fmt, initialAccountFilter, onConsumeInitialFilter }) {
   const [search, setSearch] = useState('');
-  const [filters, setFilters] = useState(EMPTY_FILTERS);
+  // Seed the account filter on mount if the parent passed one (e.g. coming
+  // from the AccountDrawer "voir toutes les transactions" CTA).
+  const [filters, setFilters] = useState(() =>
+    initialAccountFilter ? { ...EMPTY_FILTERS, accs: [initialAccountFilter] } : EMPTY_FILTERS
+  );
   const [showPanel, setShowPanel] = useState(false);
+
+  // Consume the initial filter so it doesn't re-apply on subsequent navigations
+  // back to this view.
+  useEffect(() => {
+    if (initialAccountFilter && onConsumeInitialFilter) onConsumeInitialFilter();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [sortKey, setSortKey] = useState('date');
   const [sortDir, setSortDir] = useState('desc');
   const [editingTx, setEditingTx] = useState(null);

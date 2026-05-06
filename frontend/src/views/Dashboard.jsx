@@ -16,7 +16,7 @@ import { AnimatedNumber } from '../components/AnimatedNumber.jsx';
 import { NetWorthChart } from '../components/NetWorthChart.jsx';
 import { HealthScore } from '../components/HealthScore.jsx';
 
-export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, thisMonthStats, monthlyEvolution, visibleAccounts, accountBalances, visibleAssets, visibleLiabilities, members, activeMemberId, transactions, categories, fmt, memberShare, categoryAnalysis, anomalies, cashflowProjection, goals, budgets = {}, wealthHistory = [], recurringGroups, currentMonth, setView }) {
+export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, thisMonthStats, monthlyEvolution, visibleAccounts, accountBalances, visibleAssets, visibleLiabilities, members, activeMemberId, transactions, categories, fmt, memberShare, categoryAnalysis, anomalies, cashflowProjection, goals, budgets = {}, wealthHistory = [], recurringGroups, currentMonth, setView, onAccountClick }) {
   const last12Months = monthlyEvolution.slice(-12);
   const recentTx = [...transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
   const activeMember = members.find(m => m.id === activeMemberId);
@@ -412,7 +412,12 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
                 const isJoint = a.memberIds && a.memberIds.length > 1;
                 const ownerColor = isJoint ? 'var(--color-w-asset-pension)' : (members.find(m => m.id === a.memberIds?.[0])?.color || 'var(--color-w-muted)');
                 return (
-                  <div key={a.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => onAccountClick && onAccountClick(a)}
+                    className="w-full text-left flex items-center gap-3 py-3 first:pt-0 last:pb-0 -mx-1 px-1 rounded-md hover:bg-[var(--color-w-surface-2)] transition-colors cursor-pointer"
+                  >
                     <div className="w-9 h-9 rounded-[var(--radius-w-sm)] flex items-center justify-center text-xs font-semibold text-white shrink-0" style={{ background: ownerColor }}>
                       {isJoint ? <Users size={13}/> : (a.bank?.charAt(0)?.toUpperCase() || '·')}
                     </div>
@@ -421,7 +426,8 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
                       <div className="text-xs text-[var(--color-w-muted)] truncate">{a.bank} · {ownerNames}{isJoint ? ' · joint' : ''}</div>
                     </div>
                     <div className={`text-sm w-num ${sharedBalance < 0 ? 'text-[var(--color-w-danger)]' : 'text-[var(--color-w-text)]'}`}>{fmt(sharedBalance)}</div>
-                  </div>
+                    <ChevronRight size={14} className="text-[var(--color-w-faint)]"/>
+                  </button>
                 );
               })}
             </div>

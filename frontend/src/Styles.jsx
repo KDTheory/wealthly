@@ -692,6 +692,41 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .state-warn .reg-caps-bar-fill { background: var(--warning); }
 .state-over .reg-caps-bar-fill { background: var(--danger); }
 .reg-caps-foot { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+
+/* AccountDrawer — slide-in side panel */
+.drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 999; animation: drawerBackdropIn .15s ease-out; }
+@keyframes drawerBackdropIn { from { opacity: 0; } to { opacity: 1; } }
+.drawer { position: fixed; top: 0; bottom: 0; width: min(440px, 95vw); background: var(--bg-card); z-index: 1000; box-shadow: -16px 0 48px rgba(0,0,0,0.45); display: flex; flex-direction: column; animation: drawerSlideIn .2s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.drawer-right { right: 0; border-left: 1px solid var(--border-strong); }
+@keyframes drawerSlideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+.drawer-header { display: flex; align-items: center; gap: 12px; padding: 18px 22px; border-bottom: 1px solid var(--border-light); }
+.drawer-header-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--primary-soft); color: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.drawer-header-text { flex: 1; min-width: 0; }
+.drawer-title { font-size: 16px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.drawer-subtitle { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.drawer-body { flex: 1; overflow-y: auto; padding: 18px 22px; display: flex; flex-direction: column; gap: 22px; }
+.drawer-balance { padding-bottom: 18px; border-bottom: 1px solid var(--border-light); }
+.drawer-balance-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--text-tertiary); font-weight: 500; }
+.drawer-balance-value { font-family: 'DM Mono', ui-monospace, monospace; font-size: 36px; font-weight: 500; letter-spacing: -0.035em; color: var(--text-primary); margin-top: 8px; line-height: 1; }
+.drawer-balance-value.negative { color: var(--danger); }
+.drawer-balance-meta { font-size: 11.5px; color: var(--text-tertiary); margin-top: 6px; font-variant-numeric: tabular-nums; }
+.drawer-section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--text-tertiary); font-weight: 500; margin-bottom: 8px; }
+.drawer-spark { }
+.drawer-tx-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0; }
+.drawer-tx-row { display: grid; grid-template-columns: 56px 1fr auto; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border-light); font-size: 12.5px; }
+.drawer-tx-row:last-child { border-bottom: none; }
+.drawer-tx-date { font-size: 11px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+.drawer-tx-label { color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.drawer-tx-amount { font-variant-numeric: tabular-nums; color: var(--text-secondary); font-weight: 500; }
+.drawer-tx-amount.positive { color: var(--num-positive); }
+.drawer-empty { font-size: 12.5px; color: var(--text-tertiary); padding: 14px 0; text-align: center; }
+.drawer-footer { padding: 14px 22px; border-top: 1px solid var(--border-light); background: var(--bg-subtle); }
+.drawer-footer .primary-btn { width: 100%; justify-content: center; }
+@media (max-width: 760px) {
+  .drawer { width: 100vw; }
+  .drawer-right { border-left: none; }
+  .drawer-balance-value { font-size: 30px; }
+}
 .reg-caps-remaining { display: inline-flex; align-items: center; gap: 4px; }
 .state-warn .reg-caps-remaining { color: var(--warning-text); }
 .state-over .reg-caps-remaining { color: var(--danger-text); font-weight: 600; }

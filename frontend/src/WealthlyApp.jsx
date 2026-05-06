@@ -26,6 +26,7 @@ import { Dashboard } from './views/Dashboard.jsx';
 import { Wealth } from './views/Wealth.jsx';
 import { SettingsView } from './views/Settings.jsx';
 import { ImportFlow } from './views/ImportFlow.jsx';
+import { AccountDrawer } from './components/AccountDrawer.jsx';
 
 const TaxSimulator = lazy(() => import('./TaxSimulator.jsx'));
 
@@ -42,6 +43,10 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   const [loading, setLoading] = useState(true);
   const [onboarded, setOnboarded] = useState(false);
   const [view, setView] = useState('dashboard');
+  // Account drawer + cross-view transaction filter (set when "voir toutes" is
+  // clicked from the drawer, consumed by <Transactions> on mount).
+  const [drawerAccount, setDrawerAccount] = useState(null);
+  const [txInitialAccountFilter, setTxInitialAccountFilter] = useState(null);
   const theme = 'dark';
   const [members, setMembers] = useState([]);
   const [activeMemberId, setActiveMemberId] = useState('all');
@@ -1026,6 +1031,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             goals={goals} budgets={budgets} wealthHistory={wealthHistory}
             recurringGroups={recurringGroups} currentMonth={currentMonth}
             setView={setView}
+            onAccountClick={(a) => setDrawerAccount(a)}
           />
         )}
         {['monthly','cashflow','budgets'].includes(view) && (
@@ -1090,6 +1096,8 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             members={members}
             recurringIds={recurringIds} toggleRecurring={toggleRecurring}
             updateCategory={updateTransactionCategory} deleteTransaction={deleteTransaction} fmt={fmt}
+            initialAccountFilter={txInitialAccountFilter}
+            onConsumeInitialFilter={() => setTxInitialAccountFilter(null)}
           />
         )}
         {view === 'analysis' && (
@@ -1136,6 +1144,22 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
         <button onClick={() => setView('tax')} className={view === 'tax' ? 'active' : ''}><Calculator size={18}/> <span>Impôts</span></button>
         <button onClick={() => setView('settings')} className={view === 'settings' ? 'active' : ''}><Settings size={18}/> <span>Réglages</span></button>
       </nav>
+
+      {drawerAccount && (
+        <AccountDrawer
+          account={drawerAccount}
+          transactions={transactions}
+          members={members}
+          accountBalance={accountBalances[drawerAccount.id] || 0}
+          fmt={fmt}
+          onClose={() => setDrawerAccount(null)}
+          onSeeAll={(accountId) => {
+            setDrawerAccount(null);
+            setTxInitialAccountFilter(accountId);
+            setView('transactions');
+          }}
+        />
+      )}
     </div>
   );
 }
