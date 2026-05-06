@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, Lock, User, Home, Eye, EyeOff, AlertCircle, Lock as LockIcon, ArrowLeft, Check, Sparkles, ShieldCheck, MapPin, EyeOff as PrivacyIcon } from 'lucide-react';
+import { Mail, Lock, User, Home, Eye, EyeOff, AlertCircle, Lock as LockIcon, ArrowLeft, Check, Sparkles, ShieldCheck, MapPin, EyeOff as PrivacyIcon, Users, Building2, Calculator, Github } from 'lucide-react';
 import { auth, setToken } from './api.js';
 import { enableDemoMode } from './demoData.js';
 
@@ -283,6 +283,118 @@ export default function AuthScreen({ onAuth, onTryDemo }) {
             </div>
           </div>
         </main>
+
+        {/* === Bloc 1 — Aperçu produit (faux dashboard) === */}
+        <section className="auth-preview">
+          <div className="auth-section-eyebrow">APERÇU DE LA PLATEFORME</div>
+          <div className="auth-section-title">À quoi ressemble votre tableau de bord</div>
+
+          <div className="auth-mockup">
+            {/* Window chrome */}
+            <div className="mockup-chrome">
+              <span className="mockup-dot d1"/><span className="mockup-dot d2"/><span className="mockup-dot d3"/>
+              <span className="mockup-url">wealthly.app / dashboard</span>
+            </div>
+            <div className="mockup-body">
+              {/* Faux sidebar */}
+              <div className="mockup-sidebar">
+                <div className="mockup-sb-brand">W</div>
+                <div className="mockup-sb-item active">Dashboard</div>
+                <div className="mockup-sb-item">Patrimoine</div>
+                <div className="mockup-sb-item">Mensuel</div>
+                <div className="mockup-sb-item">Transactions</div>
+                <div className="mockup-sb-item">Impôts</div>
+              </div>
+              {/* Faux content */}
+              <div className="mockup-content">
+                <div className="mockup-eyebrow">PATRIMOINE NET</div>
+                <div className="mockup-hero">147 820 €</div>
+                <div className="mockup-perf">+ 2,4 % sur le mois</div>
+                {/* Mini chart */}
+                <svg className="mockup-chart" viewBox="0 0 360 80" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="mkgrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#c5a572" stopOpacity="0.35"/>
+                      <stop offset="100%" stopColor="#c5a572" stopOpacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,60 L40,55 L80,58 L120,42 L160,46 L200,32 L240,36 L280,22 L320,28 L360,14 L360,80 L0,80 Z" fill="url(#mkgrad)"/>
+                  <path d="M0,60 L40,55 L80,58 L120,42 L160,46 L200,32 L240,36 L280,22 L320,28 L360,14" fill="none" stroke="#c5a572" strokeWidth="1.6"/>
+                  <circle cx="360" cy="14" r="3" fill="#c5a572"/>
+                </svg>
+                {/* Mini KPI strip */}
+                <div className="mockup-kpis">
+                  <div className="mockup-kpi"><div className="mk-l">LIQUIDITÉS</div><div className="mk-v">42 100 €</div></div>
+                  <div className="mockup-kpi"><div className="mk-l">ACTIFS</div><div className="mk-v">120 720 €</div></div>
+                  <div className="mockup-kpi"><div className="mk-l">DETTES</div><div className="mk-v neg">-15 000 €</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* === Bloc 2 — Features grid === */}
+        <section className="auth-features">
+          <div className="auth-section-eyebrow">CE QUE VOUS GAGNEZ</div>
+          <div className="auth-section-title">Conçu pour le foyer, pas pour le marketing</div>
+
+          <div className="auth-feat-grid">
+            <div className="auth-feat-card">
+              <div className="feat-icon"><Users size={18}/></div>
+              <div className="feat-title">Multi-membres natif</div>
+              <div className="feat-desc">Une vue par personne, une vue famille. Comptes joints, comptes perso, enfants — tout reste lisible.</div>
+            </div>
+            <div className="auth-feat-card">
+              <div className="feat-icon"><Building2 size={18}/></div>
+              <div className="feat-title">Synchro DSP2 agréée</div>
+              <div className="feat-desc">Connectable à 1 900+ banques européennes via GoCardless. Import CSV pour le reste, en 4 étapes.</div>
+            </div>
+            <div className="auth-feat-card">
+              <div className="feat-icon"><Calculator size={18}/></div>
+              <div className="feat-title">Simulateur d'impôt FR</div>
+              <div className="feat-desc">Barème 2025, parts, plafond quotient, décote, crédits garde et CESU, plafond niches 10 000 €.</div>
+            </div>
+          </div>
+        </section>
+
+        {/* === Bloc 3 — Numbers strip === */}
+        <section className="auth-numbers">
+          <div className="auth-num">
+            <div className="num-v">17</div>
+            <div className="num-l">tables<br/>relationnelles</div>
+          </div>
+          <div className="auth-num">
+            <div className="num-v">1900<span className="num-suf">+</span></div>
+            <div className="num-l">banques UE<br/>connectables</div>
+          </div>
+          <div className="auth-num">
+            <div className="num-v">FR · EN</div>
+            <div className="num-l">interface<br/>bilingue</div>
+          </div>
+          <div className="auth-num">
+            <div className="num-v">0</div>
+            <div className="num-l">tracker<br/>tiers</div>
+          </div>
+        </section>
+
+        {/* === Bloc 4 — Footer === */}
+        <footer className="auth-foot">
+          <div className="foot-left">
+            <div className="foot-brand">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" strokeLinejoin="miter" width="16" height="16">
+                <rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/>
+                <path d="M7 9 L9.5 15.5 L12 10.5 L14.5 15.5 L17 9"/>
+              </svg>
+              <span>Wealthly</span>
+            </div>
+            <span className="foot-sep">·</span>
+            <span className="foot-tag">Patrimoine familial, sans démarchage.</span>
+          </div>
+          <div className="foot-right">
+            <a href="https://github.com/Raphyy31/wealthly" target="_blank" rel="noopener noreferrer"><Github size={13}/> Code source</a>
+            <a href="mailto:contact@wealthly.app"><Mail size={13}/> Contact</a>
+          </div>
+        </footer>
       </div>
 
       <style>{authStyles}</style>
@@ -293,17 +405,17 @@ export default function AuthScreen({ onAuth, onTryDemo }) {
 const authStyles = `
 .auth-screen {
   min-height: 100vh;
-  display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: flex-start; justify-content: center;
   /* Two-layer base: subtle vignette around an off-black canvas, so the page
      reads warmer and less flat than a single solid colour. */
   background:
-    radial-gradient(ellipse 90% 70% at 50% 40%, #14161c 0%, #0d0f13 55%, #0a0b0e 100%);
+    radial-gradient(ellipse 90% 70% at 50% 30%, #14161c 0%, #0d0f13 55%, #0a0b0e 100%);
   color: #ebe8e3;
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  position: relative; overflow: hidden;
+  position: relative; overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   letter-spacing: -0.01em;
-  padding: 32px 24px;
+  padding: 56px 24px 72px;
 }
 
 /* Ambient gold glows — one large behind the form card, one small lifting the
@@ -329,9 +441,15 @@ const authStyles = `
   display: flex; flex-direction: column; align-items: center;
   gap: 28px;
   width: 100%;
-  max-width: 560px;
+  max-width: 920px;
   text-align: center;
-  padding: 16px 0 48px;
+  padding: 0;
+}
+/* The hero + form stay narrower than the marketing sections below. */
+.auth-shell > .auth-brand-row,
+.auth-shell > .auth-hero,
+.auth-shell > .auth-form-col {
+  max-width: 560px;
 }
 
 /* Brand row — small monogram + wordmark, sits just above the hero */
@@ -587,13 +705,230 @@ const authStyles = `
   font-weight: 500; text-transform: uppercase; letter-spacing: 0.12em;
 }
 
+/* === Section eyebrows + titles, shared across the marketing blocks === */
+.auth-section-eyebrow {
+  font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.24em;
+  color: #c5a572;
+  margin-bottom: 12px;
+}
+.auth-section-title {
+  font-size: clamp(22px, 3.2vw, 30px);
+  font-weight: 600; letter-spacing: -0.025em; line-height: 1.15;
+  color: #ebe8e3;
+  margin: 0 0 28px;
+  max-width: 620px;
+  margin-left: auto; margin-right: auto;
+}
+
+/* === Bloc 1 — Aperçu produit (faux dashboard mockup) === */
+.auth-preview {
+  width: 100%;
+  margin-top: 32px;
+  padding-top: 48px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.auth-mockup {
+  background: #11131a;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow:
+    0 30px 80px -30px rgba(0,0,0,0.7),
+    0 0 0 1px rgba(197, 165, 114, 0.06) inset;
+  text-align: left;
+}
+.mockup-chrome {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 14px;
+  background: #0d0f14;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.mockup-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #2a2d36;
+}
+.mockup-dot.d1 { background: #c47158; }
+.mockup-dot.d2 { background: #d4a554; }
+.mockup-dot.d3 { background: #88a978; }
+.mockup-url {
+  margin-left: 14px;
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 10.5px; color: #6e6a64;
+  letter-spacing: 0.02em;
+}
+.mockup-body {
+  display: grid; grid-template-columns: 140px 1fr;
+  min-height: 260px;
+}
+.mockup-sidebar {
+  background: #0d0f14;
+  border-right: 1px solid rgba(255,255,255,0.04);
+  padding: 16px 12px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.mockup-sb-brand {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  background: rgba(197, 165, 114, 0.12);
+  border: 1px solid rgba(197, 165, 114, 0.32);
+  color: #c5a572;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 12px;
+  margin-bottom: 14px;
+}
+.mockup-sb-item {
+  font-size: 11.5px; color: #6e6a64;
+  padding: 6px 8px; border-radius: 5px;
+}
+.mockup-sb-item.active {
+  background: rgba(197, 165, 114, 0.08);
+  color: #ebe8e3;
+}
+.mockup-content {
+  padding: 22px 24px 18px;
+  background: #0a0b0e;
+}
+.mockup-eyebrow {
+  font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.22em;
+  color: #c5a572;
+}
+.mockup-hero {
+  font-size: 38px; font-weight: 700; letter-spacing: -0.03em;
+  color: #ebe8e3; line-height: 1.1; margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.mockup-perf {
+  font-size: 11px; font-weight: 600;
+  color: #88a978;
+  margin-top: 4px;
+}
+.mockup-chart {
+  width: 100%; height: 70px; margin-top: 16px; display: block;
+}
+.mockup-kpis {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 10px; margin-top: 10px;
+}
+.mockup-kpi {
+  background: #13151a;
+  border: 1px solid rgba(255,255,255,0.05);
+  border-left: 2px solid #c5a572;
+  border-radius: 5px;
+  padding: 8px 10px;
+}
+.mk-l { font-size: 8.5px; font-weight: 700; color: #6e6a64; letter-spacing: 0.16em; }
+.mk-v { font-size: 13px; font-weight: 600; color: #ebe8e3; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.mk-v.neg { color: #c47158; }
+
+/* === Bloc 2 — Features grid === */
+.auth-features {
+  width: 100%;
+  margin-top: 56px;
+  padding-top: 48px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.auth-feat-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  text-align: left;
+}
+.auth-feat-card {
+  background: #13151a;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 22px 20px;
+  transition: border-color .15s, background .15s;
+}
+.auth-feat-card:hover {
+  border-color: rgba(197, 165, 114, 0.3);
+  background: #161820;
+}
+.feat-icon {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  background: rgba(197, 165, 114, 0.1);
+  color: #c5a572;
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-bottom: 14px;
+}
+.feat-title {
+  font-size: 14px; font-weight: 600; color: #ebe8e3;
+  letter-spacing: -0.01em; margin-bottom: 6px;
+}
+.feat-desc {
+  font-size: 12.5px; color: #a8a59f; line-height: 1.55;
+}
+
+/* === Bloc 3 — Numbers strip === */
+.auth-numbers {
+  width: 100%;
+  margin-top: 56px;
+  padding: 32px 24px;
+  background: linear-gradient(180deg, rgba(197, 165, 114, 0.04), rgba(197, 165, 114, 0.01));
+  border: 1px solid rgba(197, 165, 114, 0.14);
+  border-radius: 12px;
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.auth-num { text-align: center; }
+.num-v {
+  font-size: 28px; font-weight: 700; color: #c5a572;
+  letter-spacing: -0.03em; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.num-suf { font-size: 18px; opacity: 0.7; }
+.num-l {
+  font-size: 11px; color: #8c8a85; line-height: 1.35;
+  margin-top: 8px;
+  letter-spacing: 0.02em;
+}
+
+/* === Bloc 4 — Footer === */
+.auth-foot {
+  width: 100%;
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 14px;
+  font-size: 12px; color: #6e6a64;
+}
+.foot-left {
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.foot-brand {
+  display: inline-flex; align-items: center; gap: 7px;
+  color: #c5a572; font-weight: 600;
+}
+.foot-sep { color: #2a2d36; }
+.foot-tag { color: #8c8a85; }
+.foot-right {
+  display: inline-flex; gap: 18px;
+}
+.foot-right a {
+  display: inline-flex; align-items: center; gap: 5px;
+  color: #8c8a85; text-decoration: none;
+  transition: color .15s;
+}
+.foot-right a:hover { color: #c5a572; }
+
 /* Responsive — already centered, just tighten the hero on narrow screens */
-@media (max-width: 600px) {
-  .auth-shell { gap: 22px; padding-bottom: 32px; }
+@media (max-width: 720px) {
+  .auth-shell { gap: 22px; }
   .auth-hero { gap: 14px; }
   .auth-subhead { font-size: 14px; }
   .auth-pills { gap: 6px; }
   .auth-pill { padding: 6px 11px; font-size: 11px; }
   .auth-form-card { padding: 24px; }
+  .auth-feat-grid { grid-template-columns: 1fr; }
+  .auth-numbers { grid-template-columns: repeat(2, 1fr); gap: 22px; padding: 24px 20px; }
+  .mockup-body { grid-template-columns: 60px 1fr; }
+  .mockup-sb-item { font-size: 0; padding: 6px; }
+  .mockup-sb-item.active::after { content: '·'; font-size: 14px; color: #c5a572; }
+  .mockup-hero { font-size: 28px; }
+  .mockup-kpis { grid-template-columns: 1fr; }
+  .auth-foot { flex-direction: column; text-align: center; }
 }
 `;
