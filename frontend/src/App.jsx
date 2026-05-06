@@ -35,12 +35,11 @@ export default function App() {
         setAuthState('unauthed');
         return;
       }
-      try {
-        await auth.me();
-        setAuthState('authed');
-      } catch {
-        setAuthState('unauthed');
-      }
+      // Optimistic: show the app immediately if a token exists.
+      // Verify in the background — if the token is expired/invalid the
+      // WealthlyApp will get a 401 on its first API call and we redirect.
+      setAuthState('authed');
+      auth.me().catch(() => setAuthState('unauthed'));
     })();
   }, [refreshKey]);
 

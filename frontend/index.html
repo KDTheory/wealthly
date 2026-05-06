@@ -42,6 +42,8 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Wake up Railway backend immediately (fire-and-forget, before JS bundle parses) -->
+    <script>try{fetch('https://wealthly-production-45aa.up.railway.app/health').catch(function(){});}catch(e){}</script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -27,6 +27,7 @@ const STORAGE_KEYS = {
   ONBOARDED: 'w2:onboarded',
   ACTIVE_MEMBER: 'w2:active_member',
   THEME: 'w2:theme',
+  DATA_CACHE: 'w2:data_cache',
 };
 
 const DEFAULT_CATEGORIES = [
@@ -610,21 +611,35 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
         api.rules.list(),
         api.fixedCharges.list().catch(() => []),
       ]);
-      setMembers(memList);
-      setAccounts(accList.map(accountFromApi));
-      setTransactions(txList.map(txFromApi));
-      setAssets(astList.map(assetFromApi));
-      setLiabilities(liaList.map(liaFromApi));
+      const mappedAccounts = accList.map(accountFromApi);
+      const mappedTx = txList.map(txFromApi);
+      const mappedAssets = astList.map(assetFromApi);
+      const mappedLia = liaList.map(liaFromApi);
       const cats = (catList || []).map(categoryFromApi);
-      setCategories(cats.length > 0 ? cats : DEFAULT_CATEGORIES);
-      // Budgets: convert array to dict {category_slug: amount}
+      const finalCats = cats.length > 0 ? cats : DEFAULT_CATEGORIES;
       const budDict = {};
       (budList || []).forEach(b => { budDict[b.category_slug] = b.amount; });
+      const mappedGoals = (goalList || []).map(goalFromApi);
+      const mappedRules = (ruleList || []).map(r => ({ pattern: r.pattern, categoryId: r.category_slug, source: r.source, _id: r.id }));
+      setMembers(memList);
+      setAccounts(mappedAccounts);
+      setTransactions(mappedTx);
+      setAssets(mappedAssets);
+      setLiabilities(mappedLia);
+      setCategories(finalCats);
       setBudgets(budDict);
-      setGoals((goalList || []).map(goalFromApi));
+      setGoals(mappedGoals);
       setFixedCharges(fcList || []);
-      // Custom rules
-      setCustomRules((ruleList || []).map(r => ({ pattern: r.pattern, categoryId: r.category_slug, source: r.source, _id: r.id })));
+      setCustomRules(mappedRules);
+      // Persist a cache snapshot for stale-while-revalidate on next visit
+      try {
+        localStorage.setItem(STORAGE_KEYS.DATA_CACHE, JSON.stringify({
+          members: memList, accounts: mappedAccounts, transactions: mappedTx,
+          assets: mappedAssets, liabilities: mappedLia, categories: finalCats,
+          budgets: budDict, goals: mappedGoals, fixedCharges: fcList || [],
+          customRules: mappedRules, cachedAt: Date.now(),
+        }));
+      } catch {}
     } catch (err) {
       showToast('Erreur de chargement : ' + err.message, 'error');
     }
@@ -643,7 +658,30 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
       setActiveMemberId(am);
       setTheme(th);
       setColumnMappings(await storage.get(STORAGE_KEYS.MAPPINGS, {}));
-      // Then fetch server data (or load demo dataset if applicable)
+
+      // Stale-while-revalidate: show cached data immediately (instant for
+      // returning users) then refresh from API in the background.
+      if (!demoMode) {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEYS.DATA_CACHE);
+          if (raw) {
+            const c = JSON.parse(raw);
+            if (c.members) setMembers(c.members);
+            if (c.accounts) setAccounts(c.accounts);
+            if (c.transactions) setTransactions(c.transactions);
+            if (c.assets) setAssets(c.assets);
+            if (c.liabilities) setLiabilities(c.liabilities);
+            if (c.categories) setCategories(c.categories);
+            if (c.budgets) setBudgets(c.budgets);
+            if (c.goals) setGoals(c.goals);
+            if (c.fixedCharges) setFixedCharges(c.fixedCharges);
+            if (c.customRules) setCustomRules(c.customRules);
+            setLoading(false); // Show app immediately with stale data
+          }
+        } catch {}
+      }
+
+      // Fetch server data (or load demo dataset if applicable)
       await reloadAll();
       if (demoMode) {
         setOnboarded(true);
