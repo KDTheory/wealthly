@@ -1398,7 +1398,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             </div>
             {activeMember && (
               <div className="member-context">
-                Vue de <strong>{activeMember.name}</strong> · comptes perso + comptes joints
+                Comptes perso de <strong>{activeMember.name}</strong> + comptes joints partagés
               </div>
             )}
           </div>
@@ -2308,10 +2308,6 @@ function Monthly({ transactions, accounts, categories, members, recurringIds, re
   return (
     <div className="monthly-view">
       <div className="monthly-header">
-        <div>
-          <h1 className="page-title">Mensuel</h1>
-          <p className="page-subtitle">Charges fixes, abonnements, reste à vivre.</p>
-        </div>
         <select className="month-selector" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}>
           {availableMonths.map(m => (
             <option key={m} value={m}>{formatDate(m + '-01', { format: 'monthLong' })}{m === currentMonth ? ' (en cours)' : ''}</option>
@@ -2732,13 +2728,6 @@ function Cashflow({ transactions, categories, accounts, memberShare, fmt, curren
 
   return (
     <div className="cashflow-view">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Cashflow</h1>
-          <p className="page-subtitle">Entrées, sorties et disponible sur la période.</p>
-        </div>
-      </div>
-
       <div className="cashflow-period">
         <div className="cashflow-period-nav">
           <button className="icon-btn" onClick={() => shiftAnchor(-1)} title="Période précédente"><ChevronLeft size={16}/></button>
@@ -2953,13 +2942,6 @@ function Budgets({ categories, budgets, setBudget, categoryAnalysis, fiftyThirty
 
   return (
     <div className="budgets-view">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Budgets</h1>
-          <p className="page-subtitle">Méthode 50/30/20 et plafonds par catégorie, calibrés sur les 3 derniers mois.</p>
-        </div>
-      </div>
-
       {/* 50/30/20 visualization */}
       <section className="card budget-50-30-20">
         <div className="card-header">
@@ -4669,7 +4651,7 @@ function SettingsView({ members, accounts, accountBalances, saveMember, deleteMe
             const owners = (a.memberIds || []).map(id => members.find(m => m.id === id)?.name).filter(Boolean).join(' & ');
             return (
               <div key={a.id} className="member-card">
-                <span className="member-avatar large" style={{ background: '#3b82f6' }}>{a.bank?.charAt(0) || '?'}</span>
+                <span className="member-avatar large" style={{ background: 'var(--info)' }}>{a.bank?.charAt(0) || '?'}</span>
                 <div className="member-card-info">
                   <div className="member-card-name">{a.name}</div>
                   <div className="member-card-role">{a.bank} · {owners} · {fmt(accountBalances[a.id] || 0)}</div>
@@ -4693,7 +4675,7 @@ function SettingsView({ members, accounts, accountBalances, saveMember, deleteMe
         </div>
         <div className="settings-info">
           <Lightbulb size={14}/>
-          <span><strong>Migration future :</strong> exportez régulièrement votre backup. Quand vous passerez en self-hosted Docker, ce fichier permettra une migration sans perte.</span>
+          <span>Exportez un backup régulièrement. C'est votre filet de sécurité avant une migration ou un changement d'instance.</span>
         </div>
       </section>
 
@@ -6047,8 +6029,10 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .settings-info svg { flex-shrink: 0; margin-top: 2px; color: var(--warning); }
 
 /* MODAL */
-.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; backdrop-filter: blur(4px); }
-.modal { background: var(--bg-card); border-radius: 16px; max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-xl); border: 1px solid var(--border); }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.62); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); animation: modalFadeIn .15s ease-out; }
+.modal { background: var(--bg-card); border-radius: 14px; max-width: 540px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-xl); border: 1px solid var(--border-strong); animation: modalSlideIn .18s cubic-bezier(0.2, 0.8, 0.2, 1); }
+@keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modalSlideIn { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
 .modal--wizard { max-width: 720px; }
 .modal--detail { max-width: 1100px; }
 
@@ -6192,10 +6176,10 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 
 
 
-.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--border); }
-.modal-header h2 { font-size: 18px; font-weight: 700; margin: 0; }
-.modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
-.modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 16px 24px; border-top: 1px solid var(--border); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 22px 26px 18px; border-bottom: 1px solid var(--border-light); }
+.modal-header h2 { font-size: 19px; font-weight: 500; letter-spacing: -0.025em; margin: 0; color: var(--text-primary); }
+.modal-body { padding: 22px 26px; display: flex; flex-direction: column; gap: 16px; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 16px 26px; border-top: 1px solid var(--border-light); background: var(--bg-subtle); }
 .member-checks { display: flex; flex-wrap: wrap; gap: 8px; }
 .member-check { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 22px; font-size: 12px; cursor: pointer; transition: all 0.15s; font-weight: 600; }
 .member-check:hover { background: var(--bg-card-hover); }
