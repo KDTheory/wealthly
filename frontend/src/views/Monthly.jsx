@@ -13,6 +13,24 @@ import {
 import { formatCurrency, formatDate, monthKey } from '../utils.js';
 import { AnimatedNumber } from '../components/AnimatedNumber.jsx';
 
+// Year-over-year delta sub-label — rendered under each KPI. Returns null when
+// the prior reference value is missing or zero (we don't show "—" / 0%, the
+// row just stays clean).
+function YoYDelta({ current, previous, label, invert = false }) {
+  if (previous == null || Math.abs(previous) < 0.01) return null;
+  const delta = current - previous;
+  const pct = (delta / Math.abs(previous)) * 100;
+  // For "expenses" type metrics, less is better — invert the colour.
+  const better = invert ? delta < 0 : delta > 0;
+  const cls = better ? 'positive' : delta === 0 ? '' : 'negative';
+  const sign = pct > 0 ? '+' : '';
+  return (
+    <div className={`mk-yoy w-num ${cls}`} title={`Vs ${label} : ${previous.toFixed(0)} → ${current.toFixed(0)}`}>
+      {sign}{pct.toFixed(0)}% <span className="mk-yoy-label">vs {label}</span>
+    </div>
+  );
+}
+
 export function Monthly({ transactions, accounts, categories, members, recurringIds, recurringGroups, monthlyEvolution, thisMonthStats, anomalies, categoryAnalysis, fixedCharges, saveFixedCharge, deleteFixedCharge, memberShare, currentMonth, fmt }) {
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [editingCharge, setEditingCharge] = useState(null);
@@ -102,6 +120,19 @@ export function Monthly({ transactions, accounts, categories, members, recurring
       start_month: selectedMonth, end_month: null, member_ids: [], notes: '',
     });
   };
+
+  // Year-ago comparison — used by the KPI sub-labels. Skipped silently if
+  // we don't have data from N-1 (won't show a "—" placeholder).
+  const yearAgoMonth = useMemo(() => {
+    const [y, m] = selectedMonth.split('-').map(Number);
+    return `${y - 1}-${String(m).padStart(2, '0')}`;
+  }, [selectedMonth]);
+
+  const yearAgoData = useMemo(
+    () => monthlyEvolution.find((x) => x.month === yearAgoMonth) || null,
+    [monthlyEvolution, yearAgoMonth]
+  );
+  const yearAgoLabel = formatDate(yearAgoMonth + '-01', { format: 'monthLong' });
 
   return (
     <div className="monthly-view">
@@ -246,6 +277,7 @@ export function Monthly({ transactions, accounts, categories, members, recurring
           <div className="mk-info">
             <div className="mk-label">Revenus</div>
             <div className="mk-value"><AnimatedNumber value={monthData.income} format={(v) => fmt(v)}/></div>
+            <YoYDelta current={monthData.income} previous={yearAgoData?.income} label={yearAgoLabel}/>
           </div>
         </div>
         <div className="mk-card fixed">
@@ -253,13 +285,16 @@ export function Monthly({ transactions, accounts, categories, members, recurring
           <div className="mk-info">
             <div className="mk-label">Charges fixes</div>
             <div className="mk-value"><AnimatedNumber value={totalFixedCharges} format={(v) => fmt(v)}/></div>
+            {/* Pas de YoY ici — les charges fixes "actives" sont calculées sur l'état présent
+                des fixedCharges et ne sont pas comparables à un snapshot d'il y a un an. */}
           </div>
         </div>
         <div className="mk-card variable">
           <div className="mk-icon"><Activity size={18}/></div>
           <div className="mk-info">
-            <div className="mk-label">Dépenses variables</div>
-            <div className="mk-value"><AnimatedNumber value={variableSpent} format={(v) => fmt(v)}/></div>
+            <div className="mk-label">Dépenses</div>
+            <div className="mk-value"><AnimatedNumber value={monthData.expenses} format={(v) => fmt(v)}/></div>
+            <YoYDelta current={monthData.expenses} previous={yearAgoData?.expenses} label={yearAgoLabel} invert/>
           </div>
         </div>
         <div className={`mk-card net ${monthData.net >= 0 ? 'positive' : 'negative'}`}>
@@ -267,6 +302,7 @@ export function Monthly({ transactions, accounts, categories, members, recurring
           <div className="mk-info">
             <div className="mk-label">Solde net</div>
             <div className="mk-value"><AnimatedNumber value={monthData.net} format={(v) => fmt(v, { sign: true })}/></div>
+            <YoYDelta current={monthData.net} previous={yearAgoData?.net} label={yearAgoLabel}/>
           </div>
         </div>
       </section>

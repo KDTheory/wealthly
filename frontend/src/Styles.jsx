@@ -468,6 +468,10 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .mk-info { flex: 1; min-width: 0; }
 .mk-label { font-size: 11px; color: var(--text-tertiary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
 .mk-value { font-size: 21px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.2; margin-top: 2px; }
+.mk-yoy { font-size: 10.5px; font-weight: 500; font-variant-numeric: tabular-nums; margin-top: 4px; color: var(--text-tertiary); cursor: help; }
+.mk-yoy.positive { color: var(--num-positive); }
+.mk-yoy.negative { color: var(--num-negative); }
+.mk-yoy-label { color: var(--text-tertiary); font-weight: 400; margin-left: 2px; }
 .mk-meta { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
 .mk-card.net.positive .mk-value { color: var(--success); }
 .mk-card.net.negative .mk-value { color: var(--danger); }
