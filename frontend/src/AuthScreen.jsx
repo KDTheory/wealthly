@@ -388,7 +388,7 @@ export default function AuthScreen({ onAuth, onTryDemo }) {
               <span>Wealthly</span>
             </div>
             <span className="foot-sep">·</span>
-            <span className="foot-tag">Patrimoine familial, sans démarchage.</span>
+            <span className="foot-tag">© 2026 — Tous droits réservés</span>
           </div>
           <div className="foot-right">
             <a href="https://github.com/Raphyy31/wealthly" target="_blank" rel="noopener noreferrer"><Github size={13}/> Code source</a>
