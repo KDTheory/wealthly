@@ -9,8 +9,8 @@
 // ============================================================================
 import { useState, useMemo, useEffect } from 'react';
 import {
-  PieChart, Pie, Cell, AreaChart, Area, ResponsiveContainer,
-  XAxis, YAxis, CartesianGrid, Tooltip,
+  PieChart, Pie, Cell, AreaChart, Area, BarChart, Bar, ResponsiveContainer,
+  XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine,
 } from 'recharts';
 import {
   Plus, Trash2, Edit3, Check, ChevronLeft, ChevronRight, Home, Landmark,
@@ -954,6 +954,8 @@ function buildAmortization({ principal, annualRate, durationM, insuranceRate, st
 
 function LiabilityDetail({ liability, assets, members, memberShare, fmt, onEdit, onClose }) {
   const l = liability;
+  const [activeTab, setActiveTab] = useState('synthese');
+
   const schedule = useMemo(() => buildAmortization({
     principal: l.initialCapital,
     annualRate: l.interestRate,
@@ -978,128 +980,204 @@ function LiabilityDetail({ liability, assets, members, memberShare, fmt, onEdit,
   const pctRepaid = principal > 0 ? Math.min(100, ((principal - remainingCapital) / principal) * 100) : 0;
   const linkedAsset = l.linkedAssetId ? assets.find(a => a.id === l.linkedAssetId) : null;
   const owners = (l.memberIds || []).map(id => members.find(m => m.id === id)?.name).filter(Boolean).join(' & ');
-
-  // Mensualité breakdown — on prend la première échéance non payée si dispo,
-  // sinon la première
-  const ref = remainingRows[0] || schedule[0] || null;
+  const monthlyPayment = parseFloat(l.monthlyPayment) || (schedule[0]?.payment ?? 0);
 
   const chartData = schedule.map(r => ({
     date: r.date,
     remaining: Math.round(r.remaining),
-    paid: Math.round(principal - r.remaining),
+    payment: Math.round(r.payment),
   }));
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal modal--detail" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <ChevronLeft size={18} style={{ cursor: 'pointer' }} onClick={onClose}/>
-            <h2>{l.name}</h2>
-          </div>
-          <div style={{ display: 'flex', gap: 6 }}>
+      <div className="modal modal--detail loan-finary" onClick={(e) => e.stopPropagation()}>
+        {/* Top bar — back arrow + name + actions */}
+        <header className="loan-finary-topbar">
+          <button className="loan-finary-back" onClick={onClose} aria-label="Fermer">
+            <ChevronLeft size={18}/>
+          </button>
+          <span className="loan-finary-pagetitle">Loan</span>
+          <div className="loan-finary-topbar-actions">
             <button className="secondary-btn" onClick={onEdit}><Edit3 size={13}/> Modifier</button>
-            <button className="icon-btn-sm" onClick={onClose}><X size={16}/></button>
+          </div>
+        </header>
+
+        {/* KPI strip — title + 4 inline metrics */}
+        <div className="loan-finary-kpi-strip">
+          <div className="loan-finary-title-block">
+            <span className="loan-finary-eyebrow">Loan</span>
+            <h2 className="loan-finary-title">{l.name}</h2>
+          </div>
+
+          <div className="loan-finary-kpis">
+            <div className="loan-finary-kpi">
+              <div className="loan-finary-kpi-label">Remboursé</div>
+              <div className="loan-finary-progress">
+                <div className="loan-finary-progress-fill" style={{ width: `${pctRepaid}%` }}/>
+              </div>
+            </div>
+            <div className="loan-finary-kpi">
+              <div className="loan-finary-kpi-label">Taux d'intérêt</div>
+              <div className="loan-finary-kpi-value w-num">{l.interestRate ? `${parseFloat(l.interestRate).toFixed(2)}%` : '—'}</div>
+            </div>
+            <div className="loan-finary-kpi">
+              <div className="loan-finary-kpi-label">Mensualité</div>
+              <div className="loan-finary-kpi-value w-num">{fmt(monthlyPayment)}</div>
+            </div>
+            <div className="loan-finary-kpi">
+              <div className="loan-finary-kpi-label">Capital restant dû</div>
+              <div className="loan-finary-kpi-value w-num">{fmt(remainingCapital)}</div>
+            </div>
           </div>
         </div>
 
-        <div className="loan-detail-body">
-          <div className="loan-detail-top">
-            <div className="loan-amort-block">
-              <div className="loan-amort-period">
-                {l.startDate ? formatDate(l.startDate, { format: 'short' }) : '—'}
-                {' → '}
-                {l.endDate ? formatDate(l.endDate, { format: 'short' }) : '—'}
-              </div>
-              <div className="loan-amort-value">{fmt(remainingCapital)}</div>
-              <div className="loan-amort-meta">capital restant dû</div>
-              {schedule.length > 0 ? (
-                <ResponsiveContainer width="100%" height={220}>
-                  <AreaChart data={chartData} margin={{ left: 0, right: 8, top: 10, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="amort-fill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.4}/>
-                        <stop offset="100%" stopColor="var(--primary)" stopOpacity={0.02}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false}/>
-                    <XAxis dataKey="date" tickFormatter={(d) => d.slice(0, 4)} stroke="var(--text-tertiary)" fontSize={11} interval={Math.max(0, Math.floor(schedule.length / 8))}/>
-                    <YAxis tickFormatter={(v) => formatCurrency(v, { compact: true })} stroke="var(--text-tertiary)" fontSize={11}/>
-                    <Tooltip
-                      formatter={(v) => fmt(v)}
-                      labelFormatter={(d) => formatDate(d, { format: 'monthYear' })}
-                      contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
-                    />
-                    <Area type="monotone" dataKey="remaining" name="Capital restant" stroke="var(--primary)" strokeWidth={2} fill="url(#amort-fill)"/>
-                  </AreaChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="empty-mini">
-                  <BarChart3 size={20}/>
-                  <p>Renseigne le capital, le taux et la durée pour voir la courbe d'amortissement.</p>
+        {/* Tabs — Synthèse / Mensualités */}
+        <div className="loan-finary-tabs">
+          <button className={activeTab === 'synthese' ? 'active' : ''} onClick={() => setActiveTab('synthese')}>Synthèse</button>
+          <button className={activeTab === 'mensualites' ? 'active' : ''} onClick={() => setActiveTab('mensualites')}>Mensualités</button>
+        </div>
+
+        <div className="loan-finary-body">
+          {activeTab === 'synthese' && (
+            <>
+              <div className="loan-finary-grid">
+                {/* Bar chart — capital remaining over time + monthly payment line */}
+                <div className="loan-finary-chart">
+                  {schedule.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={chartData} margin={{ left: 0, right: 24, top: 10, bottom: 8 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false}/>
+                        <XAxis dataKey="date" tickFormatter={(d) => d.slice(0, 4)} stroke="var(--text-tertiary)" fontSize={11} tickLine={false} axisLine={false} interval={Math.max(0, Math.floor(schedule.length / 8))}/>
+                        <YAxis yAxisId="left" tickFormatter={(v) => formatCurrency(v, { compact: true })} stroke="var(--text-tertiary)" fontSize={11} tickLine={false} axisLine={false} width={56}/>
+                        <YAxis yAxisId="right" orientation="right" tickFormatter={(v) => formatCurrency(v, { compact: true })} stroke="var(--text-tertiary)" fontSize={11} tickLine={false} axisLine={false} width={56} domain={[0, monthlyPayment * 2.5]}/>
+                        <Tooltip
+                          formatter={(v, name) => [fmt(v), name === 'remaining' ? 'Capital restant' : 'Mensualité']}
+                          labelFormatter={(d) => formatDate(d, { format: 'monthYear' })}
+                          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 8, fontSize: 12 }}
+                          cursor={{ fill: 'var(--bg-subtle)' }}
+                        />
+                        <Bar yAxisId="left" dataKey="remaining" fill="var(--primary)" fillOpacity={0.85} maxBarSize={6} radius={[1, 1, 0, 0]}/>
+                        <ReferenceLine yAxisId="right" y={monthlyPayment} stroke="var(--primary)" strokeWidth={1} strokeDasharray="0" label={{ value: 'Mensualité', position: 'insideRight', fill: 'var(--text-secondary)', fontSize: 11 }}/>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="empty-mini" style={{ padding: '60px 0' }}>
+                      <BarChart3 size={24}/>
+                      <p>Renseigne le capital, le taux et la durée pour voir la courbe d'amortissement.</p>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            <aside className="loan-monthly-card">
-              <div className="loan-monthly-label">MENSUALITÉ</div>
-              <div className="loan-monthly-value">{fmt(parseFloat(l.monthlyPayment) || (ref?.payment ?? 0))}</div>
-              <div className="loan-monthly-sub">par mois</div>
-              {ref && (
-                <div className="loan-monthly-breakdown">
-                  <div><span className="dot dot-cap"/>Capital</div><div>{fmt(ref.capital)}</div>
-                  <div><span className="dot dot-int"/>Intérêts</div><div>{fmt(ref.interest)}</div>
-                  <div><span className="dot dot-ins"/>Assurance</div><div>{fmt(ref.insurance)}</div>
+                {/* Right detail list — Finary-style hierarchy */}
+                <div className="loan-finary-details">
+                  <div className="loan-finary-detail-block">
+                    <div className="loan-finary-detail-head">
+                      <span>Coût de l'emprunt</span>
+                      <span className="loan-finary-detail-value w-num">{fmt(totalCost)}</span>
+                    </div>
+                    <ul className="loan-finary-sub">
+                      <li><span>Capital</span><span className="w-num">{fmt(principal)}</span></li>
+                      <li><span>Intérêts et assurances</span><span className="w-num">{fmt(Math.max(0, totalCost - principal - (parseFloat(l.applicationFees) || 0)))}</span></li>
+                      <li><span>Frais de dossier</span><span className="w-num">{l.applicationFees ? fmt(parseFloat(l.applicationFees)) : '—'}</span></li>
+                    </ul>
+                  </div>
+
+                  <div className="loan-finary-detail-block">
+                    <div className="loan-finary-detail-head">
+                      <span>Total remboursé</span>
+                      <span className="loan-finary-detail-value w-num">{fmt(totalPaid)}</span>
+                    </div>
+                    <ul className="loan-finary-sub">
+                      <li><span>Dont capital</span><span className="w-num">{fmt(totalCapitalPaid)}</span></li>
+                      <li><span>Dont intérêts</span><span className="w-num">{fmt(totalInterestPaid)}</span></li>
+                      <li><span>Dont assurances</span><span className="w-num">{fmt(totalInsurancePaid)}</span></li>
+                    </ul>
+                  </div>
+
+                  <div className="loan-finary-detail-block">
+                    <div className="loan-finary-detail-head">
+                      <span>Capital restant dû</span>
+                      <span className="loan-finary-detail-value w-num">{fmt(remainingCapital)}</span>
+                    </div>
+                  </div>
+
+                  <div className="loan-finary-detail-block">
+                    <div className="loan-finary-detail-head">
+                      <span>Restant à rembourser</span>
+                      <span className="loan-finary-detail-value w-num">{fmt(totalRemaining)}</span>
+                    </div>
+                    <ul className="loan-finary-sub">
+                      <li><span>Reste à rembourser (%)</span><span className="w-num">{(100 - pctRepaid).toFixed(0)} %</span></li>
+                    </ul>
+                  </div>
                 </div>
-              )}
-              <div className="loan-monthly-stats">
-                <div><span>Échéances payées</span><strong>{paidRows.length}</strong></div>
-                <div><span>Échéances restantes</span><strong>{remainingRows.length}</strong></div>
-                <div><span>Date de fin</span><strong>{l.endDate ? formatDate(l.endDate, { format: 'monthYear' }) : '—'}</strong></div>
               </div>
-              <div className="loan-pct-pill">Tu as remboursé {pctRepaid.toFixed(0)} % du capital du prêt</div>
-            </aside>
-          </div>
 
-          <h3 className="loan-section-title">Synthèse</h3>
-          <div className="loan-summary-grid">
-            <div className="loan-summary-card">
-              <div className="loan-summary-label">COÛT TOTAL DE L'EMPRUNT</div>
-              <div className="loan-summary-value">{fmt(totalCost)}</div>
-              <div className="loan-summary-rows">
-                <div><span>Capital</span><span>{fmt(principal)}</span></div>
-                <div><span>Intérêts et assurance</span><span>{fmt(totalCost - principal - (parseFloat(l.applicationFees) || 0))}</span></div>
-                <div><span>Frais de dossier</span><span>{l.applicationFees ? fmt(parseFloat(l.applicationFees)) : '—'}</span></div>
-              </div>
-            </div>
-
-            <div className="loan-summary-card">
-              <div className="loan-summary-label">TOTAL REMBOURSÉ</div>
-              <div className="loan-summary-value">{fmt(totalPaid)}</div>
-              <div className="loan-summary-rows">
-                <div><span>Capital</span><span>{fmt(totalCapitalPaid)}</span></div>
-                <div><span>Intérêts</span><span>{fmt(totalInterestPaid)}</span></div>
-                <div><span>Assurance</span><span>{fmt(totalInsurancePaid)}</span></div>
-              </div>
-            </div>
-
-            <div className="loan-summary-card">
-              <div className="loan-summary-label">CAPITAL RESTANT DÛ</div>
-              <div className="loan-summary-value">{fmt(remainingCapital)}</div>
-              <div className="loan-summary-rows">
-                <div><span>Reste à rembourser</span><span>{fmt(totalRemaining)}</span></div>
-                <div><span>Reste à rembourser (%)</span><span>{(100 - pctRepaid).toFixed(0)} %</span></div>
-              </div>
-            </div>
-          </div>
-
-          {(linkedAsset || owners) && (
-            <div className="loan-meta-row">
+              {/* Linked asset card */}
               {linkedAsset && (
-                <div className="loan-meta-pill"><Home size={14}/> Lié à <strong>{linkedAsset.name}</strong></div>
+                <div className="loan-finary-linked">
+                  <div className="loan-finary-linked-icon">
+                    <Home size={18}/>
+                  </div>
+                  <div className="loan-finary-linked-text">
+                    <div className="loan-finary-linked-label">Actif lié à l'emprunt</div>
+                    <div className="loan-finary-linked-name">
+                      {linkedAsset.name}{linkedAsset.address ? ` · ${linkedAsset.address}` : ''}
+                    </div>
+                  </div>
+                  <ChevronRight size={16} className="loan-finary-linked-chevron"/>
+                </div>
               )}
+
               {owners && (
-                <div className="loan-meta-pill"><Users size={14}/> {owners}</div>
+                <div className="loan-finary-meta">
+                  <Users size={13}/> {owners}
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab === 'mensualites' && (
+            <div className="loan-finary-table-wrap">
+              {schedule.length === 0 ? (
+                <div className="empty-mini" style={{ padding: '60px 0' }}>
+                  <BarChart3 size={24}/>
+                  <p>Échéancier indisponible — renseigne capital, taux et durée.</p>
+                </div>
+              ) : (
+                <table className="loan-finary-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th className="right">Mensualité</th>
+                      <th className="right">Capital</th>
+                      <th className="right">Intérêts</th>
+                      <th className="right">Assurance</th>
+                      <th className="right">Capital restant</th>
+                      <th className="center">Statut</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {schedule.map((r, i) => {
+                      const isPaid = r.date <= today;
+                      return (
+                        <tr key={i} className={isPaid ? 'paid' : 'pending'}>
+                          <td className="w-num">{formatDate(r.date, { format: 'monthYear' })}</td>
+                          <td className="right w-num">{fmt(r.payment)}</td>
+                          <td className="right w-num">{fmt(r.capital)}</td>
+                          <td className="right w-num">{fmt(r.interest)}</td>
+                          <td className="right w-num">{fmt(r.insurance)}</td>
+                          <td className="right w-num">{fmt(r.remaining)}</td>
+                          <td className="center">
+                            <span className={`loan-finary-status ${isPaid ? 'paid' : 'pending'}`}>
+                              {isPaid ? 'Payée' : 'À venir'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               )}
             </div>
           )}
