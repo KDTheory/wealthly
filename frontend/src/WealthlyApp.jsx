@@ -5868,7 +5868,8 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .budget-bar.danger .budget-fill { background: var(--danger); }
 .budget-projection-marker { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--text-primary); border-radius: 1px; }
 .budget-meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 11px; color: var(--text-tertiary); flex-wrap: wrap; }
-.budget-warning { color: var(--warning-text); font-weight: 700; }
+.budget-warning { display: inline-flex; align-items: center; padding: 1px 8px; background: var(--warning-soft); color: var(--warning-text); font-size: 10.5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; border-radius: 4px; }
+.goal-complete { display: inline-flex; align-items: center; padding: 1px 8px; background: var(--success-soft); color: var(--success); font-size: 10.5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; border-radius: 4px; }
 .budget-danger { color: var(--danger-text); font-weight: 700; }
 .suggestion-btn { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; background: var(--primary-soft); color: var(--primary-text); border: none; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; }
 .suggestion-btn:hover { background: var(--primary); color: white; }
