@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, Lock, User, Home, Eye, EyeOff, AlertCircle, Lock as LockIcon, ArrowLeft, Check, Sparkles, ShieldCheck, MapPin, EyeOff as PrivacyIcon, Users, Building2, Calculator, Github } from 'lucide-react';
+import { Mail, Lock, User, Home, Eye, EyeOff, AlertCircle, Lock as LockIcon, ArrowLeft, Check, Sparkles, ShieldCheck, MapPin, EyeOff as PrivacyIcon } from 'lucide-react';
 import { auth, setToken } from './api.js';
 import { enableDemoMode } from './demoData.js';
 
@@ -10,9 +10,9 @@ function readResetTokenFromUrl() {
   return params.get('reset_token');
 }
 
-export default function AuthScreen({ onAuth, onTryDemo }) {
+export default function AuthScreen({ onAuth, onTryDemo, onBackToLanding, initialMode = 'login' }) {
   const initialResetToken = readResetTokenFromUrl();
-  const [mode, setMode] = useState(initialResetToken ? 'reset' : 'login'); // login | register | forgot | reset
+  const [mode, setMode] = useState(initialResetToken ? 'reset' : initialMode); // login | register | forgot | reset
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -79,6 +79,13 @@ export default function AuthScreen({ onAuth, onTryDemo }) {
       <div className="auth-grid" aria-hidden="true" />
 
       <div className="auth-shell">
+        {/* Back to landing — only shown when we have a callback (i.e. came from Landing, not from a reset_token deep link) */}
+        {onBackToLanding && (
+          <button type="button" onClick={onBackToLanding} className="auth-back-landing">
+            <ArrowLeft size={14}/> Retour à l'accueil
+          </button>
+        )}
+
         {/* Tiny brand mark + wordmark, centered at the top */}
         <div className="auth-brand-row">
           <div className="auth-brand-mark">
@@ -90,18 +97,19 @@ export default function AuthScreen({ onAuth, onTryDemo }) {
           <div className="auth-wordmark">Wealthly</div>
         </div>
 
-        {/* Hero — heyfinly-style centered headline + subhead */}
+        {/* Hero — slim version (full marketing is on Landing now) */}
         <div className="auth-hero">
-          <div className="auth-eyebrow">BILAN PATRIMONIAL FAMILIAL</div>
+          <div className="auth-eyebrow">ESPACE PERSONNEL</div>
           <h1 className="auth-headline">
-            Une vue claire<br/>de votre patrimoine.
+            {mode === 'register' ? 'Créer votre compte' : 'Bon retour.'}
           </h1>
           <p className="auth-subhead">
-            Comptes, placements, immobilier, prêts — consolidés sur un seul écran,
-            déclinés par membre du foyer. Sans démarchage. Sans revente de données.
+            {mode === 'register'
+              ? 'Email + mot de passe. Pas de carte bleue, pas d\'engagement.'
+              : 'Identifiez-vous pour accéder à votre tableau de bord patrimonial.'}
           </p>
 
-          {/* Trust pills row (heyfinly's "4.6 Rating · 1500+ Installs" zone) */}
+          {/* Trust pills row */}
           <div className="auth-pills">
             <span className="auth-pill"><ShieldCheck size={12}/> Synchro DSP2 agréée</span>
             <span className="auth-pill"><MapPin size={12}/> Hébergé en UE</span>
@@ -283,118 +291,6 @@ export default function AuthScreen({ onAuth, onTryDemo }) {
             </div>
           </div>
         </main>
-
-        {/* === Bloc 1 — Aperçu produit (faux dashboard) === */}
-        <section className="auth-preview">
-          <div className="auth-section-eyebrow">APERÇU DE LA PLATEFORME</div>
-          <div className="auth-section-title">À quoi ressemble votre tableau de bord</div>
-
-          <div className="auth-mockup">
-            {/* Window chrome */}
-            <div className="mockup-chrome">
-              <span className="mockup-dot d1"/><span className="mockup-dot d2"/><span className="mockup-dot d3"/>
-              <span className="mockup-url">wealthly.app / dashboard</span>
-            </div>
-            <div className="mockup-body">
-              {/* Faux sidebar */}
-              <div className="mockup-sidebar">
-                <div className="mockup-sb-brand">W</div>
-                <div className="mockup-sb-item active">Dashboard</div>
-                <div className="mockup-sb-item">Patrimoine</div>
-                <div className="mockup-sb-item">Mensuel</div>
-                <div className="mockup-sb-item">Transactions</div>
-                <div className="mockup-sb-item">Impôts</div>
-              </div>
-              {/* Faux content */}
-              <div className="mockup-content">
-                <div className="mockup-eyebrow">PATRIMOINE NET</div>
-                <div className="mockup-hero">147 820 €</div>
-                <div className="mockup-perf">+ 2,4 % sur le mois</div>
-                {/* Mini chart */}
-                <svg className="mockup-chart" viewBox="0 0 360 80" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="mkgrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#c5a572" stopOpacity="0.35"/>
-                      <stop offset="100%" stopColor="#c5a572" stopOpacity="0"/>
-                    </linearGradient>
-                  </defs>
-                  <path d="M0,60 L40,55 L80,58 L120,42 L160,46 L200,32 L240,36 L280,22 L320,28 L360,14 L360,80 L0,80 Z" fill="url(#mkgrad)"/>
-                  <path d="M0,60 L40,55 L80,58 L120,42 L160,46 L200,32 L240,36 L280,22 L320,28 L360,14" fill="none" stroke="#c5a572" strokeWidth="1.6"/>
-                  <circle cx="360" cy="14" r="3" fill="#c5a572"/>
-                </svg>
-                {/* Mini KPI strip */}
-                <div className="mockup-kpis">
-                  <div className="mockup-kpi"><div className="mk-l">LIQUIDITÉS</div><div className="mk-v">42 100 €</div></div>
-                  <div className="mockup-kpi"><div className="mk-l">ACTIFS</div><div className="mk-v">120 720 €</div></div>
-                  <div className="mockup-kpi"><div className="mk-l">DETTES</div><div className="mk-v neg">-15 000 €</div></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* === Bloc 2 — Features grid === */}
-        <section className="auth-features">
-          <div className="auth-section-eyebrow">CE QUE VOUS GAGNEZ</div>
-          <div className="auth-section-title">Conçu pour le foyer, pas pour le marketing</div>
-
-          <div className="auth-feat-grid">
-            <div className="auth-feat-card">
-              <div className="feat-icon"><Users size={18}/></div>
-              <div className="feat-title">Multi-membres natif</div>
-              <div className="feat-desc">Une vue par personne, une vue famille. Comptes joints, comptes perso, enfants — tout reste lisible.</div>
-            </div>
-            <div className="auth-feat-card">
-              <div className="feat-icon"><Building2 size={18}/></div>
-              <div className="feat-title">Synchro DSP2 agréée</div>
-              <div className="feat-desc">Connectable à 1 900+ banques européennes via GoCardless. Import CSV pour le reste, en 4 étapes.</div>
-            </div>
-            <div className="auth-feat-card">
-              <div className="feat-icon"><Calculator size={18}/></div>
-              <div className="feat-title">Simulateur d'impôt FR</div>
-              <div className="feat-desc">Barème 2025, parts, plafond quotient, décote, crédits garde et CESU, plafond niches 10 000 €.</div>
-            </div>
-          </div>
-        </section>
-
-        {/* === Bloc 3 — Numbers strip === */}
-        <section className="auth-numbers">
-          <div className="auth-num">
-            <div className="num-v">17</div>
-            <div className="num-l">tables<br/>relationnelles</div>
-          </div>
-          <div className="auth-num">
-            <div className="num-v">1900<span className="num-suf">+</span></div>
-            <div className="num-l">banques UE<br/>connectables</div>
-          </div>
-          <div className="auth-num">
-            <div className="num-v">FR · EN</div>
-            <div className="num-l">interface<br/>bilingue</div>
-          </div>
-          <div className="auth-num">
-            <div className="num-v">0</div>
-            <div className="num-l">tracker<br/>tiers</div>
-          </div>
-        </section>
-
-        {/* === Bloc 4 — Footer === */}
-        <footer className="auth-foot">
-          <div className="foot-left">
-            <div className="foot-brand">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" strokeLinejoin="miter" width="16" height="16">
-                <rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/>
-                <path d="M7 9 L9.5 15.5 L12 10.5 L14.5 15.5 L17 9"/>
-              </svg>
-              <span>Wealthly</span>
-            </div>
-            <span className="foot-sep">·</span>
-            <span className="foot-tag">© 2026 — Tous droits réservés</span>
-          </div>
-          <div className="foot-right">
-            <a href="https://github.com/Raphyy31/wealthly" target="_blank" rel="noopener noreferrer"><Github size={13}/> Code source</a>
-            <a href="mailto:contact@wealthly.app"><Mail size={13}/> Contact</a>
-          </div>
-        </footer>
       </div>
 
       <style>{authStyles}</style>
@@ -633,6 +529,16 @@ const authStyles = `
   transition: color .15s;
 }
 .auth-back-link:hover { color: #ebe8e3; }
+.auth-back-landing {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: transparent; border: 1px solid rgba(255,255,255,0.08);
+  padding: 7px 12px; border-radius: 999px;
+  color: #a8a59f; font-size: 12px; font-weight: 500; font-family: inherit;
+  cursor: pointer; align-self: flex-start;
+  margin-bottom: 8px;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.auth-back-landing:hover { color: #c5a572; border-color: rgba(197,165,114,0.35); background: rgba(197,165,114,0.05); }
 .auth-forgot-link {
   display: inline-block;
   font-size: 12px;

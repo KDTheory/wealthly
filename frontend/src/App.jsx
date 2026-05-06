@@ -2,12 +2,18 @@ import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { getToken, auth } from './api.js';
 import AuthScreen from './AuthScreen.jsx';
 import WealthlyApp from './WealthlyApp.jsx';
-import { isDemoMode, disableDemoMode } from './demoData.js';
+import { isDemoMode, disableDemoMode, enableDemoMode } from './demoData.js';
 
 const BankCallback = lazy(() => import('./BankCallback.jsx'));
+const Landing = lazy(() => import('./views/Landing.jsx'));
 
 export default function App() {
   const [authState, setAuthState] = useState('checking'); // checking | authed | unauthed | demo
+  // When unauthed, decide whether to show the public marketing landing or
+  // jump straight to the auth form. Default to the landing — auth is one
+  // click away via the nav.
+  const [unauthedView, setUnauthedView] = useState('landing'); // landing | auth
+  const [authInitialMode, setAuthInitialMode] = useState('login');
   const [refreshKey, setRefreshKey] = useState(0);
   const [isBankCallback, setIsBankCallback] = useState(
     typeof window !== 'undefined' && window.location.pathname === '/bank-callback'
@@ -28,6 +34,7 @@ export default function App() {
       const params = new URLSearchParams(window.location.search);
       if (params.get('reset_token')) {
         setAuthState('unauthed');
+        setUnauthedView('auth');
         return;
       }
 
@@ -77,7 +84,25 @@ export default function App() {
   }
 
   if (authState === 'unauthed') {
-    return <AuthScreen onAuth={() => setAuthState('authed')} onTryDemo={() => setAuthState('demo')} />;
+    if (unauthedView === 'landing') {
+      return (
+        <Suspense fallback={<div style={{minHeight:'100vh',background:'#0a0b0e'}}/>}>
+          <Landing
+            onSignIn={() => { setAuthInitialMode('login'); setUnauthedView('auth'); }}
+            onSignUp={() => { setAuthInitialMode('register'); setUnauthedView('auth'); }}
+            onTryDemo={() => { enableDemoMode(); setAuthState('demo'); }}
+          />
+        </Suspense>
+      );
+    }
+    return (
+      <AuthScreen
+        initialMode={authInitialMode}
+        onBackToLanding={() => setUnauthedView('landing')}
+        onAuth={() => setAuthState('authed')}
+        onTryDemo={() => setAuthState('demo')}
+      />
+    );
   }
 
   if (isBankCallback) {
