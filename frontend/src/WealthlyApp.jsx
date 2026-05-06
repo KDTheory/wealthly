@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspens
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadialBarChart, RadialBar, ComposedChart, Sankey, Layer, Rectangle } from 'recharts';
 import { Upload, Plus, TrendingUp, TrendingDown, Wallet, Home, Coins, CreditCard, Users, Settings, Search, Download, Trash2, Edit3, Check, X, ChevronRight, ChevronLeft, AlertCircle, AlertTriangle, Repeat, Calendar, ArrowUpDown, Eye, EyeOff, Sparkles, PiggyBank, Bitcoin, Banknote, Landmark, BarChart3, Target, Heart, Sun, Moon, Zap, Activity, ArrowUp, ArrowDown, Minus, PartyPopper, Lightbulb, Bell, ChevronUp, Play, Lock, Unlock, LogOut, Cloud, RefreshCw, FileText, Calculator, Link2, Unlink } from 'lucide-react';
 import * as api from './api.js';
+import { useTranslation } from 'react-i18next';
 import { getDemoData } from './demoData.js';
 import {
   APP_NAME, STORAGE_KEYS, DEFAULT_CATEGORIES, DEFAULT_RULES, BANK_PROFILES,
@@ -40,6 +41,7 @@ const TaxSimulator = lazy(() => import('./TaxSimulator.jsx'));
 // MAIN APP
 // ============================================================================
 export default function WealthlyApp({ demoMode = false, onExitDemo }) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [onboarded, setOnboarded] = useState(false);
   const [view, setView] = useState('dashboard');
@@ -946,20 +948,20 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
           </div>
 
           <nav className="sidebar-nav">
-            <button onClick={() => setView('dashboard')} className={view === 'dashboard' ? 'active' : ''}><Activity size={15}/> <span>Résumé</span></button>
-            <button onClick={() => setView('wealth')} className={view === 'wealth' ? 'active' : ''}><Landmark size={15}/> <span>Patrimoine</span></button>
+            <button onClick={() => setView('dashboard')} className={view === 'dashboard' ? 'active' : ''}><Activity size={15}/> <span>{t('nav.dashboard')}</span></button>
+            <button onClick={() => setView('wealth')} className={view === 'wealth' ? 'active' : ''}><Landmark size={15}/> <span>{t('nav.wealth')}</span></button>
             <button onClick={() => setView('monthly')} className={['monthly','cashflow','budgets'].includes(view) ? 'active' : ''}>
-              <Calendar size={15}/> <span>Mensuel</span>
+              <Calendar size={15}/> <span>{t('nav.monthly')}</span>
               {budgetsOverCount > 0 && <span className="nav-alert-dot" title={`${budgetsOverCount} budget${budgetsOverCount > 1 ? 's' : ''} dépassé${budgetsOverCount > 1 ? 's' : ''}`}>{budgetsOverCount}</span>}
             </button>
-            <button onClick={() => setView('transactions')} className={view === 'transactions' ? 'active' : ''}><BarChart3 size={15}/> <span>Transactions</span></button>
-            <button onClick={() => setView('tax')} className={view === 'tax' ? 'active' : ''}><Calculator size={15}/> <span>Impôts</span></button>
-            <button onClick={() => setView('settings')} className={view === 'settings' ? 'active' : ''}><Settings size={15}/> <span>Réglages</span></button>
+            <button onClick={() => setView('transactions')} className={view === 'transactions' ? 'active' : ''}><BarChart3 size={15}/> <span>{t('nav.transactions')}</span></button>
+            <button onClick={() => setView('tax')} className={view === 'tax' ? 'active' : ''}><Calculator size={15}/> <span>{t('nav.tax')}</span></button>
+            <button onClick={() => setView('settings')} className={view === 'settings' ? 'active' : ''}><Settings size={15}/> <span>{t('nav.settings')}</span></button>
           </nav>
 
           <div className="sidebar-footer">
             <button className="primary-btn sidebar-import" onClick={() => { setView('import'); setImportStep('upload'); }}>
-              <Upload size={14}/> <span>Importer</span>
+              <Upload size={14}/> <span>{t('nav.import')}</span>
             </button>
             <div className="sidebar-utilities">
               <button className="icon-btn" onClick={() => setHideAmounts(!hideAmounts)} title="Masquer/afficher">
@@ -992,7 +994,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
                 <LogOut size={16}/>
               </button>
               <button className="primary-btn" onClick={() => { setView('import'); setImportStep('upload'); }}>
-                <Upload size={14}/> <span>Importer</span>
+                <Upload size={14}/> <span>{t('nav.import')}</span>
               </button>
             </div>
           </header>
@@ -1037,10 +1039,10 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
         {['monthly','cashflow','budgets'].includes(view) && (
           <div className="monthly-hub">
             <nav className="hub-tabs">
-              <button onClick={() => setView('monthly')}   className={view === 'monthly'   ? 'active' : ''}><Calendar  size={13}/> <span>Vue mensuelle</span></button>
-              <button onClick={() => setView('cashflow')}  className={view === 'cashflow'  ? 'active' : ''}><Activity  size={13}/> <span>Cashflow</span></button>
+              <button onClick={() => setView('monthly')}   className={view === 'monthly'   ? 'active' : ''}><Calendar  size={13}/> <span>{t('hub.monthlyTab')}</span></button>
+              <button onClick={() => setView('cashflow')}  className={view === 'cashflow'  ? 'active' : ''}><Activity  size={13}/> <span>{t('hub.cashflowTab')}</span></button>
               <button onClick={() => setView('budgets')}   className={view === 'budgets'   ? 'active' : ''}>
-                <Target size={13}/> <span>Budgets</span>
+                <Target size={13}/> <span>{t('hub.budgetsTab')}</span>
                 {budgetsOverCount > 0 && (
                   <span className="nav-alert-dot" style={{ marginLeft: 6 }}>{budgetsOverCount}</span>
                 )}
@@ -1134,15 +1136,15 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
 
       {/* Mobile bottom nav (<1024px) — fixed bottom bar */}
       <nav className="bottom-nav">
-        <button onClick={() => setView('dashboard')} className={view === 'dashboard' ? 'active' : ''}><Activity size={18}/> <span>Résumé</span></button>
-        <button onClick={() => setView('wealth')} className={view === 'wealth' ? 'active' : ''}><Landmark size={18}/> <span>Patrimoine</span></button>
+        <button onClick={() => setView('dashboard')} className={view === 'dashboard' ? 'active' : ''}><Activity size={18}/> <span>{t('nav.dashboard')}</span></button>
+        <button onClick={() => setView('wealth')} className={view === 'wealth' ? 'active' : ''}><Landmark size={18}/> <span>{t('nav.wealth')}</span></button>
         <button onClick={() => setView('monthly')} className={['monthly','cashflow','budgets'].includes(view) ? 'active' : ''}>
-          <Calendar size={18}/> <span>Mensuel</span>
+          <Calendar size={18}/> <span>{t('nav.monthlyShort')}</span>
           {budgetsOverCount > 0 && <span className="nav-alert-dot">{budgetsOverCount}</span>}
         </button>
-        <button onClick={() => setView('transactions')} className={view === 'transactions' ? 'active' : ''}><BarChart3 size={18}/> <span>Transac.</span></button>
-        <button onClick={() => setView('tax')} className={view === 'tax' ? 'active' : ''}><Calculator size={18}/> <span>Impôts</span></button>
-        <button onClick={() => setView('settings')} className={view === 'settings' ? 'active' : ''}><Settings size={18}/> <span>Réglages</span></button>
+        <button onClick={() => setView('transactions')} className={view === 'transactions' ? 'active' : ''}><BarChart3 size={18}/> <span>{t('nav.transactionsShort')}</span></button>
+        <button onClick={() => setView('tax')} className={view === 'tax' ? 'active' : ''}><Calculator size={18}/> <span>{t('nav.tax')}</span></button>
+        <button onClick={() => setView('settings')} className={view === 'settings' ? 'active' : ''}><Settings size={18}/> <span>{t('nav.settings')}</span></button>
       </nav>
 
       {drawerAccount && (

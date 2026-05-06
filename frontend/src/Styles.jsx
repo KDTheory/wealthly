@@ -968,6 +968,15 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .loan-finary-status.paid { background: var(--success-soft); color: var(--success); }
 .loan-finary-status.pending { background: var(--bg-subtle); color: var(--text-tertiary); }
 
+/* Language picker — FR / EN segmented pills in Settings */
+.lang-switch { display: inline-flex; gap: 4px; padding: 4px; background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: 10px; align-self: flex-start; margin-bottom: 12px; }
+.lang-pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; background: transparent; border: 1px solid transparent; color: var(--text-secondary); font-size: 12.5px; font-weight: 500; border-radius: 7px; cursor: pointer; font-family: inherit; transition: color .15s, background .15s, border-color .15s; }
+.lang-pill:hover { color: var(--text-primary); }
+.lang-pill.active { background: var(--bg-card); color: var(--text-primary); border-color: var(--border); }
+.lang-pill-code { font-family: 'DM Mono', ui-monospace, monospace; font-size: 11px; padding: 2px 6px; border-radius: 4px; background: var(--primary-soft); color: var(--primary); letter-spacing: 0.04em; }
+.lang-pill.active .lang-pill-code { background: var(--primary); color: var(--bg-page); }
+.lang-pill-name { font-weight: 500; }
+
 @media (max-width: 900px) {
   .loan-finary-kpi-strip { grid-template-columns: 1fr; align-items: start; }
   .loan-finary-kpis { gap: 18px; flex-wrap: wrap; }

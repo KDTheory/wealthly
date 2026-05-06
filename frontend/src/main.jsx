@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
+import './i18n.js';            // initialise i18next before the first render
 import './index.css';
 
 // Register the PWA service worker (production only — Vite dev server doesn't

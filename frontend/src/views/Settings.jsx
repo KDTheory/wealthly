@@ -9,8 +9,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Plus, Trash2, Edit3, Check, Upload, Download, Users, Wallet,
-  Lightbulb, Sparkles, Activity, AlertCircle, RefreshCw, Link2, Unlink,
+  Lightbulb, Sparkles, Activity, AlertCircle, RefreshCw, Link2, Unlink, Globe,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import * as api from '../api.js';
 import { MEMBER_PALETTE } from '../constants.js';
 
@@ -18,6 +19,7 @@ import { MEMBER_PALETTE } from '../constants.js';
 // SETTINGS
 // ============================================================================
 export function SettingsView({ members, accounts, accountBalances, saveMember, deleteMember, deleteAccount, exportData, importData, resetAllData, categories = [], fmt }) {
+  const { t } = useTranslation();
   const [editingMember, setEditingMember] = useState(null);
   const COLORS = MEMBER_PALETTE;
 
@@ -25,8 +27,8 @@ export function SettingsView({ members, accounts, accountBalances, saveMember, d
     <div className="settings-view">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Réglages</h1>
-          <p className="page-subtitle">Membres, comptes, catégories, données.</p>
+          <h1 className="page-title">{t('settings.title')}</h1>
+          <p className="page-subtitle">{t('settings.subtitle')}</p>
         </div>
       </div>
 
@@ -86,12 +88,53 @@ export function SettingsView({ members, accounts, accountBalances, saveMember, d
         </div>
       </section>
 
+      <LanguageSection />
+
       <BankConnectionsSection />
 
       <CustomRulesSection categories={categories} />
 
       {editingMember && <MemberEditor member={editingMember} onSave={(m) => { saveMember(m); setEditingMember(null); }} onCancel={() => setEditingMember(null)}/>}
     </div>
+  );
+}
+
+/**
+ * Language picker — FR / EN segmented control. The active language is
+ * persisted by i18n.js on every change, so this component only has to call
+ * changeLanguage().
+ */
+function LanguageSection() {
+  const { t, i18n } = useTranslation();
+  const current = (i18n.resolvedLanguage || i18n.language || 'fr').slice(0, 2);
+  const choose = (lng) => { if (lng !== current) i18n.changeLanguage(lng); };
+  const langs = [
+    { code: 'fr', label: 'Français' },
+    { code: 'en', label: 'English' },
+  ];
+  return (
+    <section className="card">
+      <div className="card-header">
+        <h3><Globe size={16}/> {t('settings.language')}</h3>
+      </div>
+      <div className="lang-switch">
+        {langs.map((l) => (
+          <button
+            key={l.code}
+            className={`lang-pill ${current === l.code ? 'active' : ''}`}
+            onClick={() => choose(l.code)}
+            aria-pressed={current === l.code}
+          >
+            <span className="lang-pill-code">{l.code.toUpperCase()}</span>
+            <span className="lang-pill-name">{l.label}</span>
+          </button>
+        ))}
+      </div>
+      <div className="settings-info">
+        <Lightbulb size={14}/>
+        <span>{t('settings.languageHint')}</span>
+      </div>
+    </section>
   );
 }
 
