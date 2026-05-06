@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, Lock, User, Home, Eye, EyeOff, AlertCircle, Lock as LockIcon, ArrowLeft, Check, Sparkles } from 'lucide-react';
+import { Mail, Lock, User, Home, Eye, EyeOff, AlertCircle, Lock as LockIcon, ArrowLeft, Check, Sparkles, ShieldCheck, MapPin, EyeOff as PrivacyIcon } from 'lucide-react';
 import { auth, setToken } from './api.js';
 import { enableDemoMode } from './demoData.js';
 
@@ -79,29 +79,37 @@ export default function AuthScreen({ onAuth, onTryDemo }) {
       <div className="auth-grid" aria-hidden="true" />
 
       <div className="auth-shell">
-        {/* Brand column */}
-        <aside className="auth-brand-col">
+        {/* Tiny brand mark + wordmark, centered at the top */}
+        <div className="auth-brand-row">
           <div className="auth-brand-mark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" strokeLinejoin="miter" width="28" height="28">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" strokeLinejoin="miter" width="22" height="22">
               <rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/>
               <path d="M7 9 L9.5 15.5 L12 10.5 L14.5 15.5 L17 9"/>
             </svg>
           </div>
           <div className="auth-wordmark">Wealthly</div>
-          <div className="auth-tagline">Gestion de patrimoine privée</div>
+        </div>
 
-          <div className="auth-pitch">
-            Une vue claire de votre patrimoine familial. Comptes, placements, immobilier, prêts — consolidés sur un seul écran, déclinés par membre du foyer.
+        {/* Hero — heyfinly-style centered headline + subhead */}
+        <div className="auth-hero">
+          <div className="auth-eyebrow">BILAN PATRIMONIAL FAMILIAL</div>
+          <h1 className="auth-headline">
+            Une vue claire<br/>de votre patrimoine.
+          </h1>
+          <p className="auth-subhead">
+            Comptes, placements, immobilier, prêts — consolidés sur un seul écran,
+            déclinés par membre du foyer. Sans démarchage. Sans revente de données.
+          </p>
+
+          {/* Trust pills row (heyfinly's "4.6 Rating · 1500+ Installs" zone) */}
+          <div className="auth-pills">
+            <span className="auth-pill"><ShieldCheck size={12}/> Synchro DSP2 agréée</span>
+            <span className="auth-pill"><MapPin size={12}/> Hébergé en UE</span>
+            <span className="auth-pill"><PrivacyIcon size={12}/> Aucune revente de données</span>
           </div>
+        </div>
 
-          <div className="auth-bullets">
-            <div className="auth-bullet"><span className="auth-bullet-dot"/>Foyer multi-membres : une vue par personne, une vue famille.</div>
-            <div className="auth-bullet"><span className="auth-bullet-dot"/>Synchro bancaire DSP2 ou import CSV, simulateur d'impôt FR.</div>
-            <div className="auth-bullet"><span className="auth-bullet-dot"/>Données chiffrées en transit, infrastructure hébergée en Union européenne.</div>
-          </div>
-        </aside>
-
-        {/* Form column */}
+        {/* Form column — single centered card under the hero */}
         <main className="auth-form-col">
           <div className="auth-form-card">
             {(mode === 'login' || mode === 'register') ? (
@@ -318,64 +326,85 @@ const authStyles = `
 
 .auth-shell {
   position: relative; z-index: 1;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 64px;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 28px;
   width: 100%;
-  max-width: 1040px;
-  align-items: center;
+  max-width: 560px;
+  text-align: center;
+  padding: 16px 0 48px;
 }
 
-/* Brand column */
-.auth-brand-col {
-  display: flex; flex-direction: column; gap: 16px;
-  padding: 24px 0;
+/* Brand row — small monogram + wordmark, sits just above the hero */
+.auth-brand-row {
+  display: inline-flex; align-items: center; gap: 12px;
 }
 .auth-brand-mark {
-  width: 48px; height: 48px;
-  border-radius: 6px;
-  background: rgba(197, 165, 114, 0.1);
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  background: rgba(197, 165, 114, 0.08);
   border: 1px solid rgba(197, 165, 114, 0.32);
   color: #c5a572;
   display: inline-flex; align-items: center; justify-content: center;
-  margin-bottom: 4px;
 }
 .auth-wordmark {
-  font-size: 44px; font-weight: 500; letter-spacing: -0.04em;
+  font-size: 19px; font-weight: 600; letter-spacing: -0.02em;
   color: #ebe8e3;
   line-height: 1;
 }
-.auth-tagline {
-  font-size: 10px; font-weight: 500;
-  text-transform: uppercase; letter-spacing: 0.22em;
+
+/* Hero — heyfinly homepage hero layout, centered */
+.auth-hero {
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+  margin-top: 4px;
+}
+.auth-eyebrow {
+  font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.24em;
   color: #c5a572;
+  padding: 6px 14px;
+  border: 1px solid rgba(197, 165, 114, 0.28);
+  border-radius: 999px;
+  background: rgba(197, 165, 114, 0.05);
 }
-.auth-pitch {
-  font-size: 16px; line-height: 1.65;
-  color: #c8c5be;                                          /* warmer, more readable than the previous muted gray */
-  max-width: 420px;
-  margin-top: 28px;
-  letter-spacing: -0.01em;
+.auth-headline {
+  font-size: clamp(34px, 6vw, 54px);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  color: #ebe8e3;
+  margin: 4px 0 0;
 }
-.auth-bullets {
-  display: flex; flex-direction: column; gap: 12px;
-  margin-top: 24px;
-}
-.auth-bullet {
-  display: flex; align-items: flex-start; gap: 12px;
-  font-size: 13.5px; color: #a8a59f;
-  line-height: 1.5; max-width: 420px;
-}
-.auth-bullet-dot {
-  width: 5px; height: 5px; border-radius: 50%;
-  background: #c5a572;
-  flex-shrink: 0; margin-top: 8px;
-  box-shadow: 0 0 0 4px rgba(197, 165, 114, 0.10);
+.auth-subhead {
+  font-size: 15px; line-height: 1.6;
+  color: #b5b2ab;
+  max-width: 460px;
+  margin: 0;
+  letter-spacing: -0.005em;
 }
 
-/* Form column */
+/* Trust pills row — social proof equivalent */
+.auth-pills {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.auth-pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 13px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  font-size: 11.5px; font-weight: 500;
+  color: #c8c5be;
+  letter-spacing: 0.005em;
+}
+.auth-pill svg { color: #c5a572; }
+
+/* Form column — sits centered under the hero */
 .auth-form-col {
   display: flex; justify-content: center;
+  width: 100%;
+  margin-top: 8px;
 }
 .auth-form-card {
   background: #181a20;                                    /* slightly lighter than the page so the card lifts */
@@ -558,19 +587,13 @@ const authStyles = `
   font-weight: 500; text-transform: uppercase; letter-spacing: 0.12em;
 }
 
-/* Responsive — stack on narrow screens */
-@media (max-width: 860px) {
-  .auth-shell {
-    grid-template-columns: 1fr;
-    gap: 32px;
-    max-width: 460px;
-  }
-  .auth-brand-col {
-    text-align: center; align-items: center;
-    padding: 0;
-  }
-  .auth-pitch { display: none; }
-  .auth-bullets { display: none; }
-  .auth-wordmark { font-size: 36px; }
+/* Responsive — already centered, just tighten the hero on narrow screens */
+@media (max-width: 600px) {
+  .auth-shell { gap: 22px; padding-bottom: 32px; }
+  .auth-hero { gap: 14px; }
+  .auth-subhead { font-size: 14px; }
+  .auth-pills { gap: 6px; }
+  .auth-pill { padding: 6px 11px; font-size: 11px; }
+  .auth-form-card { padding: 24px; }
 }
 `;
