@@ -151,3 +151,7 @@ export const LIABILITY_TYPES = [
   { id: 'auto_loan', name: 'Crédit auto', icon: CreditCard, color: '#ea580c' },
   { id: 'other_loan', name: 'Autre prêt', icon: Banknote, color: '#6b7280' },
 ];
+
+// Member avatar palette — harmonised with the private-banking tokens. Stable
+// order so the same person keeps the same colour across renders.
+export const MEMBER_PALETTE = ['#c5a572', '#88a978', '#7a8aa8', '#c8855a', '#9d8bb5', '#d4a554', '#c47158', '#8c918f'];
