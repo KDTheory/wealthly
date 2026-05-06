@@ -1824,18 +1824,16 @@ function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, this
 
   return (
     <div className="w-redesign font-sans">
-      {/* Header */}
-      <div className="flex items-end justify-between flex-wrap gap-4 mb-7">
-        <div>
-          <p className={labelCls + ' mb-2'}>{greeting}{activeMember ? ` · ${activeMember.name}` : ''}</p>
-          <h1 className="text-[28px] leading-tight font-semibold tracking-tight text-[var(--color-w-text)]">Patrimoine</h1>
-          <p className="text-sm text-[var(--color-w-faint)] mt-1">{dateLong}</p>
+      {/* Top bar: subtle greeting + utility actions only — no redundant page title */}
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-5">
+        <div className="text-[13px] text-[var(--color-w-faint)] font-medium tracking-tight">
+          {greeting}{activeMember ? ` · ${activeMember.name}` : ''} <span className="text-[var(--color-w-faint)]/70">— {dateLong}</span>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {streak >= 2 && (
-            <div className="inline-flex items-center gap-2 px-3 h-8 rounded-full border border-[var(--color-w-border)] bg-[var(--color-w-surface)] text-xs text-[var(--color-w-text)]">
-              <Zap size={13} className="text-[var(--color-w-accent)]"/>
-              <span className="text-[var(--color-w-muted)]">{streak} mois positifs d'affilée</span>
+            <div className="inline-flex items-center gap-2 px-3 h-8 rounded-full border border-[var(--color-w-border)] bg-[var(--color-w-surface)] text-xs">
+              <Zap size={12} className="text-[var(--color-w-accent)]"/>
+              <span className="text-[var(--color-w-muted)]"><span className="text-[var(--color-w-text)] font-medium">{streak}</span> mois consécutifs</span>
             </div>
           )}
           <button
@@ -1851,77 +1849,108 @@ function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, this
                 ASSET_CLASS_MAP,
               });
             }}
-            className="inline-flex items-center gap-2 px-3 h-8 rounded-md border border-[var(--color-w-border-strong)] bg-[var(--color-w-surface)] text-xs text-[var(--color-w-text)] hover:bg-[var(--color-w-surface-2)] transition-colors"
+            className="inline-flex items-center gap-2 px-3 h-8 rounded-md border border-[var(--color-w-border)] text-xs text-[var(--color-w-muted)] hover:text-[var(--color-w-text)] hover:border-[var(--color-w-border-strong)] transition-colors"
             title="Télécharger le bilan en PDF"
           >
-            <FileText size={13} className="text-[var(--color-w-accent)]"/>
-            <span>Exporter PDF</span>
+            <FileText size={12}/>
+            <span>Bilan PDF</span>
           </button>
         </div>
       </div>
 
-      {/* Hero KPIs — 4 cards, primary spans 2 cols */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
-        {/* Card 1 — Patrimoine net (primary, 2 cols) */}
-        <div className={`${cardCls} lg:col-span-2 p-6 relative overflow-hidden`}>
-          <div className={labelCls}>Patrimoine net</div>
-          <div className="text-[40px] leading-[1.1] font-semibold tracking-tight w-num text-[var(--color-w-text)] mt-3">
-            <AnimatedNumber value={netWorth} format={(v) => fmt(v)}/>
-          </div>
-          <div className="flex flex-wrap gap-x-6 gap-y-2 mt-5 text-[13px] text-[var(--color-w-muted)]">
-            {liquidWealth > 0 && (
-              <span className="inline-flex items-center gap-2">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-w-asset-cash)]"/>
-                <span className="w-num text-[var(--color-w-text)]">{fmt(liquidWealth)}</span>
-                <span>liquidités</span>
-              </span>
-            )}
-            {assetsValue > 0 && (
-              <span className="inline-flex items-center gap-2">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-w-asset-equity)]"/>
-                <span className="w-num text-[var(--color-w-text)]">{fmt(assetsValue)}</span>
-                <span>actifs</span>
-              </span>
-            )}
-            {liabilitiesValue > 0 && (
-              <span className="inline-flex items-center gap-2">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-w-danger)]"/>
-                <span className="w-num text-[var(--color-w-text)]">−{fmt(liabilitiesValue)}</span>
-                <span>dettes</span>
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Card 2 — Performance 1 mois */}
-        <div className={`${cardCls} p-6`}>
-          <div className="flex items-start justify-between">
-            <div className={labelCls}>Performance 1 mois</div>
-            <div className={m1Positive === null ? 'text-[var(--color-w-faint)]' : m1Positive ? 'text-[var(--color-w-accent)]' : 'text-[var(--color-w-danger)]'}>
-              {m1Positive === null ? <Activity size={16}/> : m1Positive ? <TrendingUp size={16}/> : <TrendingDown size={16}/>}
+      {/* HERO — net worth giant + sparkline backdrop */}
+      <section className="mb-4">
+        <div className="relative overflow-hidden bg-[var(--color-w-surface)] border border-[var(--color-w-border)] rounded-[var(--radius-w-xl)] px-6 sm:px-10 pt-7 sm:pt-9 pb-7 sm:pb-9">
+          {/* Subtle area sparkline behind the value */}
+          {monthlyEvolution.length >= 2 && (
+            <div className="absolute inset-x-0 bottom-0 h-[62%] pointer-events-none opacity-90" aria-hidden="true">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={monthlyEvolution.slice(-12)} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="hero-area" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--color-w-accent)" stopOpacity="0.18"/>
+                      <stop offset="100%" stopColor="var(--color-w-accent)" stopOpacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <Area type="monotone" dataKey="balance" stroke="var(--color-w-accent)" strokeWidth={1.25} strokeOpacity={0.45} fill="url(#hero-area)"/>
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
-          </div>
-          <div className={`text-[28px] leading-tight font-semibold w-num mt-3 ${m1Positive === null ? 'text-[var(--color-w-text)]' : m1Positive ? 'text-[var(--color-w-accent)]' : 'text-[var(--color-w-danger)]'}`}>
-            {perf.m1 !== null ? `${perf.m1 >= 0 ? '+' : ''}${perf.m1.toFixed(2)}%` : '—'}
-          </div>
-          {perf.m3 !== null && (
-            <div className="text-xs text-[var(--color-w-muted)] mt-3">3 mois&nbsp;: <span className="w-num text-[var(--color-w-text)]">{perf.m3 >= 0 ? '+' : ''}{perf.m3.toFixed(1)}%</span></div>
           )}
+
+          <div className="relative">
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-[10px] uppercase tracking-[0.18em] text-[var(--color-w-muted)] font-medium">Patrimoine net</span>
+              {perf.m1 !== null && (
+                <span
+                  className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-md w-num"
+                  style={{
+                    color: m1Positive ? 'var(--color-w-success)' : 'var(--color-w-danger)',
+                    background: m1Positive ? 'rgba(136,169,120,0.13)' : 'rgba(196,113,88,0.13)',
+                  }}
+                >
+                  {m1Positive ? <ArrowUp size={11}/> : <ArrowDown size={11}/>}
+                  <span>{m1Positive ? '+' : ''}{perf.m1.toFixed(2)}%</span>
+                  <span className="opacity-60 ml-0.5">1M</span>
+                </span>
+              )}
+            </div>
+
+            <div className="text-[clamp(46px,9.2vw,84px)] leading-[1.02] font-medium tracking-[-0.045em] w-num text-[var(--color-w-text)] mt-3">
+              <AnimatedNumber value={netWorth} format={(v) => fmt(v)}/>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-7 gap-y-2 mt-5 text-[13px]">
+              {liquidWealth > 0 && (
+                <span className="inline-flex items-center gap-2">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-w-asset-cash)]"/>
+                  <span className="w-num text-[var(--color-w-text)]">{fmt(liquidWealth)}</span>
+                  <span className="text-[var(--color-w-faint)]">liquidités</span>
+                </span>
+              )}
+              {assetsValue > 0 && (
+                <span className="inline-flex items-center gap-2">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-w-asset-equity)]"/>
+                  <span className="w-num text-[var(--color-w-text)]">{fmt(assetsValue)}</span>
+                  <span className="text-[var(--color-w-faint)]">actifs</span>
+                </span>
+              )}
+              {liabilitiesValue > 0 && (
+                <span className="inline-flex items-center gap-2">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-w-danger)]"/>
+                  <span className="w-num text-[var(--color-w-text)]">−{fmt(liabilitiesValue)}</span>
+                  <span className="text-[var(--color-w-faint)]">dettes</span>
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Secondary KPI strip — 3 sober cards */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+        <div className={`${cardCls} px-5 py-4`}>
+          <div className="flex items-center justify-between">
+            <span className={labelCls}>Performance 3 mois</span>
+            {perf.m3 !== null && (perf.m3 >= 0 ? <TrendingUp size={14} className="text-[var(--color-w-success)]"/> : <TrendingDown size={14} className="text-[var(--color-w-danger)]"/>)}
+          </div>
+          <div className={`text-[22px] leading-tight font-medium w-num mt-2 ${perf.m3 === null ? 'text-[var(--color-w-faint)]' : perf.m3 >= 0 ? 'text-[var(--color-w-text)]' : 'text-[var(--color-w-danger)]'}`}>
+            {perf.m3 !== null ? `${perf.m3 >= 0 ? '+' : ''}${perf.m3.toFixed(1)}%` : '—'}
+          </div>
         </div>
 
-        {/* Card 3 — Liquidité OU Épargne du mois (selon présence dettes) */}
         {liabilitiesValue > 0 ? (
-          <div className={`${cardCls} p-6`}>
-            <div className="flex items-start justify-between">
-              <div className={labelCls}>Ratio dette / actifs</div>
-              <CreditCard size={16} className="text-[var(--color-w-faint)]"/>
+          <div className={`${cardCls} px-5 py-4`}>
+            <div className="flex items-center justify-between">
+              <span className={labelCls}>Ratio d'endettement</span>
+              <CreditCard size={14} className="text-[var(--color-w-faint)]"/>
             </div>
-            <div className="text-[28px] leading-tight font-semibold w-num mt-3 text-[var(--color-w-text)]">
+            <div className="text-[22px] leading-tight font-medium w-num mt-2 text-[var(--color-w-text)]">
               {debtRatio !== null ? `${debtRatio.toFixed(1)}%` : '—'}
             </div>
-            <div className="text-xs mt-3">
+            <div className="text-[11px] mt-1 uppercase tracking-wider">
               {debtRatio === null ? null : debtRatio < 30 ? (
-                <span className="text-[var(--color-w-accent)]">Sain</span>
+                <span className="text-[var(--color-w-success)]">Sain</span>
               ) : debtRatio < 50 ? (
                 <span className="text-[var(--color-w-warning)]">Surveillé</span>
               ) : (
@@ -1930,19 +1959,30 @@ function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, this
             </div>
           </div>
         ) : (
-          <div className={`${cardCls} p-6`}>
-            <div className="flex items-start justify-between">
-              <div className={labelCls}>Épargne du mois</div>
-              <PiggyBank size={16} className="text-[var(--color-w-accent)]"/>
+          <div className={`${cardCls} px-5 py-4`}>
+            <div className="flex items-center justify-between">
+              <span className={labelCls}>Épargne du mois</span>
+              <PiggyBank size={14} className="text-[var(--color-w-faint)]"/>
             </div>
-            <div className={`text-[28px] leading-tight font-semibold w-num mt-3 ${thisMonthStats.net >= 0 ? 'text-[var(--color-w-accent)]' : 'text-[var(--color-w-danger)]'}`}>
+            <div className={`text-[22px] leading-tight font-medium w-num mt-2 ${thisMonthStats.net >= 0 ? 'text-[var(--color-w-text)]' : 'text-[var(--color-w-danger)]'}`}>
               <AnimatedNumber value={thisMonthStats.net} format={(v) => fmt(v, { sign: true })}/>
             </div>
             {thisMonthStats.income > 0 && (
-              <div className="text-xs text-[var(--color-w-muted)] mt-3">Taux&nbsp;: <span className="w-num text-[var(--color-w-text)]">{((thisMonthStats.net / thisMonthStats.income) * 100).toFixed(0)}%</span> des revenus</div>
+              <div className="text-[11px] text-[var(--color-w-faint)] mt-1 w-num">{((thisMonthStats.net / thisMonthStats.income) * 100).toFixed(0)}% des revenus</div>
             )}
           </div>
         )}
+
+        <div className={`${cardCls} px-5 py-4`}>
+          <div className="flex items-center justify-between">
+            <span className={labelCls}>Part liquide</span>
+            <Wallet size={14} className="text-[var(--color-w-faint)]"/>
+          </div>
+          <div className="text-[22px] leading-tight font-medium w-num mt-2 text-[var(--color-w-text)]">
+            {liquidityRatio !== null ? `${liquidityRatio.toFixed(0)}%` : '—'}
+          </div>
+          <div className="text-[11px] text-[var(--color-w-faint)] mt-1">disponibles immédiatement</div>
+        </div>
       </section>
 
       {/* Anomalies — alert strip */}
@@ -2211,8 +2251,8 @@ function Monthly({ transactions, accounts, categories, members, recurringIds, re
     <div className="monthly-view">
       <div className="monthly-header">
         <div>
-          <h1 className="page-title">Suivi mensuel</h1>
-          <p className="page-subtitle">Reste à vivre, charges fixes, abonnements</p>
+          <h1 className="page-title">Mensuel</h1>
+          <p className="page-subtitle">Charges fixes, abonnements, reste à vivre.</p>
         </div>
         <select className="month-selector" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}>
           {availableMonths.map(m => (
@@ -2424,9 +2464,9 @@ function Monthly({ transactions, accounts, categories, members, recurringIds, re
               <YAxis tickFormatter={(v) => formatCurrency(v, { compact: true })} stroke="var(--text-tertiary)" fontSize={11}/>
               <Tooltip formatter={(v) => formatCurrency(v)} contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}/>
               <Legend wrapperStyle={{ fontSize: 12 }}/>
-              <Bar dataKey="income" name="Revenus" fill="var(--success)" radius={[4, 4, 0, 0]}/>
-              <Bar dataKey="expenses" name="Dépenses" fill="var(--danger)" radius={[4, 4, 0, 0]}/>
-              <Line type="monotone" dataKey="net" name="Solde net" stroke="var(--primary)" strokeWidth={2.5} dot={{ r: 4 }}/>
+              <Bar dataKey="income" name="Revenus" fill="var(--success)" radius={[3, 3, 0, 0]} maxBarSize={24}/>
+              <Bar dataKey="expenses" name="Dépenses" fill="var(--danger)" radius={[3, 3, 0, 0]} maxBarSize={24}/>
+              <Line type="monotone" dataKey="net" name="Solde net" stroke="var(--primary)" strokeWidth={1.75} dot={{ r: 2.5, fill: 'var(--primary)' }} activeDot={{ r: 4 }}/>
             </ComposedChart>
           </ResponsiveContainer>
         ) : <div className="chart-empty"><BarChart3 size={28}/><span>Pas encore de données</span></div>}
@@ -2637,7 +2677,7 @@ function Cashflow({ transactions, categories, accounts, memberShare, fmt, curren
       <div className="page-header">
         <div>
           <h1 className="page-title">Cashflow</h1>
-          <p className="page-subtitle">D'où vient ton argent et où il part — vue Sankey</p>
+          <p className="page-subtitle">Entrées, sorties et disponible sur la période.</p>
         </div>
       </div>
 
@@ -2857,8 +2897,8 @@ function Budgets({ categories, budgets, setBudget, categoryAnalysis, fiftyThirty
     <div className="budgets-view">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Budgets intelligents</h1>
-          <p className="page-subtitle">Méthode 50/30/20 et budget par catégorie · automatiques sur la base de vos 3 derniers mois</p>
+          <h1 className="page-title">Budgets</h1>
+          <p className="page-subtitle">Méthode 50/30/20 et plafonds par catégorie, calibrés sur les 3 derniers mois.</p>
         </div>
       </div>
 
@@ -3217,7 +3257,7 @@ function Wealth({ assets, liabilities, members, activeMemberId, visibleAssets, v
       <div className="page-header">
         <div>
           <h1 className="page-title">Patrimoine</h1>
-          <p className="page-subtitle">Actifs · passifs · allocation par classe · indicateurs gestion privée</p>
+          <p className="page-subtitle">Actifs, passifs, allocation par classe.</p>
         </div>
         <button className="primary-btn" onClick={() => setShowAddPicker(true)}><Plus size={14}/> Compléter mon patrimoine</button>
       </div>
@@ -4359,7 +4399,7 @@ function Transactions({ transactions, accounts, categories, recurringIds, toggle
       <div className="page-header">
         <div>
           <h1 className="page-title">Transactions</h1>
-          <p className="page-subtitle">Toutes vos opérations · cliquez sur une catégorie pour la modifier</p>
+          <p className="page-subtitle">Toutes vos opérations. Cliquez une catégorie pour la modifier.</p>
         </div>
       </div>
       <div className="filters-bar">
@@ -4463,8 +4503,8 @@ function Analysis({ transactions, categories, recurringIds, recurringGroups, mon
     <div className="analysis-view">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Analyse approfondie</h1>
-          <p className="page-subtitle">Comprenez vos habitudes financières</p>
+          <h1 className="page-title">Analyse</h1>
+          <p className="page-subtitle">Marchands, catégories et tendances sur la durée.</p>
         </div>
       </div>
 
@@ -4478,8 +4518,8 @@ function Analysis({ transactions, categories, recurringIds, recurringGroups, mon
               <YAxis tickFormatter={(v) => formatCurrency(v, { compact: true })} stroke="var(--text-tertiary)" fontSize={11}/>
               <Tooltip formatter={(v) => formatCurrency(v)} contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}/>
               <Legend wrapperStyle={{ fontSize: 12 }}/>
-              <Bar dataKey="income" name="Revenus" fill="#10b981" radius={[4, 4, 0, 0]}/>
-              <Bar dataKey="expenses" name="Dépenses" fill="#ef4444" radius={[4, 4, 0, 0]}/>
+              <Bar dataKey="income" name="Revenus" fill="var(--success)" radius={[3, 3, 0, 0]} maxBarSize={28}/>
+              <Bar dataKey="expenses" name="Dépenses" fill="var(--danger)" radius={[3, 3, 0, 0]} maxBarSize={28}/>
             </BarChart>
           </ResponsiveContainer>
         ) : <div className="chart-empty">Pas de données</div>}
@@ -4517,7 +4557,7 @@ function Analysis({ transactions, categories, recurringIds, recurringGroups, mon
                 <XAxis dataKey="month" tickFormatter={(m) => formatDate(m + '-01', { format: 'monthYear' })} stroke="var(--text-tertiary)" fontSize={11}/>
                 <YAxis tickFormatter={(v) => formatCurrency(v, { compact: true })} stroke="var(--text-tertiary)" fontSize={11}/>
                 <Tooltip formatter={(v) => formatCurrency(v)} contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}/>
-                <Line type="monotone" dataKey="amount" stroke="#8b5cf6" strokeWidth={2.5} dot={{ r: 3 }}/>
+                <Line type="monotone" dataKey="amount" stroke="var(--primary)" strokeWidth={2} dot={{ r: 2.5, fill: 'var(--primary)' }} activeDot={{ r: 4 }}/>
               </LineChart>
             </ResponsiveContainer>
           ) : <div className="chart-empty">Aucune donnée</div>}
@@ -4539,7 +4579,7 @@ function SettingsView({ members, accounts, accountBalances, saveMember, deleteMe
       <div className="page-header">
         <div>
           <h1 className="page-title">Réglages</h1>
-          <p className="page-subtitle">Gérez les membres, comptes, et vos données</p>
+          <p className="page-subtitle">Membres, comptes, catégories, données.</p>
         </div>
       </div>
 
@@ -5367,9 +5407,10 @@ function Styles({ theme }) {
 .member-context strong { color: var(--text-secondary); }
 
 .content { padding: 28px 24px 60px; max-width: 1280px; margin: 0 auto; min-height: calc(100vh - 140px); }
-.page-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
-.page-title { font-size: 28px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.02em; }
-.page-subtitle { font-size: 13px; color: var(--text-tertiary); margin: 0; }
+.page-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+.page-title { font-size: 36px; font-weight: 500; margin: 0 0 4px; letter-spacing: -0.035em; line-height: 1.05; }
+.page-subtitle { font-size: 13px; color: var(--text-tertiary); margin: 0; max-width: 580px; line-height: 1.5; }
+@media (max-width: 760px) { .page-title { font-size: 28px; letter-spacing: -0.03em; } }
 
 input, select, textarea { font-family: inherit; font-size: 13px; padding: 9px 12px; border-radius: 6px; border: 1px solid var(--border); background: ${dark ? 'var(--bg-subtle)' : 'var(--bg-card)'}; color: var(--text-primary); transition: border-color 0.15s, box-shadow 0.15s, background 0.15s; letter-spacing: -0.01em; }
 input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
