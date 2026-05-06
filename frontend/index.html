@@ -12,12 +12,38 @@
     <meta name="apple-mobile-web-app-title" content="Wealthly" />
     <meta name="mobile-web-app-capable" content="yes" />
     <title>Wealthly — Patrimoine privé</title>
+    <style>
+      body { margin: 0; background: #0c0d10; }
+      #root:empty::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: #0c0d10;
+      }
+      #root:empty::before {
+        content: '';
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 28px;
+        height: 28px;
+        border: 2px solid #232730;
+        border-top-color: #c5a572;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        z-index: 1;
+      }
+      @keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+    </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   </head>
   <body>
     <div id="root"></div>
+    <!-- Wake up Railway backend immediately (fire-and-forget, before JS bundle parses) -->
+    <script>try{fetch('https://wealthly-production-45aa.up.railway.app/health').catch(function(){});}catch(e){}</script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

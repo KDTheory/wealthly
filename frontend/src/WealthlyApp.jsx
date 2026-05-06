@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadialBarChart, RadialBar, ComposedChart, Sankey, Layer, Rectangle } from 'recharts';
-import { Upload, Plus, TrendingUp, TrendingDown, Wallet, Home, Coins, CreditCard, Users, Settings, Search, Download, Trash2, Edit3, Check, X, ChevronRight, ChevronLeft, AlertCircle, AlertTriangle, Repeat, Calendar, ArrowUpDown, Eye, EyeOff, Sparkles, PiggyBank, Bitcoin, Banknote, Landmark, BarChart3, Target, Heart, Sun, Moon, Zap, Activity, ArrowUp, ArrowDown, Minus, PartyPopper, Lightbulb, Bell, ChevronUp, Play, Lock, Unlock, LogOut, Cloud, RefreshCw, FileText, Calculator, Link2, Unlink } from 'lucide-react';
+import { Upload, Plus, TrendingUp, TrendingDown, Wallet, Home, Coins, CreditCard, Users, Settings, Search, Download, Trash2, Edit3, Check, X, ChevronRight, ChevronLeft, ChevronDown, AlertCircle, AlertTriangle, Repeat, Calendar, ArrowUpDown, Eye, EyeOff, Sparkles, PiggyBank, Bitcoin, Banknote, Landmark, BarChart3, Target, Heart, Sun, Moon, Zap, Activity, ArrowUp, ArrowDown, Minus, PartyPopper, Lightbulb, Bell, ChevronUp, Play, Lock, Unlock, LogOut, Cloud, RefreshCw, FileText, Calculator, Link2, Unlink } from 'lucide-react';
 import * as api from './api.js';
-import { generateBilanPdf } from './pdfReport.js';
-import TaxSimulator from './TaxSimulator.jsx';
+const TaxSimulator = React.lazy(() => import('./TaxSimulator.jsx'));
 import { getDemoData } from './demoData.js';
 
 // ============================================================================
@@ -28,6 +27,7 @@ const STORAGE_KEYS = {
   ONBOARDED: 'w2:onboarded',
   ACTIVE_MEMBER: 'w2:active_member',
   THEME: 'w2:theme',
+  DATA_CACHE: 'w2:data_cache',
 };
 
 const DEFAULT_CATEGORIES = [
@@ -406,7 +406,8 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   const [loading, setLoading] = useState(true);
   const [onboarded, setOnboarded] = useState(false);
   const [view, setView] = useState('dashboard');
-  const [theme, setTheme] = useState('light');
+  const [pendingTxAcc, setPendingTxAcc] = useState('all');
+  const [theme, setTheme] = useState('dark');
   const [members, setMembers] = useState([]);
   const [activeMemberId, setActiveMemberId] = useState('all');
   const [accounts, setAccounts] = useState([]);
@@ -610,21 +611,35 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
         api.rules.list(),
         api.fixedCharges.list().catch(() => []),
       ]);
-      setMembers(memList);
-      setAccounts(accList.map(accountFromApi));
-      setTransactions(txList.map(txFromApi));
-      setAssets(astList.map(assetFromApi));
-      setLiabilities(liaList.map(liaFromApi));
+      const mappedAccounts = accList.map(accountFromApi);
+      const mappedTx = txList.map(txFromApi);
+      const mappedAssets = astList.map(assetFromApi);
+      const mappedLia = liaList.map(liaFromApi);
       const cats = (catList || []).map(categoryFromApi);
-      setCategories(cats.length > 0 ? cats : DEFAULT_CATEGORIES);
-      // Budgets: convert array to dict {category_slug: amount}
+      const finalCats = cats.length > 0 ? cats : DEFAULT_CATEGORIES;
       const budDict = {};
       (budList || []).forEach(b => { budDict[b.category_slug] = b.amount; });
+      const mappedGoals = (goalList || []).map(goalFromApi);
+      const mappedRules = (ruleList || []).map(r => ({ pattern: r.pattern, categoryId: r.category_slug, source: r.source, _id: r.id }));
+      setMembers(memList);
+      setAccounts(mappedAccounts);
+      setTransactions(mappedTx);
+      setAssets(mappedAssets);
+      setLiabilities(mappedLia);
+      setCategories(finalCats);
       setBudgets(budDict);
-      setGoals((goalList || []).map(goalFromApi));
+      setGoals(mappedGoals);
       setFixedCharges(fcList || []);
-      // Custom rules
-      setCustomRules((ruleList || []).map(r => ({ pattern: r.pattern, categoryId: r.category_slug, source: r.source, _id: r.id })));
+      setCustomRules(mappedRules);
+      // Persist a cache snapshot for stale-while-revalidate on next visit
+      try {
+        localStorage.setItem(STORAGE_KEYS.DATA_CACHE, JSON.stringify({
+          members: memList, accounts: mappedAccounts, transactions: mappedTx,
+          assets: mappedAssets, liabilities: mappedLia, categories: finalCats,
+          budgets: budDict, goals: mappedGoals, fixedCharges: fcList || [],
+          customRules: mappedRules, cachedAt: Date.now(),
+        }));
+      } catch {}
     } catch (err) {
       showToast('Erreur de chargement : ' + err.message, 'error');
     }
@@ -637,13 +652,36 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
       const [ov, am, th] = await Promise.all([
         storage.get(STORAGE_KEYS.RECURRING_OVERRIDES, {}),
         storage.get(STORAGE_KEYS.ACTIVE_MEMBER, 'all'),
-        storage.get(STORAGE_KEYS.THEME, 'light'),
+        storage.get(STORAGE_KEYS.THEME, 'dark'),
       ]);
       setRecurringOverrides(ov);
       setActiveMemberId(am);
       setTheme(th);
       setColumnMappings(await storage.get(STORAGE_KEYS.MAPPINGS, {}));
-      // Then fetch server data (or load demo dataset if applicable)
+
+      // Stale-while-revalidate: show cached data immediately (instant for
+      // returning users) then refresh from API in the background.
+      if (!demoMode) {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEYS.DATA_CACHE);
+          if (raw) {
+            const c = JSON.parse(raw);
+            if (c.members) setMembers(c.members);
+            if (c.accounts) setAccounts(c.accounts);
+            if (c.transactions) setTransactions(c.transactions);
+            if (c.assets) setAssets(c.assets);
+            if (c.liabilities) setLiabilities(c.liabilities);
+            if (c.categories) setCategories(c.categories);
+            if (c.budgets) setBudgets(c.budgets);
+            if (c.goals) setGoals(c.goals);
+            if (c.fixedCharges) setFixedCharges(c.fixedCharges);
+            if (c.customRules) setCustomRules(c.customRules);
+            setLoading(false); // Show app immediately with stale data
+          }
+        } catch {}
+      }
+
+      // Fetch server data (or load demo dataset if applicable)
       await reloadAll();
       if (demoMode) {
         setOnboarded(true);
@@ -1308,21 +1346,6 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             <div className="brand-tagline">Patrimoine privé</div>
           </div>
         </div>
-        <nav className="main-nav">
-          <button onClick={() => setView('dashboard')} className={view === 'dashboard' ? 'active' : ''}><Activity size={14}/> <span>Résumé</span></button>
-          <button onClick={() => setView('monthly')} className={view === 'monthly' ? 'active' : ''}><Calendar size={14}/> <span>Suivi mensuel</span></button>
-          <button onClick={() => setView('budgets')} className={view === 'budgets' ? 'active' : ''}>
-            <Target size={14}/> <span>Budgets</span>
-            {budgetsOverCount > 0 && (
-              <span className="nav-alert-dot" title={`${budgetsOverCount} budget${budgetsOverCount > 1 ? 's' : ''} dépassé${budgetsOverCount > 1 ? 's' : ''}`}>{budgetsOverCount}</span>
-            )}
-          </button>
-          <button onClick={() => setView('wealth')} className={view === 'wealth' ? 'active' : ''}><Landmark size={14}/> <span>Patrimoine</span></button>
-          <button onClick={() => setView('cashflow')} className={view === 'cashflow' ? 'active' : ''}><Activity size={14}/> <span>Cashflow</span></button>
-          <button onClick={() => setView('transactions')} className={view === 'transactions' ? 'active' : ''}><BarChart3 size={14}/> <span>Transactions</span></button>
-          <button onClick={() => setView('tax')} className={view === 'tax' ? 'active' : ''}><Calculator size={14}/> <span>Impôts</span></button>
-          <button onClick={() => setView('settings')} className={view === 'settings' ? 'active' : ''}><Settings size={14}/> <span>Réglages</span></button>
-        </nav>
         <div className="header-actions">
           <button className="icon-btn" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} title="Changer thème">
             {theme === 'light' ? <Moon size={16}/> : <Sun size={16}/>}
@@ -1338,6 +1361,23 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
           </button>
         </div>
       </header>
+
+      {/* Nav placed OUTSIDE the header to avoid iOS Safari backdrop-filter containing-block trap */}
+      <nav className="main-nav">
+        <button onClick={() => setView('dashboard')} className={view === 'dashboard' ? 'active' : ''}><Activity size={14}/> <span>Résumé</span></button>
+        <button onClick={() => setView('monthly')} className={view === 'monthly' ? 'active' : ''}><Calendar size={14}/> <span>Suivi mensuel</span></button>
+        <button onClick={() => setView('budgets')} className={view === 'budgets' ? 'active' : ''}>
+          <Target size={14}/> <span>Budgets</span>
+          {budgetsOverCount > 0 && (
+            <span className="nav-alert-dot" title={`${budgetsOverCount} budget${budgetsOverCount > 1 ? 's' : ''} dépassé${budgetsOverCount > 1 ? 's' : ''}`}>{budgetsOverCount}</span>
+          )}
+        </button>
+        <button onClick={() => setView('wealth')} className={view === 'wealth' ? 'active' : ''}><Landmark size={14}/> <span>Patrimoine</span></button>
+        <button onClick={() => setView('cashflow')} className={view === 'cashflow' ? 'active' : ''}><Activity size={14}/> <span>Cashflow</span></button>
+        <button onClick={() => { setView('transactions'); setPendingTxAcc('all'); }} className={view === 'transactions' ? 'active' : ''}><BarChart3 size={14}/> <span>Transactions</span></button>
+        <button onClick={() => setView('tax')} className={view === 'tax' ? 'active' : ''}><Calculator size={14}/> <span>Impôts</span></button>
+        <button onClick={() => setView('settings')} className={view === 'settings' ? 'active' : ''}><Settings size={14}/> <span>Réglages</span></button>
+      </nav>
 
       <div className="member-bar">
         <div className="member-tabs">
@@ -1373,6 +1413,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             goals={goals} wealthHistory={wealthHistory}
             recurringGroups={recurringGroups} currentMonth={currentMonth}
             setView={setView}
+            onAccountClick={(accId) => { setPendingTxAcc(accId); setView('transactions'); }}
           />
         )}
         {view === 'monthly' && (
@@ -1417,6 +1458,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             transactions={visibleTransactions} accounts={accounts} categories={categories}
             recurringIds={recurringIds} toggleRecurring={toggleRecurring}
             updateCategory={updateTransactionCategory} deleteTransaction={deleteTransaction} fmt={fmt}
+            initialAcc={pendingTxAcc}
           />
         )}
         {view === 'analysis' && (
@@ -1427,7 +1469,9 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
           />
         )}
         {view === 'tax' && (
-          <TaxSimulator transactions={visibleTransactions} />
+          <React.Suspense fallback={<div className="loading-screen"><div className="spinner"/></div>}>
+            <TaxSimulator transactions={visibleTransactions} />
+          </React.Suspense>
         )}
         {view === 'settings' && (
           <SettingsView
@@ -1707,7 +1751,7 @@ function Onboarding({ onComplete }) {
 // ============================================================================
 // DASHBOARD
 // ============================================================================
-function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, thisMonthStats, monthlyEvolution, visibleAccounts, accountBalances, visibleAssets, visibleLiabilities, members, activeMemberId, transactions, categories, fmt, memberShare, categoryAnalysis, anomalies, cashflowProjection, goals, wealthHistory = [], recurringGroups, currentMonth, setView }) {
+function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, thisMonthStats, monthlyEvolution, visibleAccounts, accountBalances, visibleAssets, visibleLiabilities, members, activeMemberId, transactions, categories, fmt, memberShare, categoryAnalysis, anomalies, cashflowProjection, goals, wealthHistory = [], recurringGroups, currentMonth, setView, onAccountClick }) {
   const last12Months = monthlyEvolution.slice(-12);
   const recentTx = [...transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
   const activeMember = members.find(m => m.id === activeMemberId);
@@ -1817,15 +1861,18 @@ function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, this
             </div>
           )}
           <button
-            onClick={() => generateBilanPdf({
-              netWorth, liquidWealth, assetsValue, liabilitiesValue,
-              thisMonthStats, monthlyEvolution,
-              visibleAccounts, accountBalances, visibleAssets, visibleLiabilities,
-              members, activeMemberId,
-              recurringGroups, categoryAnalysis, categories,
-              memberShare, currentMonth,
-              ASSET_CLASS_MAP,
-            })}
+            onClick={async () => {
+              const { generateBilanPdf } = await import('./pdfReport.js');
+              generateBilanPdf({
+                netWorth, liquidWealth, assetsValue, liabilitiesValue,
+                thisMonthStats, monthlyEvolution,
+                visibleAccounts, accountBalances, visibleAssets, visibleLiabilities,
+                members, activeMemberId,
+                recurringGroups, categoryAnalysis, categories,
+                memberShare, currentMonth,
+                ASSET_CLASS_MAP,
+              });
+            }}
             className="inline-flex items-center gap-2 px-3 h-8 rounded-md border border-[var(--color-w-border-strong)] bg-[var(--color-w-surface)] text-xs text-[var(--color-w-text)] hover:bg-[var(--color-w-surface-2)] transition-colors"
             title="Télécharger le bilan en PDF"
           >
@@ -2042,7 +2089,7 @@ function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, this
                 const isJoint = a.memberIds && a.memberIds.length > 1;
                 const ownerColor = isJoint ? 'var(--color-w-asset-pension)' : (members.find(m => m.id === a.memberIds?.[0])?.color || 'var(--color-w-muted)');
                 return (
-                  <div key={a.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                  <div key={a.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 -mx-2 px-2 rounded-[var(--radius-w-sm)] transition-colors cursor-pointer hover:bg-[var(--color-w-surface-2)]" onClick={() => onAccountClick && onAccountClick(a.id)} title="Voir les transactions de ce compte">
                     <div className="w-9 h-9 rounded-[var(--radius-w-sm)] flex items-center justify-center text-xs font-semibold text-white shrink-0" style={{ background: ownerColor }}>
                       {isJoint ? <Users size={13}/> : (a.bank?.charAt(0)?.toUpperCase() || '·')}
                     </div>
@@ -2051,6 +2098,7 @@ function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, this
                       <div className="text-xs text-[var(--color-w-muted)] truncate">{a.bank} · {ownerNames}{isJoint ? ' · joint' : ''}</div>
                     </div>
                     <div className={`text-sm w-num ${sharedBalance < 0 ? 'text-[var(--color-w-danger)]' : 'text-[var(--color-w-text)]'}`}>{fmt(sharedBalance)}</div>
+                    <ChevronRight size={12} className="text-[var(--color-w-faint)] shrink-0"/>
                   </div>
                 );
               })}
@@ -2089,6 +2137,23 @@ function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, this
     </div>
   );
 }
+// Small delta badge shown under a KPI value — "vs mois précédent"
+function MkDelta({ current, prev, invert = false, absolute = false, fmt }) {
+  if (prev == null || prev === 0) return null;
+  const pct = ((current - prev) / Math.abs(prev)) * 100;
+  if (Math.abs(pct) < 1) return <span className="mk-delta mk-delta--stable">= stable</span>;
+  const good = invert ? pct < 0 : pct > 0;
+  const sign = pct > 0 ? '+' : '';
+  const label = absolute
+    ? `${sign}${fmt(current - prev, { sign: true })}`
+    : `${sign}${pct.toFixed(0)}%`;
+  return (
+    <span className={`mk-delta ${good ? 'mk-delta--good' : 'mk-delta--bad'}`}>
+      {good ? <ArrowUp size={9}/> : <ArrowDown size={9}/>} {label} vs mois préc.
+    </span>
+  );
+}
+
 // ============================================================================
 // MONTHLY (Suivi Mensuel)
 // ============================================================================
@@ -2160,7 +2225,33 @@ function Monthly({ transactions, accounts, categories, members, recurringIds, re
   const restPct = restToLive > 0 ? Math.min(100, (variableSpent / restToLive) * 100) : 0;
   const savingsRate = monthData.income > 0 ? (monthData.net / monthData.income) * 100 : null;
 
+  // Previous month key + data for N vs N-1 comparison
+  const prevMonthKey = useMemo(() => {
+    const idx = availableMonths.indexOf(selectedMonth);
+    return idx < availableMonths.length - 1 ? availableMonths[idx + 1] : null;
+  }, [availableMonths, selectedMonth]);
+
+  const prevMonthData = useMemo(() =>
+    prevMonthKey ? (monthlyEvolution.find(m => m.month === prevMonthKey) || null) : null,
+    [monthlyEvolution, prevMonthKey]
+  );
+
+  const prevMonthCatSpend = useMemo(() => {
+    if (!prevMonthKey) return {};
+    const spend = {};
+    transactions
+      .filter(t => monthKey(t.date) === prevMonthKey && t.amount < 0)
+      .forEach(t => {
+        const acc = accounts.find(a => a.id === t.accountId);
+        const share = acc ? memberShare(acc) : 1;
+        spend[t.categoryId] = (spend[t.categoryId] || 0) + Math.abs(t.amount * share);
+      });
+    return spend;
+  }, [transactions, prevMonthKey, accounts, memberShare]);
+
   // Category comparison (this month vs prev 3-month avg)
+  const [compMode, setCompMode] = useState('n1'); // 'n1' | 'avg3m'
+
   const monthVsAvg = useMemo(() => {
     return Object.entries(categoryAnalysis)
       .filter(([_, data]) => data.current > 0 || data.avg3m > 30)
@@ -2172,6 +2263,25 @@ function Monthly({ transactions, accounts, categories, members, recurringIds, re
       .sort((a, b) => Math.abs(b.change) - Math.abs(a.change))
       .slice(0, 10);
   }, [categoryAnalysis, categories]);
+
+  const monthVsN1 = useMemo(() => {
+    const allCatIds = new Set([
+      ...Object.keys(categoryAnalysis),
+      ...Object.keys(prevMonthCatSpend),
+    ]);
+    return Array.from(allCatIds)
+      .map(catId => {
+        const cat = categories.find(c => c.id === catId);
+        const current = categoryAnalysis[catId]?.current || 0;
+        const prev = prevMonthCatSpend[catId] || 0;
+        if (current === 0 && prev === 0) return null;
+        const change = prev > 0 ? ((current - prev) / prev) * 100 : (current > 0 ? 100 : 0);
+        return { id: catId, name: cat?.name, icon: cat?.icon, color: cat?.color, current, prev, change };
+      })
+      .filter(Boolean)
+      .sort((a, b) => Math.abs(b.change) - Math.abs(a.change))
+      .slice(0, 10);
+  }, [categoryAnalysis, prevMonthCatSpend, categories]);
 
   const expenseCategories = categories.filter(c => c.type === 'expense');
 
@@ -2329,6 +2439,7 @@ function Monthly({ transactions, accounts, categories, members, recurringIds, re
           <div className="mk-info">
             <div className="mk-label">Revenus</div>
             <div className="mk-value"><AnimatedNumber value={monthData.income} format={(v) => fmt(v)}/></div>
+            <MkDelta current={monthData.income} prev={prevMonthData?.income} fmt={fmt}/>
           </div>
         </div>
         <div className="mk-card fixed">
@@ -2336,6 +2447,7 @@ function Monthly({ transactions, accounts, categories, members, recurringIds, re
           <div className="mk-info">
             <div className="mk-label">Charges fixes</div>
             <div className="mk-value"><AnimatedNumber value={totalFixedCharges} format={(v) => fmt(v)}/></div>
+            <MkDelta current={totalFixedCharges} prev={prevMonthData?.fixed} invert fmt={fmt}/>
           </div>
         </div>
         <div className="mk-card variable">
@@ -2343,6 +2455,7 @@ function Monthly({ transactions, accounts, categories, members, recurringIds, re
           <div className="mk-info">
             <div className="mk-label">Dépenses variables</div>
             <div className="mk-value"><AnimatedNumber value={variableSpent} format={(v) => fmt(v)}/></div>
+            <MkDelta current={variableSpent} prev={prevMonthData?.variable} invert fmt={fmt}/>
           </div>
         </div>
         <div className={`mk-card net ${monthData.net >= 0 ? 'positive' : 'negative'}`}>
@@ -2350,42 +2463,54 @@ function Monthly({ transactions, accounts, categories, members, recurringIds, re
           <div className="mk-info">
             <div className="mk-label">Solde net</div>
             <div className="mk-value"><AnimatedNumber value={monthData.net} format={(v) => fmt(v, { sign: true })}/></div>
+            <MkDelta current={monthData.net} prev={prevMonthData?.net} fmt={fmt} absolute/>
           </div>
         </div>
       </section>
 
-      {/* Month vs Average comparison */}
+      {/* Month comparison — toggle N-1 vs avg 3m */}
       <section className="card">
         <div className="card-header">
-          <h3>Ce mois vs moyenne</h3>
-          <span className="card-meta">moyenne 3 derniers mois</span>
+          <h3>Comparaison par catégorie</h3>
+          <div className="comp-toggle">
+            <button className={compMode === 'n1' ? 'active' : ''} onClick={() => setCompMode('n1')}>vs mois préc.</button>
+            <button className={compMode === 'avg3m' ? 'active' : ''} onClick={() => setCompMode('avg3m')}>vs moy. 3 mois</button>
+          </div>
         </div>
-        <div className="month-comparison">
-          {monthVsAvg.length === 0 ? (
-            <div className="empty-mini"><BarChart3 size={24}/><p>Plus de données nécessaires</p></div>
-          ) : (
-            monthVsAvg.map(c => (
-              <div key={c.id} className="comp-row">
-                <span className="comp-icon" style={{ background: (c.color || '#999') + '22' }}>{c.icon}</span>
-                <div className="comp-info">
-                  <div className="comp-name">{c.name}</div>
-                  <div className="comp-amounts">
-                    <span className="comp-current">{fmt(c.current)}</span>
-                    <span className="comp-avg">vs {fmt(c.avg)} moy.</span>
+        {compMode === 'n1' && !prevMonthKey ? (
+          <div className="empty-mini"><BarChart3 size={24}/><p>Pas encore de mois précédent disponible</p></div>
+        ) : (
+          <div className="month-comparison">
+            {(compMode === 'n1' ? monthVsN1 : monthVsAvg).length === 0 ? (
+              <div className="empty-mini"><BarChart3 size={24}/><p>Plus de données nécessaires</p></div>
+            ) : (
+              (compMode === 'n1' ? monthVsN1 : monthVsAvg).map(c => {
+                const refValue = compMode === 'n1' ? c.prev : c.avg;
+                const refLabel = compMode === 'n1' ? 'mois préc.' : 'moy.';
+                return (
+                  <div key={c.id} className="comp-row">
+                    <span className="comp-icon" style={{ background: (c.color || '#999') + '22' }}>{c.icon}</span>
+                    <div className="comp-info">
+                      <div className="comp-name">{c.name}</div>
+                      <div className="comp-amounts">
+                        <span className="comp-current">{fmt(c.current)}</span>
+                        <span className="comp-avg">vs {fmt(refValue)} {refLabel}</span>
+                      </div>
+                    </div>
+                    {Math.abs(c.change) > 5 ? (
+                      <div className={`comp-change ${c.change > 0 ? 'up' : 'down'}`}>
+                        {c.change > 0 ? <ArrowUp size={11}/> : <ArrowDown size={11}/>}
+                        {Math.abs(c.change).toFixed(0)}%
+                      </div>
+                    ) : (
+                      <div className="comp-change stable"><Minus size={11}/> stable</div>
+                    )}
                   </div>
-                </div>
-                {Math.abs(c.change) > 5 ? (
-                  <div className={`comp-change ${c.change > 0 ? 'up' : 'down'}`}>
-                    {c.change > 0 ? <ArrowUp size={11}/> : <ArrowDown size={11}/>}
-                    {Math.abs(c.change).toFixed(0)}%
-                  </div>
-                ) : (
-                  <div className="comp-change stable"><Minus size={11}/> stable</div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
+                );
+              })
+            )}
+          </div>
+        )}
       </section>
 
       {/* Income vs Expenses 6 month chart */}
@@ -4294,20 +4419,52 @@ function LiabilityDetail({ liability, assets, members, memberShare, fmt, onEdit,
 // ============================================================================
 // TRANSACTIONS
 // ============================================================================
-function Transactions({ transactions, accounts, categories, recurringIds, toggleRecurring, updateCategory, deleteTransaction, fmt }) {
+function Transactions({ transactions, accounts, categories, recurringIds, toggleRecurring, updateCategory, deleteTransaction, fmt, initialAcc = 'all' }) {
   const [search, setSearch] = useState('');
-  const [filterCat, setFilterCat] = useState('all');
-  const [filterAcc, setFilterAcc] = useState('all');
+  const [filterCats, setFilterCats] = useState([]);
+  const [filterAcc, setFilterAcc] = useState(initialAcc);
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
+  const [filterAmountMin, setFilterAmountMin] = useState('');
+  const [filterAmountMax, setFilterAmountMax] = useState('');
   const [sortKey, setSortKey] = useState('date');
   const [sortDir, setSortDir] = useState('desc');
   const [editingTx, setEditingTx] = useState(null);
+  const [catDropOpen, setCatDropOpen] = useState(false);
+  const catDropRef = useRef(null);
+
+  useEffect(() => { setFilterAcc(initialAcc); }, [initialAcc]);
+
+  useEffect(() => {
+    const handler = (e) => { if (catDropRef.current && !catDropRef.current.contains(e.target)) setCatDropOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const hasActiveFilters = search || filterCats.length > 0 || filterAcc !== 'all' || filterDateFrom || filterDateTo || filterAmountMin !== '' || filterAmountMax !== '';
+
+  const resetFilters = () => {
+    setSearch('');
+    setFilterCats([]);
+    setFilterAcc('all');
+    setFilterDateFrom('');
+    setFilterDateTo('');
+    setFilterAmountMin('');
+    setFilterAmountMax('');
+  };
 
   const filtered = useMemo(() => {
+    const amountMin = filterAmountMin !== '' ? parseFloat(filterAmountMin) : null;
+    const amountMax = filterAmountMax !== '' ? parseFloat(filterAmountMax) : null;
     return transactions
       .filter(t => {
         if (search && !(t.label || '').toLowerCase().includes(search.toLowerCase())) return false;
-        if (filterCat !== 'all' && t.categoryId !== filterCat) return false;
+        if (filterCats.length > 0 && !filterCats.includes(t.categoryId)) return false;
         if (filterAcc !== 'all' && t.accountId !== filterAcc) return false;
+        if (filterDateFrom && t.date < filterDateFrom) return false;
+        if (filterDateTo && t.date > filterDateTo) return false;
+        if (amountMin !== null && t.amount < amountMin) return false;
+        if (amountMax !== null && t.amount > amountMax) return false;
         return true;
       })
       .sort((a, b) => {
@@ -4317,12 +4474,18 @@ function Transactions({ transactions, accounts, categories, recurringIds, toggle
         else if (sortKey === 'label') cmp = (a.label || '').localeCompare(b.label || '');
         return sortDir === 'asc' ? cmp : -cmp;
       });
-  }, [transactions, search, filterCat, filterAcc, sortKey, sortDir]);
+  }, [transactions, search, filterCats, filterAcc, filterDateFrom, filterDateTo, filterAmountMin, filterAmountMax, sortKey, sortDir]);
 
   const toggleSort = (key) => {
     if (sortKey === key) setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
     else { setSortKey(key); setSortDir('desc'); }
   };
+
+  const catLabel = filterCats.length === 0
+    ? 'Toutes catégories'
+    : filterCats.length === 1
+      ? (categories.find(c => c.id === filterCats[0])?.name || '1 catégorie')
+      : `${filterCats.length} catégories`;
 
   return (
     <div className="transactions-view">
@@ -4337,14 +4500,42 @@ function Transactions({ transactions, accounts, categories, recurringIds, toggle
           <Search size={16}/>
           <input placeholder="Rechercher dans les libellés…" value={search} onChange={(e) => setSearch(e.target.value)}/>
         </div>
-        <select value={filterCat} onChange={(e) => setFilterCat(e.target.value)}>
-          <option value="all">Toutes catégories</option>
-          {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-        </select>
+        <div className="filter-cat-dropdown" ref={catDropRef}>
+          <button className={`filter-select-btn ${filterCats.length > 0 ? 'active' : ''}`} onClick={() => setCatDropOpen(o => !o)}>
+            {catLabel} <ChevronDown size={12}/>
+          </button>
+          {catDropOpen && (
+            <div className="filter-cat-menu">
+              <label className="filter-cat-item">
+                <input type="checkbox" readOnly checked={filterCats.length === 0} onClick={() => setFilterCats([])}/>
+                <span>Toutes</span>
+              </label>
+              {categories.map(c => (
+                <label key={c.id} className="filter-cat-item">
+                  <input type="checkbox" checked={filterCats.includes(c.id)} onChange={() => {
+                    setFilterCats(prev => prev.includes(c.id) ? prev.filter(id => id !== c.id) : [...prev, c.id]);
+                  }}/>
+                  <span>{c.icon} {c.name}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
         <select value={filterAcc} onChange={(e) => setFilterAcc(e.target.value)}>
           <option value="all">Tous comptes</option>
           {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
         </select>
+        <div className="filter-date-range">
+          <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} title="Date de début"/>
+          <span className="filter-range-sep">→</span>
+          <input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} title="Date de fin"/>
+        </div>
+        <div className="filter-amount-range">
+          <input type="number" placeholder="Min €" value={filterAmountMin} onChange={e => setFilterAmountMin(e.target.value)} step="any"/>
+          <span className="filter-range-sep">→</span>
+          <input type="number" placeholder="Max €" value={filterAmountMax} onChange={e => setFilterAmountMax(e.target.value)} step="any"/>
+        </div>
+        {hasActiveFilters && <button className="filter-reset-btn" onClick={resetFilters} title="Réinitialiser les filtres"><X size={13}/></button>}
         <span className="result-count">{filtered.length} transaction{filtered.length > 1 ? 's' : ''}</span>
       </div>
       <div className="tx-table">
@@ -5296,13 +5487,12 @@ function Styles({ theme }) {
 .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
 .brand-name { font-size: 17px; font-weight: 700; letter-spacing: -0.025em; }
 .brand-tagline { font-size: 10px; color: var(--text-tertiary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 1px; }
-.main-nav { display: flex; gap: 2px; background: var(--bg-subtle); padding: 4px; border-radius: 10px; overflow-x: auto; border: 1px solid var(--border-light); }
-.main-nav button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: none; background: transparent; color: var(--text-secondary); font-size: 13px; font-weight: 500; border-radius: 7px; cursor: pointer; transition: color 0.18s, background 0.18s; font-family: inherit; white-space: nowrap; letter-spacing: -0.01em; }
-.main-nav button svg { color: var(--text-tertiary); transition: color 0.18s; }
-.main-nav button:hover { background: var(--bg-card); color: var(--text-primary); }
-.main-nav button:hover svg { color: var(--text-secondary); }
-.main-nav button.active { background: var(--bg-card); color: var(--primary); box-shadow: 0 1px 0 0 var(--border-light), inset 0 0 0 1px var(--border); font-weight: 600; }
-.main-nav button.active svg { color: var(--primary); }
+.main-nav { display: flex; align-items: stretch; gap: 0; padding: 0 20px; background: var(--bg-card); border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+.main-nav::-webkit-scrollbar { display: none; }
+.main-nav button { display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; height: 44px; border: none; border-bottom: 2px solid transparent; background: transparent; color: var(--text-tertiary); font-size: 13px; font-weight: 500; border-radius: 0; cursor: pointer; transition: color 0.18s, border-color 0.18s; font-family: inherit; white-space: nowrap; letter-spacing: -0.01em; }
+.main-nav button svg { color: currentColor; transition: color 0.18s; flex-shrink: 0; }
+.main-nav button:hover { color: var(--text-primary); }
+.main-nav button.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
 .nav-alert-dot { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px; padding: 0 5px; margin-left: 4px; border-radius: 8px; background: var(--danger); color: white; font-size: 10px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
 .header-actions { display: flex; align-items: center; gap: 8px; }
 .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; background: var(--bg-subtle); border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; transition: all 0.15s; }
@@ -5555,6 +5745,13 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .mk-label { font-size: 11px; color: var(--text-tertiary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
 .mk-value { font-size: 21px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.2; margin-top: 2px; }
 .mk-meta { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+.mk-delta { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 600; margin-top: 4px; padding: 2px 6px; border-radius: 4px; font-variant-numeric: tabular-nums; }
+.mk-delta--good { background: var(--success-soft); color: var(--success-text); }
+.mk-delta--bad { background: var(--danger-soft); color: var(--danger-text); }
+.mk-delta--stable { background: var(--bg-subtle); color: var(--text-tertiary); }
+.comp-toggle { display: flex; gap: 2px; background: var(--bg-subtle); padding: 3px; border-radius: 8px; border: 1px solid var(--border); }
+.comp-toggle button { padding: 4px 10px; font-size: 11px; font-weight: 500; border-radius: 5px; border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; font-family: inherit; transition: all 0.15s; white-space: nowrap; }
+.comp-toggle button.active { background: var(--bg-card); color: var(--text-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
 .mk-card.net.positive .mk-value { color: var(--success); }
 .mk-card.net.negative .mk-value { color: var(--danger); }
 .mk-card.savings-rate.positive .mk-icon { background: var(--success-soft); color: var(--success-text); }
@@ -5776,6 +5973,22 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .search-box input { border: none; background: transparent; padding: 8px 0; font-size: 13px; flex: 1; color: var(--text-primary); font-family: inherit; }
 .search-box input:focus { outline: none; box-shadow: none; }
 .result-count { font-size: 11px; color: var(--text-tertiary); margin-left: auto; }
+.filter-cat-dropdown { position: relative; }
+.filter-select-btn { display: flex; align-items: center; gap: 5px; padding: 7px 10px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--text-secondary); cursor: pointer; white-space: nowrap; font-family: inherit; }
+.filter-select-btn:hover { border-color: var(--border-strong); color: var(--text-primary); }
+.filter-select-btn.active { border-color: var(--primary); color: var(--primary-text); background: var(--primary-soft); }
+.filter-cat-menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 200; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-md); min-width: 190px; max-height: 260px; overflow-y: auto; padding: 6px; }
+.filter-cat-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--text-secondary); user-select: none; }
+.filter-cat-item:hover { background: var(--bg-subtle); color: var(--text-primary); }
+.filter-cat-item input[type="checkbox"] { accent-color: var(--primary); cursor: pointer; }
+.filter-date-range, .filter-amount-range { display: flex; align-items: center; gap: 4px; }
+.filter-date-range input, .filter-amount-range input { padding: 7px 8px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--text-secondary); font-family: inherit; }
+.filter-date-range input { width: 130px; }
+.filter-amount-range input { width: 76px; }
+.filter-date-range input:focus, .filter-amount-range input:focus { outline: none; border-color: var(--primary); color: var(--text-primary); }
+.filter-range-sep { font-size: 11px; color: var(--text-tertiary); }
+.filter-reset-btn { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; background: var(--bg-subtle); border: 1px solid var(--border); color: var(--text-tertiary); cursor: pointer; flex-shrink: 0; }
+.filter-reset-btn:hover { border-color: var(--danger); color: var(--danger); }
 .tx-table { background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow-sm); }
 .tx-header, .tx-row { display: grid; grid-template-columns: 90px minmax(180px, 1fr) 160px 140px 110px 50px; gap: 12px; padding: 10px 16px; align-items: center; }
 .tx-header { background: var(--bg-subtle); border-bottom: 1px solid var(--border); font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700; }
@@ -6048,8 +6261,8 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
   .header-actions { gap: 4px; flex-shrink: 0; }
   .icon-btn { width: 32px; height: 32px; }
 
-  /* Page content: extra bottom padding to clear the bottom nav */
-  .content { padding: 16px 14px calc(96px + env(safe-area-inset-bottom, 0px)); }
+  /* Page content: extra bottom padding to clear the bottom nav (56px nav + safe area) */
+  .content { padding: 16px 14px calc(72px + env(safe-area-inset-bottom, 0px)); }
   .page-title { font-size: 22px; }
   .monthly-header h1 { font-size: 22px; }
 
@@ -6058,42 +6271,48 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
   .member-tab { padding: 6px 12px; font-size: 12px; }
   .member-context { font-size: 11px; padding: 8px 0; }
 
-  /* Main nav becomes a fixed bottom tab bar (native-app feel) */
+  /* Main nav: fixed bottom tab bar on mobile (nav is outside header — no iOS Safari stacking context trap) */
   .main-nav {
     position: fixed;
     left: 0; right: 0; bottom: 0;
-    z-index: 90;
+    z-index: 200;
     display: flex;
     justify-content: space-around;
-    background: ${dark ? 'rgba(21, 23, 28, 0.94)' : 'rgba(255, 255, 255, 0.95)'};
-    backdrop-filter: blur(14px);
+    align-items: stretch;
+    background: ${dark ? 'rgba(21, 23, 28, 0.96)' : 'rgba(247, 245, 239, 0.97)'};
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-top: 1px solid var(--border);
-    border-radius: 0;
-    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
-    overflow-x: visible;
-    gap: 0;
+    border-bottom: none;
+    padding: 0 0 env(safe-area-inset-bottom, 0px);
+    overflow-x: auto;
+    scrollbar-width: none;
+    height: calc(56px + env(safe-area-inset-bottom, 0px));
   }
+  .main-nav::-webkit-scrollbar { display: none; }
   .main-nav button {
     flex: 1;
     flex-direction: column;
     gap: 3px;
-    padding: 6px 4px;
-    font-size: 10px;
+    padding: 8px 4px;
+    height: auto;
+    font-size: 9px;
     font-weight: 500;
-    border-radius: 6px;
+    border-bottom: none;
+    border-radius: 0;
     color: var(--text-tertiary);
-    min-width: 0;
+    min-width: 44px;
     background: transparent;
+    position: relative;
   }
-  .main-nav button svg { width: 18px; height: 18px; }
-  .main-nav button span { font-size: 10px; line-height: 1.1; white-space: nowrap; }
+  .main-nav button svg { width: 20px; height: 20px; }
+  .main-nav button span { font-size: 9px; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 52px; }
   .main-nav button:hover { background: transparent; color: var(--text-secondary); }
-  .main-nav button.active { background: transparent; color: var(--primary); box-shadow: none; }
-  .main-nav button { position: relative; }
+  .main-nav button.active { background: transparent; color: var(--primary); border-bottom: none; font-weight: 600; }
   .nav-alert-dot {
     position: absolute;
-    top: 4px;
-    right: 16px;
+    top: 5px;
+    right: calc(50% - 16px);
     margin-left: 0;
     min-width: 14px;
     height: 14px;
@@ -6162,6 +6381,9 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
   .filters-bar { padding: 10px; gap: 6px; }
   .search-box { min-width: 0; flex: 1 1 100%; order: -1; }
   .result-count { display: none; }
+  .filter-date-range, .filter-amount-range { flex: 1 1 calc(50% - 4px); }
+  .filter-date-range input { width: auto; flex: 1; min-width: 0; }
+  .filter-amount-range input { width: auto; flex: 1; min-width: 0; }
 
   /* Onboarding: tighter padding */
   .onboarding { padding: 16px 12px; }
