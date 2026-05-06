@@ -426,7 +426,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   const [loading, setLoading] = useState(true);
   const [onboarded, setOnboarded] = useState(false);
   const [view, setView] = useState('dashboard');
-  const [theme, setTheme] = useState('light');
+  const theme = 'dark';
   const [members, setMembers] = useState([]);
   const [activeMemberId, setActiveMemberId] = useState('all');
   const [accounts, setAccounts] = useState([]);
@@ -654,14 +654,12 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   useEffect(() => {
     (async () => {
       // Load local UI prefs first (instant)
-      const [ov, am, th] = await Promise.all([
+      const [ov, am] = await Promise.all([
         storage.get(STORAGE_KEYS.RECURRING_OVERRIDES, {}),
         storage.get(STORAGE_KEYS.ACTIVE_MEMBER, 'all'),
-        storage.get(STORAGE_KEYS.THEME, 'light'),
       ]);
       setRecurringOverrides(ov);
       setActiveMemberId(am);
-      setTheme(th);
       setColumnMappings(await storage.get(STORAGE_KEYS.MAPPINGS, {}));
       // Then fetch server data (or load demo dataset if applicable)
       await reloadAll();
@@ -701,7 +699,6 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   const persist = useCallback(async (key, value) => { await storage.set(key, value); }, []);
 
   useEffect(() => { if (!loading) persist(STORAGE_KEYS.ACTIVE_MEMBER, activeMemberId); }, [activeMemberId, loading, persist]);
-  useEffect(() => { if (!loading) persist(STORAGE_KEYS.THEME, theme); }, [theme, loading, persist]);
 
   // Toast helper
   const showToast = (message, type = 'info') => {
@@ -1344,9 +1341,6 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
           <button onClick={() => setView('settings')} className={view === 'settings' ? 'active' : ''}><Settings size={14}/> <span>Réglages</span></button>
         </nav>
         <div className="header-actions">
-          <button className="icon-btn" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} title="Changer thème">
-            {theme === 'light' ? <Moon size={16}/> : <Sun size={16}/>}
-          </button>
           <button className="icon-btn" onClick={() => setHideAmounts(!hideAmounts)} title="Masquer/afficher">
             {hideAmounts ? <EyeOff size={16}/> : <Eye size={16}/>}
           </button>
