@@ -442,7 +442,6 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   const [fixedCharges, setFixedCharges] = useState([]);
   const [hideAmounts, setHideAmounts] = useState(false);
   const [toast, setToast] = useState(null);
-  const [confettiActive, setConfettiActive] = useState(false);
 
   const [importFile, setImportFile] = useState(null);
   const [importStep, setImportStep] = useState('upload');
@@ -704,11 +703,6 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   const showToast = (message, type = 'info') => {
     setToast({ message, type, id: Date.now() });
     setTimeout(() => setToast(null), 3500);
-  };
-
-  const triggerConfetti = () => {
-    setConfettiActive(true);
-    setTimeout(() => setConfettiActive(false), 3000);
   };
 
 
@@ -1303,7 +1297,6 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   return (
     <div className={`app theme-${theme}`}>
       <Styles theme={theme}/>
-      {confettiActive && <Confetti/>}
       {toast && <Toast message={toast.message} type={toast.type}/>}
 
       {demoMode && (
@@ -1537,29 +1530,6 @@ function Toast({ message, type }) {
   return (
     <div className={`toast toast-${type}`}>
       <div className="toast-content">{message}</div>
-    </div>
-  );
-}
-
-function Confetti() {
-  const pieces = useMemo(() => Array.from({ length: 60 }, (_, i) => ({
-    id: i,
-    left: Math.random() * 100,
-    delay: Math.random() * 0.4,
-    duration: 2 + Math.random() * 1.5,
-    color: ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6'][Math.floor(Math.random() * 5)],
-    size: 6 + Math.random() * 8,
-    rotation: Math.random() * 360,
-  })), []);
-  return (
-    <div className="confetti-container">
-      {pieces.map(p => (
-        <div key={p.id} className="confetti-piece" style={{
-          left: `${p.left}%`, animationDelay: `${p.delay}s`, animationDuration: `${p.duration}s`,
-          background: p.color, width: `${p.size}px`, height: `${p.size}px`,
-          transform: `rotate(${p.rotation}deg)`,
-        }}/>
-      ))}
     </div>
   );
 }
