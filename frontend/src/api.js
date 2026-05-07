@@ -42,9 +42,16 @@ async function request(method, path, body = null) {
   }
 
   if (response.status === 401) {
-    clearToken();
-    window.location.reload();
-    throw new Error('Session expirée');
+    if (getToken()) {
+      // Expired/invalid session token — clear and reload to go back to login.
+      clearToken();
+      window.location.reload();
+    }
+    // No token: this is a credentials failure (wrong password etc.).
+    // Let the error bubble up so the form can display it.
+    let errMsg = 'Session expirée';
+    try { const d = await response.clone().json(); errMsg = d?.detail || errMsg; } catch {}
+    throw new Error(errMsg);
   }
 
   if (response.status === 204) return null; // No Content

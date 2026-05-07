@@ -36,10 +36,11 @@ export default function App() {
         return;
       }
       // Optimistic: show the app immediately if a token exists.
-      // Verify in the background — if the token is expired/invalid the
-      // WealthlyApp will get a 401 on its first API call and we redirect.
+      // api.js handles 401s globally (clearToken + reload), so we don't need
+      // to redirect here — network errors on mobile cold-starts would
+      // incorrectly bounce the user back to the login screen.
       setAuthState('authed');
-      auth.me().catch(() => setAuthState('unauthed'));
+      auth.me().catch(() => {});
     })();
   }, [refreshKey]);
 
