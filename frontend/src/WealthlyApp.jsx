@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadialBarChart, RadialBar, ComposedChart, Sankey, Layer, Rectangle } from 'recharts';
-import { Upload, Plus, TrendingUp, TrendingDown, Wallet, Home, Coins, CreditCard, Users, Settings, Search, Download, Trash2, Edit3, Check, X, ChevronRight, ChevronLeft, ChevronDown, AlertCircle, AlertTriangle, Repeat, Calendar, ArrowUpDown, Eye, EyeOff, Sparkles, PiggyBank, Bitcoin, Banknote, Landmark, BarChart3, Target, Heart, Sun, Moon, Zap, Activity, ArrowUp, ArrowDown, Minus, PartyPopper, Lightbulb, Bell, ChevronUp, Play, Lock, Unlock, LogOut, Cloud, RefreshCw, FileText, Calculator, Link2, Unlink } from 'lucide-react';
+import { Upload, Plus, TrendingUp, TrendingDown, Wallet, Home, Coins, CreditCard, Users, Settings, Search, Download, Trash2, Edit3, Check, X, ChevronRight, ChevronLeft, ChevronDown, AlertCircle, AlertTriangle, Repeat, Calendar, ArrowUpDown, Eye, EyeOff, Sparkles, PiggyBank, Bitcoin, Banknote, Landmark, BarChart3, Target, Heart, Sun, Moon, Zap, Activity, ArrowUp, ArrowDown, Minus, PartyPopper, Lightbulb, Bell, ChevronUp, Play, Lock, Unlock, LogOut, Cloud, RefreshCw, FileText, Calculator, Link2, Unlink, Menu } from 'lucide-react';
 import * as api from './api.js';
 import { useTranslation } from 'react-i18next';
 import { LangButton } from './components/LangButton.jsx';
@@ -51,6 +51,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   // Account drawer + cross-view transaction filter (set when "voir toutes" is
   // clicked from the drawer, consumed by <Transactions> on mount).
   const [drawerAccount, setDrawerAccount] = useState(null);
+  const [navOpen, setNavOpen] = useState(false);
   const [txInitialAccountFilter, setTxInitialAccountFilter] = useState(null);
   const theme = 'dark';
   const [members, setMembers] = useState([]);
@@ -1045,18 +1046,14 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
               <div className="brand-name">{APP_NAME}</div>
             </div>
             <div className="header-actions">
-              <LangButton />
               <button className="icon-btn" onClick={() => setHideAmounts(!hideAmounts)} title="Masquer/afficher">
                 {hideAmounts ? <EyeOff size={16}/> : <Eye size={16}/>}
               </button>
-              <button className="icon-btn" onClick={() => setView('settings')} title="Connecter une banque">
-                <Link2 size={16}/>
-              </button>
-              <button className="icon-btn" onClick={logout} title="Déconnexion">
-                <LogOut size={16}/>
-              </button>
               <button className="primary-btn" onClick={() => { setView('import'); setImportStep('upload'); }}>
                 <Upload size={14}/> <span>{t('nav.import')}</span>
+              </button>
+              <button className="icon-btn hamburger-btn" onClick={() => setNavOpen(true)} title="Menu">
+                <Menu size={20}/>
               </button>
             </div>
           </header>
@@ -1196,7 +1193,60 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
         </div>
       </div>
 
-      {/* Mobile bottom nav (<1024px) — fixed bottom bar */}
+      {/* Mobile nav drawer — slide in from left */}
+      {navOpen && (
+        <div className="nav-drawer-overlay" onClick={() => setNavOpen(false)}>
+          <aside className="nav-drawer" onClick={e => e.stopPropagation()}>
+            <div className="nav-drawer-header">
+              <div className="sidebar-brand" style={{padding:'0 0 0 4px', cursor:'default'}}>
+                <div className="brand-mark">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" strokeLinejoin="miter" width="20" height="20">
+                    <rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/>
+                    <path d="M7 9 L9.5 15.5 L12 10.5 L14.5 15.5 L17 9"/>
+                  </svg>
+                </div>
+                <div className="brand-name">{APP_NAME}</div>
+              </div>
+              <button className="icon-btn" onClick={() => setNavOpen(false)}><X size={18}/></button>
+            </div>
+            <nav className="sidebar-nav" style={{flex:1}}>
+              {[
+                { v: 'dashboard', icon: <Activity size={16}/>, label: t('nav.dashboard') },
+                { v: 'wealth',    icon: <Landmark size={16}/>,  label: t('nav.wealth') },
+                { v: 'monthly',   icon: <Calendar size={16}/>,  label: t('nav.monthly'), badge: budgetsOverCount },
+                { v: 'transactions', icon: <BarChart3 size={16}/>, label: t('nav.transactions') },
+                { v: 'tax',       icon: <Calculator size={16}/>, label: t('nav.tax') },
+                { v: 'settings',  icon: <Settings size={16}/>,  label: t('nav.settings') },
+              ].map(({ v, icon, label, badge }) => (
+                <button key={v}
+                  className={view === v || (v === 'monthly' && ['monthly','cashflow','budgets'].includes(view)) ? 'active' : ''}
+                  onClick={() => { setView(v); setNavOpen(false); }}>
+                  {icon} <span>{label}</span>
+                  {badge > 0 && <span className="nav-alert-dot">{badge}</span>}
+                </button>
+              ))}
+            </nav>
+            <div className="nav-drawer-footer">
+              {currentUser && (
+                <div className="sidebar-user">
+                  <div className="sidebar-user-avatar">{(currentUser.full_name || currentUser.email || '?')[0].toUpperCase()}</div>
+                  <div className="sidebar-user-info">
+                    <div className="sidebar-user-name">{currentUser.full_name || currentUser.email}</div>
+                    <div className="sidebar-user-email">{currentUser.email}</div>
+                  </div>
+                </div>
+              )}
+              <div style={{display:'flex', gap:6, marginTop:8}}>
+                <LangButton />
+                <button className="icon-btn" onClick={() => { setHideAmounts(!hideAmounts); }} title="Masquer/afficher">{hideAmounts ? <EyeOff size={16}/> : <Eye size={16}/>}</button>
+                <button className="icon-btn" onClick={logout} title="Déconnexion"><LogOut size={16}/></button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* Mobile bottom nav (<768px) — fixed bottom bar */}
       <nav className="bottom-nav">
         <button onClick={() => setView('dashboard')} className={view === 'dashboard' ? 'active' : ''}><Activity size={18}/> <span>{t('nav.dashboard')}</span></button>
         <button onClick={() => setView('wealth')} className={view === 'wealth' ? 'active' : ''}><Landmark size={18}/> <span>{t('nav.wealth')}</span></button>

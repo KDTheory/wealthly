@@ -163,6 +163,39 @@ export function Styles({ theme }) {
 .sidebar-user-name { font-size: 12px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.01em; }
 .sidebar-user-email { font-size: 10.5px; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+/* Mobile nav drawer */
+.nav-drawer-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+}
+.nav-drawer {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 272px;
+  background: var(--bg-page);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  padding: 0;
+  animation: drawerSlideIn .22s cubic-bezier(.22,1,.36,1);
+  overflow-y: auto;
+}
+@keyframes drawerSlideIn {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+.nav-drawer-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 14px 14px;
+  border-bottom: 1px solid var(--border-light);
+}
+.nav-drawer .sidebar-nav { padding: 10px 12px; gap: 2px; }
+.nav-drawer-footer {
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--border-light);
+  margin-top: auto;
+}
+.hamburger-btn { color: var(--text-secondary) !important; }
+
 /* Mobile-only top header — hidden on desktop, shown <768px */
 .app-header-mobile { display: none; }
 
