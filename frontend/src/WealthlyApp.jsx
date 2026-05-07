@@ -1036,6 +1036,9 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
         <div className="app-main">
           {/* Mobile-only top bar (<1024px) */}
           <header className="app-header-mobile">
+            <button className="icon-btn hamburger-btn" onClick={() => setNavOpen(true)} title="Menu">
+              <Menu size={20}/>
+            </button>
             <div className="brand" onClick={() => setView('dashboard')}>
               <div className="brand-mark">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" strokeLinejoin="miter" width="22" height="22">
@@ -1051,9 +1054,6 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
               </button>
               <button className="primary-btn" onClick={() => { setView('import'); setImportStep('upload'); }}>
                 <Upload size={14}/> <span>{t('nav.import')}</span>
-              </button>
-              <button className="icon-btn hamburger-btn" onClick={() => setNavOpen(true)} title="Menu">
-                <Menu size={20}/>
               </button>
             </div>
           </header>
