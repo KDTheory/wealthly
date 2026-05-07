@@ -1031,6 +1031,9 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
               <button className="icon-btn" onClick={() => setHideAmounts(!hideAmounts)} title="Masquer/afficher">
                 {hideAmounts ? <EyeOff size={16}/> : <Eye size={16}/>}
               </button>
+              <button className="icon-btn" onClick={() => setView('settings')} title="Connecter une banque">
+                <Link2 size={16}/>
+              </button>
               <button className="icon-btn" onClick={logout} title="Déconnexion">
                 <LogOut size={16}/>
               </button>

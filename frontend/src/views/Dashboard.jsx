@@ -8,7 +8,7 @@ import {
 import {
   Upload, Plus, TrendingUp, TrendingDown, Wallet, CreditCard, Users,
   ChevronRight, AlertTriangle, PiggyBank, Sparkles, Zap, ArrowUp, ArrowDown,
-  FileText,
+  FileText, Landmark,
 } from 'lucide-react';
 import { ASSET_CLASS_MAP } from '../constants.js';
 import { formatCurrency, formatDate } from '../utils.js';
@@ -92,6 +92,9 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
             </button>
             <button onClick={() => setView('wealth')} className="inline-flex items-center gap-2 px-5 h-11 rounded-[var(--radius-w-md)] border border-[var(--color-w-border-strong)] text-[var(--color-w-text)] hover:bg-[var(--color-w-surface-2)] transition-colors">
               <Plus size={14}/> Saisir un actif
+            </button>
+            <button onClick={() => setView('settings')} className="inline-flex items-center gap-2 px-5 h-11 rounded-[var(--radius-w-md)] border border-[var(--color-w-border-strong)] text-[var(--color-w-muted)] hover:text-[var(--color-w-text)] hover:bg-[var(--color-w-surface-2)] transition-colors">
+              <Landmark size={14}/> Connecter ma banque
             </button>
           </div>
         </div>
