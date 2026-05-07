@@ -86,14 +86,16 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
           <p className="text-[var(--color-w-muted)] leading-relaxed mb-7 max-w-md">
             Importez vos relevés ou saisissez vos actifs. Tout reste chiffré, hébergé chez vous.
           </p>
-          <div className="flex gap-3 flex-wrap">
-            <button onClick={() => setView('import')} className="inline-flex items-center gap-2 px-5 h-11 rounded-[var(--radius-w-md)] bg-[var(--color-w-accent)] text-[#0a0a0c] font-medium hover:bg-[var(--color-w-accent-hover)] transition-colors">
-              <Upload size={15}/> Importer un relevé
-            </button>
-            <button onClick={() => setView('wealth')} className="inline-flex items-center gap-2 px-5 h-11 rounded-[var(--radius-w-md)] border border-[var(--color-w-border-strong)] text-[var(--color-w-text)] hover:bg-[var(--color-w-surface-2)] transition-colors">
-              <Plus size={14}/> Saisir un actif
-            </button>
-            <button onClick={() => setView('settings')} className="inline-flex items-center gap-2 px-5 h-11 rounded-[var(--radius-w-md)] border border-[var(--color-w-border-strong)] text-[var(--color-w-muted)] hover:text-[var(--color-w-text)] hover:bg-[var(--color-w-surface-2)] transition-colors">
+          <div className="flex flex-col gap-3 w-full max-w-sm">
+            <div className="flex gap-3">
+              <button onClick={() => setView('import')} className="flex-1 inline-flex items-center justify-center gap-2 px-4 h-11 rounded-[var(--radius-w-md)] bg-[var(--color-w-accent)] text-[#0a0a0c] font-medium hover:bg-[var(--color-w-accent-hover)] transition-colors">
+                <Upload size={15}/> Importer un relevé
+              </button>
+              <button onClick={() => setView('wealth')} className="flex-1 inline-flex items-center justify-center gap-2 px-4 h-11 rounded-[var(--radius-w-md)] border border-[var(--color-w-border-strong)] text-[var(--color-w-text)] hover:bg-[var(--color-w-surface-2)] transition-colors">
+                <Plus size={14}/> Saisir un actif
+              </button>
+            </div>
+            <button onClick={() => setView('settings')} className="inline-flex items-center justify-center gap-2 px-4 h-10 rounded-[var(--radius-w-md)] border border-[var(--color-w-border)] text-[var(--color-w-muted)] hover:text-[var(--color-w-text)] hover:border-[var(--color-w-border-strong)] transition-colors text-sm">
               <Landmark size={14}/> Connecter ma banque
             </button>
           </div>
