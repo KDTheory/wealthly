@@ -49,10 +49,9 @@ export default function App() {
       // the first real API call (reloadAll inside WealthlyApp) will throw 401
       // and we'll catch it below to redirect.
       setAuthState('authed');
-      auth.me().catch(() => {
-        // Token is invalid/expired — bounce back to AuthScreen.
-        setAuthState('unauthed');
-      });
+      // Don't redirect on network errors (cold Railway backend on mobile).
+      // api.js already handles expired tokens: 401 → clearToken + reload.
+      auth.me().catch(() => {});
     })();
   }, [refreshKey]);
 
