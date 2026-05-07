@@ -292,7 +292,7 @@ function CustomRulesSection({ categories }) {
 // ============================================================================
 function BankConnectionsSection() {
   const [connections, setConnections] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
   const [picker, setPicker] = useState(false);
   const [syncingId, setSyncingId] = useState(null);
@@ -366,7 +366,7 @@ function BankConnectionsSection() {
   return (
     <section className="card">
       <div className="card-header">
-        <h3><Link2 size={16}/> Connexions bancaires</h3>
+        <h3><Link2 size={16}/> Connexions bancaires {loading && <RefreshCw size={12} className="spin" style={{marginLeft:6,opacity:.5}}/>}</h3>
         <button className="secondary-btn" onClick={() => setPicker(true)}><Plus size={14}/> Connecter une banque</button>
       </div>
 
@@ -378,9 +378,7 @@ function BankConnectionsSection() {
         </div>
       )}
 
-      {loading && <div className="empty-mini"><RefreshCw size={20} className="spin"/><p>Chargement…</p></div>}
-
-      {!loading && connections.length === 0 && (
+      {connections.length === 0 && !loading && (
         <div className="empty-mini">
           <Link2 size={24}/>
           <p>Aucune banque connectée. Ajoute-en une pour recevoir tes transactions automatiquement.</p>
