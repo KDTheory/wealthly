@@ -23,9 +23,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-charts': ['recharts'],
-          'vendor-icons': ['lucide-react'],
+          recharts: ['recharts'],
+          icons: ['lucide-react'],
+          pdf: ['jspdf', 'jspdf-autotable'],
         },
       },
     },

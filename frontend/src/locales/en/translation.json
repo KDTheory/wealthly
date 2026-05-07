@@ -1,0 +1,80 @@
+{
+  "nav": {
+    "dashboard": "Overview",
+    "wealth": "Wealth",
+    "monthly": "Monthly",
+    "monthlyShort": "Monthly",
+    "transactions": "Transactions",
+    "transactionsShort": "Tx",
+    "tax": "Tax",
+    "settings": "Settings",
+    "import": "Import"
+  },
+  "hub": {
+    "monthlyTab": "Monthly view",
+    "cashflowTab": "Cashflow",
+    "budgetsTab": "Budgets"
+  },
+  "dashboard": {
+    "greetingMorning": "Good morning",
+    "greetingAfternoon": "Good afternoon",
+    "greetingEvening": "Good evening",
+    "netWorth": "Net worth",
+    "perf3m": "3-month performance",
+    "debtRatio": "Debt-to-asset ratio",
+    "monthlySavings": "Monthly savings",
+    "liquidPart": "Liquid share",
+    "anomalies": "Anomalies detected",
+    "anomaliesMeta": "vs 3-month average",
+    "composition": "Composition",
+    "topExpenses": "Top expenses this month",
+    "accounts": "Accounts",
+    "recent": "Recent activity",
+    "viewAll": "View all",
+    "details": "Details",
+    "exportPdf": "PDF report",
+    "streakSuffix": "consecutive months",
+    "healthScore": "Financial health",
+    "healthScoreMeta": "5 weighted criteria",
+    "healthRatingLow": "Needs attention",
+    "healthRatingMid": "Fair",
+    "healthRatingHigh": "Solid"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Members, accounts, categories, data.",
+    "language": "Language",
+    "languageHint": "The interface updates immediately. Date and currency formatting follows the same language."
+  },
+  "import": {
+    "title": "Import a CSV statement",
+    "subtitle": "Drag your file or click to select it",
+    "chooseFile": "Choose a CSV file",
+    "autoDetect": "Auto-detection: Revolut, Crédit Agricole, Boursorama and more",
+    "stepColumns": "Columns",
+    "stepAccount": "Account",
+    "stepPreview": "Preview",
+    "verifyMapping": "Check the mapping",
+    "mappingDate": "Date *",
+    "mappingLabel": "Description",
+    "mappingAmount": "Signed amount",
+    "mappingDebit": "Debit (separate column)",
+    "mappingCredit": "Credit (separate column)",
+    "mappingBalance": "Balance (optional)",
+    "preview": "Preview:",
+    "cancel": "Cancel",
+    "next": "Next",
+    "back": "Back",
+    "previewBtn": "Preview",
+    "confirm": "Confirm import",
+    "noneOption": "— None —"
+  },
+  "errors": {
+    "rateLimited": "Too many attempts. Try again in a moment.",
+    "network": "Unable to reach the server. Check your connection.",
+    "invalidCredentials": "Wrong email or password",
+    "emailExists": "This email is already in use",
+    "tokenExpired": "Link expired or already used. Request a new one.",
+    "generic": "Something went wrong. Try again."
+  }
+}

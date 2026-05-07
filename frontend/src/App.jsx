@@ -1,12 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { getToken, auth } from './api.js';
 import AuthScreen from './AuthScreen.jsx';
 import WealthlyApp from './WealthlyApp.jsx';
-import BankCallback from './BankCallback.jsx';
-import { isDemoMode, disableDemoMode } from './demoData.js';
+import { isDemoMode, disableDemoMode, enableDemoMode } from './demoData.js';
+
+const BankCallback = lazy(() => import('./BankCallback.jsx'));
+const Landing = lazy(() => import('./views/Landing.jsx'));
 
 export default function App() {
   const [authState, setAuthState] = useState('checking'); // checking | authed | unauthed | demo
+  // When unauthed, decide whether to show the public marketing landing or
+  // jump straight to the auth form. Default to the landing — auth is one
+  // click away via the nav.
+  const [unauthedView, setUnauthedView] = useState('landing'); // landing | auth
+  const [authInitialMode, setAuthInitialMode] = useState('login');
   const [refreshKey, setRefreshKey] = useState(0);
   const [isBankCallback, setIsBankCallback] = useState(
     typeof window !== 'undefined' && window.location.pathname === '/bank-callback'
@@ -27,6 +34,7 @@ export default function App() {
       const params = new URLSearchParams(window.location.search);
       if (params.get('reset_token')) {
         setAuthState('unauthed');
+        setUnauthedView('auth');
         return;
       }
 
@@ -35,12 +43,16 @@ export default function App() {
         setAuthState('unauthed');
         return;
       }
-      // Optimistic: show the app immediately if a token exists.
-      // api.js handles 401s globally (clearToken + reload), so we don't need
-      // to redirect here — network errors on mobile cold-starts would
-      // incorrectly bounce the user back to the login screen.
+      // Optimistic auth: assume the token is valid and let WealthlyApp render
+      // immediately. This avoids a full UI freeze while a cold Railway backend
+      // takes 10-30s to respond to /auth/me. If the token is actually stale,
+      // the first real API call (reloadAll inside WealthlyApp) will throw 401
+      // and we'll catch it below to redirect.
       setAuthState('authed');
-      auth.me().catch(() => {});
+      auth.me().catch(() => {
+        // Token is invalid/expired — bounce back to AuthScreen.
+        setAuthState('unauthed');
+      });
     })();
   }, [refreshKey]);
 
@@ -57,9 +69,9 @@ export default function App() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#0c0d10',
+        background: '#0a0b0e',
         color: '#8c8a85',
-        fontFamily: 'Inter, system-ui, sans-serif',
+        fontFamily: "'DM Sans', system-ui, sans-serif",
         fontSize: 14,
       }}>
         Chargement…
@@ -72,17 +84,37 @@ export default function App() {
   }
 
   if (authState === 'unauthed') {
-    return <AuthScreen onAuth={() => setAuthState('authed')} onTryDemo={() => setAuthState('demo')} />;
+    if (unauthedView === 'landing') {
+      return (
+        <Suspense fallback={<div style={{minHeight:'100vh',background:'#0a0b0e'}}/>}>
+          <Landing
+            onSignIn={() => { setAuthInitialMode('login'); setUnauthedView('auth'); }}
+            onSignUp={() => { setAuthInitialMode('register'); setUnauthedView('auth'); }}
+            onTryDemo={() => { enableDemoMode(); setAuthState('demo'); }}
+          />
+        </Suspense>
+      );
+    }
+    return (
+      <AuthScreen
+        initialMode={authInitialMode}
+        onBackToLanding={() => setUnauthedView('landing')}
+        onAuth={() => setAuthState('authed')}
+        onTryDemo={() => setAuthState('demo')}
+      />
+    );
   }
 
   if (isBankCallback) {
     return (
-      <BankCallback
-        onDone={() => {
-          setIsBankCallback(false);
-          setRefreshKey((k) => k + 1);
-        }}
-      />
+      <Suspense fallback={<div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0a0b0e',color:'#8c8a85',fontFamily:"'DM Sans', system-ui, sans-serif",fontSize:14}}>Chargement…</div>}>
+        <BankCallback
+          onDone={() => {
+            setIsBankCallback(false);
+            setRefreshKey((k) => k + 1);
+          }}
+        />
+      </Suspense>
     );
   }
 

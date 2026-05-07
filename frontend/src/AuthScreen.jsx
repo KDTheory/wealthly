@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, Lock, User, Home, Eye, EyeOff, AlertCircle, Lock as LockIcon, ArrowLeft, Check, Sparkles } from 'lucide-react';
+import { Mail, Lock, User, Home, Eye, EyeOff, AlertCircle, Lock as LockIcon, ArrowLeft, Check, Sparkles, ShieldCheck, MapPin, EyeOff as PrivacyIcon } from 'lucide-react';
 import { auth, setToken } from './api.js';
 import { enableDemoMode } from './demoData.js';
 
@@ -10,9 +10,9 @@ function readResetTokenFromUrl() {
   return params.get('reset_token');
 }
 
-export default function AuthScreen({ onAuth, onTryDemo }) {
+export default function AuthScreen({ onAuth, onTryDemo, onBackToLanding, initialMode = 'login' }) {
   const initialResetToken = readResetTokenFromUrl();
-  const [mode, setMode] = useState(initialResetToken ? 'reset' : 'login'); // login | register | forgot | reset
+  const [mode, setMode] = useState(initialResetToken ? 'reset' : initialMode); // login | register | forgot | reset
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -79,29 +79,45 @@ export default function AuthScreen({ onAuth, onTryDemo }) {
       <div className="auth-grid" aria-hidden="true" />
 
       <div className="auth-shell">
-        {/* Brand column */}
-        <aside className="auth-brand-col">
+        {/* Back to landing — only shown when we have a callback (i.e. came from Landing, not from a reset_token deep link) */}
+        {onBackToLanding && (
+          <button type="button" onClick={onBackToLanding} className="auth-back-landing">
+            <ArrowLeft size={14}/> Retour à l'accueil
+          </button>
+        )}
+
+        {/* Tiny brand mark + wordmark, centered at the top */}
+        <div className="auth-brand-row">
           <div className="auth-brand-mark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" strokeLinejoin="miter" width="28" height="28">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" strokeLinejoin="miter" width="22" height="22">
               <rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/>
               <path d="M7 9 L9.5 15.5 L12 10.5 L14.5 15.5 L17 9"/>
             </svg>
           </div>
           <div className="auth-wordmark">Wealthly</div>
-          <div className="auth-tagline">Patrimoine privé</div>
+        </div>
 
-          <div className="auth-pitch">
-            Vue consolidée de votre patrimoine familial. Comptes, placements, immobilier, dettes — souverain, chiffré, vôtre.
+        {/* Hero — slim version (full marketing is on Landing now) */}
+        <div className="auth-hero">
+          <div className="auth-eyebrow">ESPACE PERSONNEL</div>
+          <h1 className="auth-headline">
+            {mode === 'register' ? 'Créer votre compte' : 'Bon retour.'}
+          </h1>
+          <p className="auth-subhead">
+            {mode === 'register'
+              ? 'Email + mot de passe. Pas de carte bleue, pas d\'engagement.'
+              : 'Identifiez-vous pour accéder à votre tableau de bord patrimonial.'}
+          </p>
+
+          {/* Trust pills row */}
+          <div className="auth-pills">
+            <span className="auth-pill"><ShieldCheck size={12}/> Synchro DSP2 agréée</span>
+            <span className="auth-pill"><MapPin size={12}/> Hébergé en UE</span>
+            <span className="auth-pill"><PrivacyIcon size={12}/> Aucune revente de données</span>
           </div>
+        </div>
 
-          <div className="auth-bullets">
-            <div className="auth-bullet"><span className="auth-bullet-dot"/>Auto-hébergé · vos données chez vous</div>
-            <div className="auth-bullet"><span className="auth-bullet-dot"/>Catégorisation IA optionnelle (BYOK)</div>
-            <div className="auth-bullet"><span className="auth-bullet-dot"/>Multi-membres · vue par foyer</div>
-          </div>
-        </aside>
-
-        {/* Form column */}
+        {/* Form column — single centered card under the hero */}
         <main className="auth-form-col">
           <div className="auth-form-card">
             {(mode === 'login' || mode === 'register') ? (
@@ -285,97 +301,136 @@ export default function AuthScreen({ onAuth, onTryDemo }) {
 const authStyles = `
 .auth-screen {
   min-height: 100vh;
-  display: flex; align-items: center; justify-content: center;
-  background: #0c0d10;
+  display: flex; align-items: flex-start; justify-content: center;
+  /* Two-layer base: subtle vignette around an off-black canvas, so the page
+     reads warmer and less flat than a single solid colour. */
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 30%, #14161c 0%, #0d0f13 55%, #0a0b0e 100%);
   color: #ebe8e3;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  position: relative; overflow: hidden;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  position: relative; overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   letter-spacing: -0.01em;
-  padding: 32px 24px;
+  padding: 56px 24px 72px;
 }
 
-/* Subtle radial glow + grid texture, very low contrast */
+/* Ambient gold glows — one large behind the form card, one small lifting the
+   brand column. Stronger than before so the page no longer feels flat. */
 .auth-bg {
   position: absolute; inset: 0; pointer-events: none; z-index: 0;
   background:
-    radial-gradient(ellipse 60% 40% at 70% 20%, rgba(197, 165, 114, 0.08), transparent 70%),
-    radial-gradient(ellipse 60% 40% at 20% 90%, rgba(197, 165, 114, 0.04), transparent 60%);
+    radial-gradient(ellipse 50% 55% at 78% 50%, rgba(197, 165, 114, 0.16), transparent 70%),
+    radial-gradient(ellipse 45% 35% at 18% 30%, rgba(197, 165, 114, 0.07), transparent 65%),
+    radial-gradient(ellipse 60% 30% at 50% 100%, rgba(197, 165, 114, 0.04), transparent 70%);
 }
 .auth-grid {
   position: absolute; inset: 0; pointer-events: none; z-index: 0;
   background-image:
-    linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
   background-size: 64px 64px;
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 30%, transparent 80%);
+  mask-image: radial-gradient(ellipse 75% 60% at 50% 50%, black 30%, transparent 80%);
 }
 
 .auth-shell {
   position: relative; z-index: 1;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 64px;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 28px;
   width: 100%;
-  max-width: 1040px;
-  align-items: center;
+  max-width: 920px;
+  text-align: center;
+  padding: 0;
+}
+/* The hero + form stay narrower than the marketing sections below. */
+.auth-shell > .auth-brand-row,
+.auth-shell > .auth-hero,
+.auth-shell > .auth-form-col {
+  max-width: 560px;
 }
 
-/* Brand column */
-.auth-brand-col {
-  display: flex; flex-direction: column; gap: 16px;
-  padding: 24px 0;
+/* Brand row — small monogram + wordmark, sits just above the hero */
+.auth-brand-row {
+  display: inline-flex; align-items: center; gap: 12px;
 }
 .auth-brand-mark {
-  width: 48px; height: 48px;
-  border-radius: 6px;
-  background: rgba(197, 165, 114, 0.1);
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  background: rgba(197, 165, 114, 0.08);
   border: 1px solid rgba(197, 165, 114, 0.32);
   color: #c5a572;
   display: inline-flex; align-items: center; justify-content: center;
-  margin-bottom: 4px;
 }
 .auth-wordmark {
-  font-size: 32px; font-weight: 600; letter-spacing: -0.03em;
+  font-size: 19px; font-weight: 600; letter-spacing: -0.02em;
   color: #ebe8e3;
   line-height: 1;
 }
-.auth-tagline {
-  font-size: 11px; font-weight: 500;
-  text-transform: uppercase; letter-spacing: 0.18em;
-  color: #c5a572;
+
+/* Hero — heyfinly homepage hero layout, centered */
+.auth-hero {
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+  margin-top: 4px;
 }
-.auth-pitch {
+.auth-eyebrow {
+  font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.24em;
+  color: #c5a572;
+  padding: 6px 14px;
+  border: 1px solid rgba(197, 165, 114, 0.28);
+  border-radius: 999px;
+  background: rgba(197, 165, 114, 0.05);
+}
+.auth-headline {
+  font-size: clamp(34px, 6vw, 54px);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  color: #ebe8e3;
+  margin: 4px 0 0;
+}
+.auth-subhead {
   font-size: 15px; line-height: 1.6;
   color: #b5b2ab;
-  max-width: 380px;
-  margin-top: 28px;
-}
-.auth-bullets {
-  display: flex; flex-direction: column; gap: 10px;
-  margin-top: 20px;
-}
-.auth-bullet {
-  display: flex; align-items: center; gap: 10px;
-  font-size: 13px; color: #8c8a85;
-}
-.auth-bullet-dot {
-  width: 4px; height: 4px; border-radius: 50%;
-  background: #c5a572;
-  flex-shrink: 0;
+  max-width: 460px;
+  margin: 0;
+  letter-spacing: -0.005em;
 }
 
-/* Form column */
+/* Trust pills row — social proof equivalent */
+.auth-pills {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.auth-pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 13px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  font-size: 11.5px; font-weight: 500;
+  color: #c8c5be;
+  letter-spacing: 0.005em;
+}
+.auth-pill svg { color: #c5a572; }
+
+/* Form column — sits centered under the hero */
 .auth-form-col {
   display: flex; justify-content: center;
+  width: 100%;
+  margin-top: 8px;
 }
 .auth-form-card {
-  background: #15171c;
-  border: 1px solid #232730;
-  border-radius: 12px;
+  background: #181a20;                                    /* slightly lighter than the page so the card lifts */
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 2px solid rgba(197, 165, 114, 0.85);        /* gold signature line, same language as the Dashboard hero */
+  border-radius: 14px;
   padding: 32px;
   width: 100%; max-width: 420px;
-  box-shadow: 0 24px 60px -20px rgba(0,0,0,0.5);
+  box-shadow:
+    0 24px 60px -20px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(197, 165, 114, 0.04) inset;
+  position: relative;
 }
 
 .auth-tabs {
@@ -474,6 +529,16 @@ const authStyles = `
   transition: color .15s;
 }
 .auth-back-link:hover { color: #ebe8e3; }
+.auth-back-landing {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: transparent; border: 1px solid rgba(255,255,255,0.08);
+  padding: 7px 12px; border-radius: 999px;
+  color: #a8a59f; font-size: 12px; font-weight: 500; font-family: inherit;
+  cursor: pointer; align-self: flex-start;
+  margin-bottom: 8px;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.auth-back-landing:hover { color: #c5a572; border-color: rgba(197,165,114,0.35); background: rgba(197,165,114,0.05); }
 .auth-forgot-link {
   display: inline-block;
   font-size: 12px;
@@ -484,7 +549,7 @@ const authStyles = `
 .auth-submit {
   margin-top: 6px; padding: 11px;
   background: #c5a572;
-  color: #0c0d10;
+  color: #0a0b0e;
   border: none;
   border-radius: 6px;
   font-size: 13px; font-weight: 600;
@@ -546,19 +611,230 @@ const authStyles = `
   font-weight: 500; text-transform: uppercase; letter-spacing: 0.12em;
 }
 
-/* Responsive — stack on narrow screens */
-@media (max-width: 860px) {
-  .auth-shell {
-    grid-template-columns: 1fr;
-    gap: 32px;
-    max-width: 460px;
-  }
-  .auth-brand-col {
-    text-align: center; align-items: center;
-    padding: 0;
-  }
-  .auth-pitch { display: none; }
-  .auth-bullets { display: none; }
-  .auth-wordmark { font-size: 28px; }
+/* === Section eyebrows + titles, shared across the marketing blocks === */
+.auth-section-eyebrow {
+  font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.24em;
+  color: #c5a572;
+  margin-bottom: 12px;
+}
+.auth-section-title {
+  font-size: clamp(22px, 3.2vw, 30px);
+  font-weight: 600; letter-spacing: -0.025em; line-height: 1.15;
+  color: #ebe8e3;
+  margin: 0 0 28px;
+  max-width: 620px;
+  margin-left: auto; margin-right: auto;
+}
+
+/* === Bloc 1 — Aperçu produit (faux dashboard mockup) === */
+.auth-preview {
+  width: 100%;
+  margin-top: 32px;
+  padding-top: 48px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.auth-mockup {
+  background: #11131a;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow:
+    0 30px 80px -30px rgba(0,0,0,0.7),
+    0 0 0 1px rgba(197, 165, 114, 0.06) inset;
+  text-align: left;
+}
+.mockup-chrome {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 14px;
+  background: #0d0f14;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.mockup-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #2a2d36;
+}
+.mockup-dot.d1 { background: #c47158; }
+.mockup-dot.d2 { background: #d4a554; }
+.mockup-dot.d3 { background: #88a978; }
+.mockup-url {
+  margin-left: 14px;
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 10.5px; color: #6e6a64;
+  letter-spacing: 0.02em;
+}
+.mockup-body {
+  display: grid; grid-template-columns: 140px 1fr;
+  min-height: 260px;
+}
+.mockup-sidebar {
+  background: #0d0f14;
+  border-right: 1px solid rgba(255,255,255,0.04);
+  padding: 16px 12px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.mockup-sb-brand {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  background: rgba(197, 165, 114, 0.12);
+  border: 1px solid rgba(197, 165, 114, 0.32);
+  color: #c5a572;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 12px;
+  margin-bottom: 14px;
+}
+.mockup-sb-item {
+  font-size: 11.5px; color: #6e6a64;
+  padding: 6px 8px; border-radius: 5px;
+}
+.mockup-sb-item.active {
+  background: rgba(197, 165, 114, 0.08);
+  color: #ebe8e3;
+}
+.mockup-content {
+  padding: 22px 24px 18px;
+  background: #0a0b0e;
+}
+.mockup-eyebrow {
+  font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.22em;
+  color: #c5a572;
+}
+.mockup-hero {
+  font-size: 38px; font-weight: 700; letter-spacing: -0.03em;
+  color: #ebe8e3; line-height: 1.1; margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.mockup-perf {
+  font-size: 11px; font-weight: 600;
+  color: #88a978;
+  margin-top: 4px;
+}
+.mockup-chart {
+  width: 100%; height: 70px; margin-top: 16px; display: block;
+}
+.mockup-kpis {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 10px; margin-top: 10px;
+}
+.mockup-kpi {
+  background: #13151a;
+  border: 1px solid rgba(255,255,255,0.05);
+  border-left: 2px solid #c5a572;
+  border-radius: 5px;
+  padding: 8px 10px;
+}
+.mk-l { font-size: 8.5px; font-weight: 700; color: #6e6a64; letter-spacing: 0.16em; }
+.mk-v { font-size: 13px; font-weight: 600; color: #ebe8e3; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.mk-v.neg { color: #c47158; }
+
+/* === Bloc 2 — Features grid === */
+.auth-features {
+  width: 100%;
+  margin-top: 56px;
+  padding-top: 48px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.auth-feat-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  text-align: left;
+}
+.auth-feat-card {
+  background: #13151a;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 22px 20px;
+  transition: border-color .15s, background .15s;
+}
+.auth-feat-card:hover {
+  border-color: rgba(197, 165, 114, 0.3);
+  background: #161820;
+}
+.feat-icon {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  background: rgba(197, 165, 114, 0.1);
+  color: #c5a572;
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-bottom: 14px;
+}
+.feat-title {
+  font-size: 14px; font-weight: 600; color: #ebe8e3;
+  letter-spacing: -0.01em; margin-bottom: 6px;
+}
+.feat-desc {
+  font-size: 12.5px; color: #a8a59f; line-height: 1.55;
+}
+
+/* === Bloc 3 — Numbers strip === */
+.auth-numbers {
+  width: 100%;
+  margin-top: 56px;
+  padding: 32px 24px;
+  background: linear-gradient(180deg, rgba(197, 165, 114, 0.04), rgba(197, 165, 114, 0.01));
+  border: 1px solid rgba(197, 165, 114, 0.14);
+  border-radius: 12px;
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.auth-num { text-align: center; }
+.num-v {
+  font-size: 28px; font-weight: 700; color: #c5a572;
+  letter-spacing: -0.03em; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.num-suf { font-size: 18px; opacity: 0.7; }
+.num-l {
+  font-size: 11px; color: #8c8a85; line-height: 1.35;
+  margin-top: 8px;
+  letter-spacing: 0.02em;
+}
+
+/* === Bloc 4 — Footer === */
+.auth-foot {
+  width: 100%;
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 14px;
+  font-size: 12px; color: #6e6a64;
+}
+.foot-left {
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.foot-brand {
+  display: inline-flex; align-items: center; gap: 7px;
+  color: #c5a572; font-weight: 600;
+}
+.foot-sep { color: #2a2d36; }
+.foot-tag { color: #8c8a85; }
+.foot-right {
+  display: inline-flex; gap: 18px;
+}
+.foot-right a {
+  display: inline-flex; align-items: center; gap: 5px;
+  color: #8c8a85; text-decoration: none;
+  transition: color .15s;
+}
+.foot-right a:hover { color: #c5a572; }
+
+/* Responsive — already centered, just tighten the hero on narrow screens */
+@media (max-width: 720px) {
+  .auth-shell { gap: 22px; }
+  .auth-hero { gap: 14px; }
+  .auth-subhead { font-size: 14px; }
+  .auth-pills { gap: 6px; }
+  .auth-pill { padding: 6px 11px; font-size: 11px; }
+  .auth-form-card { padding: 24px; }
+  .auth-feat-grid { grid-template-columns: 1fr; }
+  .auth-numbers { grid-template-columns: repeat(2, 1fr); gap: 22px; padding: 24px 20px; }
+  .mockup-body { grid-template-columns: 60px 1fr; }
+  .mockup-sb-item { font-size: 0; padding: 6px; }
+  .mockup-sb-item.active::after { content: '·'; font-size: 14px; color: #c5a572; }
+  .mockup-hero { font-size: 28px; }
+  .mockup-kpis { grid-template-columns: 1fr; }
+  .auth-foot { flex-direction: column; text-align: center; }
 }
 `;

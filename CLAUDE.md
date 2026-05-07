@@ -52,9 +52,16 @@ backend/
       banks.py           GoCardless Bank Account Data — connect/sync flow
     services/
       gocardless.py      Thin httpx client over the GoCardless API
-  tests/                 pytest, in-memory SQLite, mocked Resend
+    rate_limit.py        slowapi Limiter + 429 handler (FR detail message)
+  alembic.ini            Alembic config (URL via env, never hardcoded)
+  alembic/
+    env.py               Loads Settings.DATABASE_URL, registers Base.metadata
+    script.py.mako       Revision template
+    versions/
+      0001_baseline.py   Marker — current schema is the baseline
+  tests/                 pytest, in-memory SQLite, mocked Resend, limiter disabled
   pytest.ini
-  requirements.txt       prod deps
+  requirements.txt       prod deps (now includes slowapi)
   requirements-dev.txt   + pytest, pytest-cov
 
 frontend/
@@ -64,19 +71,41 @@ frontend/
     icon-maskable.svg     Android adaptive icon
     sw.js                 Service worker (network-first shell)
   src/
-    main.jsx              Entry, registers SW in prod only
-    App.jsx               Auth gate + demo mode + reset_token URL handler
-    AuthScreen.jsx        Login | Register | Forgot | Reset modes
-    BankCallback.jsx      Landing page after the bank OAuth redirect
-    WealthlyApp.jsx       🐉 ~4500 lignes monolith — toutes les vues + Styles
-    TaxSimulator.jsx      Vue Impôts
-    taxFr.js              Pure tax engine (barème + parts + crédits)
-    pdfReport.js          jsPDF bilan generator
-    demoData.js           Seed for demo mode
-    api.js                HTTP client. Demo-aware: GET returns null, POST throws.
-    index.css             Tailwind v4 + custom @theme tokens
-  vite.config.js          Tailwind plugin + /api proxy (dev only)
-  index.html              PWA + iOS metadata
+    main.jsx                       Entry, registers SW in prod only
+    App.jsx                        Auth gate + demo mode + reset_token URL handler
+    AuthScreen.jsx                 Login | Register | Forgot | Reset modes
+    BankCallback.jsx               Landing page after the bank OAuth redirect
+    WealthlyApp.jsx                Main shell — data layer + sidebar/nav + view router (~1100 lines)
+    TaxSimulator.jsx               Vue Impôts (lazy-loaded)
+    Styles.jsx                     Global CSS-in-JS — pairs with index.css
+    constants.js                   STORAGE_KEYS, DEFAULT_CATEGORIES/RULES, BANK_PROFILES, ASSET/LIABILITY_TYPES, MEMBER_PALETTE
+    storage.js                     Tiny localStorage wrapper for UI prefs
+    utils.js                       formatCurrency/Date, CSV parse, categorize, detectRecurring (no React)
+    taxFr.js                       Pure tax engine (barème + parts + crédits)
+    pdfReport.js                   jsPDF bilan generator (dynamic import on click)
+    demoData.js                    Seed for demo mode
+    api.js                         HTTP client. Demo-aware: GET returns null, POST throws.
+    index.css                      Tailwind v4 + custom @theme tokens
+    components/
+      Toast.jsx                    Stateless toast renderer
+      AnimatedNumber.jsx           rAF-tweened currency display (memoized)
+      NetWorthChart.jsx            Brut/Net/Financier toggle + period selector (used by Dashboard + Wealth)
+      HealthScore.jsx              0-100 SVG gauge + 5-criteria breakdown (Dashboard widget)
+    hooks/
+      useIsNarrow.js               Viewport breakpoint hook (used by Cashflow Sankey)
+    views/
+      Onboarding.jsx               3-step first-launch wizard
+      Dashboard.jsx                Net worth hero + KPIs + composition + recent
+      Wealth.jsx                   Patrimoine + all asset/liability editors + 5-step wizards
+      Monthly.jsx                  Suivi mensuel + FixedChargeEditor (modal)
+      Cashflow.jsx                 Sankey + donut + SankeyNode (memoized)
+      Budgets.jsx                  50/30/20 + GoalEditor (modal)
+      Transactions.jsx             Searchable + sortable + advanced filter panel (multi-cat / accs / members / dates / amount / type)
+      Analysis.jsx                 Évolution + top marchands + per-category drill
+      Settings.jsx                 SettingsView + CustomRules + BankConnections + InstitutionPicker + MemberEditor
+      ImportFlow.jsx               4-step CSV wizard + MappingField (local helper)
+  vite.config.js                   Tailwind plugin + /api proxy (dev only) + manualChunks for recharts/lucide/jspdf
+  index.html                       PWA + iOS metadata + dark-flash prevention inline style
 
 .github/workflows/test.yml     pytest on push/PR
 
@@ -99,8 +128,8 @@ Tokens live in two places that must stay in sync:
 2. `frontend/src/WealthlyApp.jsx` `Styles({ theme })` `:root` block — used by the monolith CSS-in-JS (`var(--bg-card)`, `var(--primary)`)
 
 Key colors (dark, the primary mode):
-- `--color-w-bg` / `--bg-page`: `#0c0d10`
-- `--color-w-surface` / `--bg-card`: `#15171c`
+- `--color-w-bg` / `--bg-page`: `#0a0b0e`
+- `--color-w-surface` / `--bg-card`: `#13151a`
 - `--color-w-text` / `--text-primary`: `#ebe8e3` (cream-tinted, NOT pure white — warmth matters)
 - `--color-w-accent` / `--primary`: **`#c5a572`** (the signature gold)
 - `--color-w-success` / `--success`: `#88a978` (muted sage)
@@ -137,14 +166,20 @@ Default `EMAIL_FROM` is `Wealthly <onboarding@resend.dev>`. With this sender, Re
 2. Railway → Logs — look for `[email]` lines
 3. Solution: either test with the Resend account's email, or verify a domain on Resend
 
-**3. WealthlyApp is a 4500-line monolith.**
-The user wants it split (see ROADMAP), but the découpe is risky if rushed. When it happens, do it in levels:
-- L1: extract pure utils + constants + AnimatedNumber + Toast + Styles
-- L2: views (Dashboard, Wealth, Monthly, Transactions, Budgets, Settings, Import, Onboarding)
-- L3: modals (MemberEditor, AssetEditor, LiabilityEditor…)
-- L4: data hooks (useMembers, useReload…)
+**3. WealthlyApp is no longer a monolith.**
+L1+L2 of the découpe shipped (commits 955143b → 8663654, 2026-05). The
+file dropped from 6386 to ~1100 lines and now owns only the data layer
++ shell + view router. Sub-views live in `src/views/`, leaf components
+in `src/components/`, hooks in `src/hooks/`. Sed-based extraction is
+risky — the L2.4 Dashboard removal accidentally chewed into the start
+of `WEALTH_SUBVIEWS` (fixed in bdd7ed3); always grep the boundary
+before deleting.
 
-Each level = one commit. Verify the build still works on Vercel between levels.
+Remaining work if/when needed:
+- L3: split the data layer into hooks (`useMembers`, `useReload`,
+  `useTransactions`…) so views can move to a context provider instead
+  of receiving everything via props.
+- L4: TypeScript? Tests? Out of scope for now.
 
 **4. The frontend tax engine is in `taxFr.js` and is critical.**
 - French income brackets 2025 (declared 2026): 0 / 11 497 / 29 315 / 83 823 / 180 294 / ∞
@@ -160,7 +195,25 @@ Update these constants when the law changes (typically late each year for the ne
 `WealthlyApp` posts a snapshot whenever net-worth math materially changes. Debounced 1.5s, gated by a useRef. Don't remove the gating — the deps array on the useEffect is intentionally `[netWorth, liquidWealth, assetsValue, liabilitiesValue]` and would otherwise spam the backend every render.
 
 **6. CI tests.**
-`pytest` runs against in-memory SQLite. The **email service is mocked** in conftest — DO NOT make password-reset endpoints depend on getting a real Resend response, the test patches `app.routers.auth.send_password_reset_email` and reads the captured emails via `client.sent_emails`.
+`pytest` runs against in-memory SQLite. The **email service is mocked** in conftest — DO NOT make password-reset endpoints depend on getting a real Resend response, the test patches `app.routers.auth.send_password_reset_email` and reads the captured emails via `client.sent_emails`. The **slowapi rate limiter is disabled** in conftest (`limiter.enabled = False`) — TestClient runs everything from one synthetic IP and would otherwise burn the budget within 2 cases.
+
+**7. Alembic is set up but not the source of truth (yet).**
+`Base.metadata.create_all()` still runs at startup as the fresh-DB safety
+net. Alembic infrastructure (alembic.ini, env.py, baseline marker) is
+posted in parallel: on first boot against a DB that has tables but no
+`alembic_version` row, the startup hook stamps head — treats the current
+schema as the baseline so future revisions can run cleanly. Going forward
+every schema change should be a real alembic revision; eventually we
+remove `create_all()` once we have a few real migrations validated in
+prod. **Don't write a "full initial migration"** that re-creates all 17
+tables — it would conflict with the existing schema.
+
+**8. Rate limiting on auth.**
+`slowapi` is wired on `/auth/login` (10/min), `/auth/register` (5/min),
+`/auth/forgot-password` (5/min) per IP. The 429 message is the FR string
+`"Trop de tentatives. Réessaie dans quelques instants."` — the existing
+toast pipeline surfaces it without a special case. Limiter lives in
+`app/rate_limit.py`; main.py and routers/auth.py share the same instance.
 
 ---
 
@@ -175,7 +228,40 @@ Update these constants when the law changes (typically late each year for the ne
 
 ---
 
-## Last work session — 2026-05-05
+## Last work session — 2026-05-06 (investor-ready push, 3 phases)
+
+**Morning**: full visual refonte (hero overhaul, sidebar desktop, mobile
+bottom-nav 6 items, palette refinement, DM Sans/Mono fonts, modale
+modernization, sober empty states) + complete WealthlyApp découpe
+(6 386 → 1 139 lignes via L1 utils/constants/Styles + L2 all 10 views).
+
+**Afternoon**: backend security baseline (slowapi rate limiting on auth),
+Alembic infrastructure with auto-stamp baseline, advanced transaction
+filters panel (multi-cat / accs / members / dates / amounts / type),
+financial health score widget on Dashboard (0-100 SVG gauge + 5-criteria
+breakdown).
+
+**Evening**: unrealized gains (purchase_price/date via Alembic + PV %
+display), regulatory caps (PEA/Livret A/LDDS), YoY comparison on Suivi
+mensuel, account drawer (right slide-in + cross-view tx filter), Finary
+loan view rebuild, i18n FR/EN setup with inline FR · EN button (sidebar +
+mobile header — out of Settings), AuthScreen polish (radial vignette,
+honest copy, gold border-top), PDF rebuild — full dark theme matching the
+app, premium Pictet/EdR-style cover (oversized typo + signature gold
+rule + 3-card stat grid + "préparé pour" footer + page mark), per-debt
+amortization page with capital chart, Unicode sanitize at the doc.text
+seam (kills the `/` and `"` glyphs from `Intl.NumberFormat fr-FR`
+narrow-NBSP and U+2212 minus). Hotfixes: WEALTH_SUBVIEWS leftover
+post-sed crashing the build, SW cache version bump after broken-build
+streak, formatDate import missing in Dashboard (black screen post-login).
+
+Roadmap not yet done: JWT → httpOnly cookies (3.2), 2FA TOTP (3.3),
+multi-currency (5.3), tests frontend vitest on taxFr.js (6.2), bank
+sync cron (6.3), trademark research on "Wealthly" + Hebrew rebrand
+candidates, **PDF screenshots embed** à la Finary annual report
+(html2canvas → addImage). See ROADMAP.md.
+
+## Previous session — 2026-05-05
 
 Massive session. Delivered (in order of commits):
 

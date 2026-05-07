@@ -21,6 +21,11 @@ from sqlalchemy.pool import StaticPool
 
 from app.database import Base, get_db
 from app.main import app
+from app.rate_limit import limiter
+
+# Disable per-IP rate limiting in tests — multiple registers/logins from the
+# same TestClient would otherwise trip the auth limits.
+limiter.enabled = False
 
 
 @pytest.fixture()
