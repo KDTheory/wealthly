@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Mail, Lock, User, Home, Eye, EyeOff, AlertCircle, Lock as LockIcon, ArrowLeft, Check, Sparkles, ShieldCheck, MapPin, EyeOff as PrivacyIcon } from 'lucide-react';
 import { auth, setToken } from './api.js';
 import { enableDemoMode } from './demoData.js';
+import { LegalModal } from './components/LegalModal.jsx';
 
 // On mount, capture any reset_token from the URL so we can land directly
 // on the "set new password" screen and clean it out of the address bar.
@@ -23,6 +24,7 @@ export default function AuthScreen({ onAuth, onTryDemo, onBackToLanding, initial
   const [error, setError] = useState(null);
   const [info, setInfo] = useState(null);
   const [resetToken] = useState(initialResetToken);
+  const [legal, setLegal] = useState(null);
 
   // Once we've loaded with a reset token, scrub it from the URL so a refresh
   // (or the user pasting it elsewhere) doesn't keep a single-use token live.
@@ -288,10 +290,15 @@ export default function AuthScreen({ onAuth, onTryDemo, onBackToLanding, initial
 
             <div className="auth-meta">
               <LockIcon size={11} /> Connexion chiffrée · session JWT
+              <span className="auth-meta-sep">·</span>
+              <button className="auth-legal-link" onClick={() => setLegal('cgu')}>CGU</button>
+              <button className="auth-legal-link" onClick={() => setLegal('privacy')}>Confidentialité</button>
             </div>
           </div>
         </main>
       </div>
+
+      {legal && <LegalModal section={legal} onClose={() => setLegal(null)} />}
 
       <style>{authStyles}</style>
     </div>
@@ -605,11 +612,20 @@ const authStyles = `
 
 .auth-meta {
   display: flex; align-items: center; justify-content: center; gap: 5px;
+  flex-wrap: wrap;
   margin-top: 18px; padding-top: 18px;
   border-top: 1px solid #232730;
   font-size: 10px; color: #5a5a55;
   font-weight: 500; text-transform: uppercase; letter-spacing: 0.12em;
 }
+.auth-meta-sep { opacity: 0.4; }
+.auth-legal-link {
+  background: none; border: none; padding: 0; cursor: pointer;
+  font-size: 10px; color: #5a5a55; font-family: inherit;
+  font-weight: 500; text-transform: uppercase; letter-spacing: 0.12em;
+  transition: color .15s;
+}
+.auth-legal-link:hover { color: #c5a572; }
 
 /* === Section eyebrows + titles, shared across the marketing blocks === */
 .auth-section-eyebrow {

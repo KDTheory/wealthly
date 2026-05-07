@@ -8,11 +8,12 @@
 // Inline CSS-in-JS for portability (matches AuthScreen.jsx pattern).
 // All screenshots live in /public/landing/ — keep filenames in sync.
 // ============================================================================
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ArrowRight, ShieldCheck, MapPin, EyeOff, Users, Building2, Calculator,
   Activity, Github, Mail, ChevronDown, Lock, Sparkles, BarChart3, Calendar,
 } from 'lucide-react';
+import { LegalModal } from '../components/LegalModal.jsx';
 
 const Wmark = ({ size = 22 }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" strokeLinejoin="miter" width={size} height={size}>
@@ -22,6 +23,7 @@ const Wmark = ({ size = 22 }) => (
 );
 
 export default function Landing({ onSignIn, onSignUp, onTryDemo }) {
+  const [legal, setLegal] = useState(null); // null | 'cgu' | 'privacy'
   return (
     <div className="lp">
       {/* === NAV === */}
@@ -296,10 +298,17 @@ export default function Landing({ onSignIn, onSignUp, onTryDemo }) {
           </div>
         </div>
         <div className="lp-foot-bottom">
-          <span>© 2026 Wealthly — Tous droits réservés</span>
+          <span>
+            © 2026 Wealthly —{' '}
+            <button className="lp-legal-link" onClick={() => setLegal('cgu')}>CGU</button>
+            {' · '}
+            <button className="lp-legal-link" onClick={() => setLegal('privacy')}>Confidentialité</button>
+          </span>
           <span className="lp-foot-disclaim">Wealthly ne fournit aucun conseil en investissement. Les outils proposés sont à but informatif.</span>
         </div>
       </footer>
+
+      {legal && <LegalModal section={legal} onClose={() => setLegal(null)} />}
 
       <style>{styles}</style>
     </div>
@@ -765,6 +774,12 @@ const styles = `
   font-size: 11.5px; color: #5a5a55;
 }
 .lp-foot-disclaim { max-width: 580px; text-align: right; line-height: 1.5; }
+.lp-legal-link {
+  background: none; border: none; padding: 0; cursor: pointer;
+  color: #5a5a55; font-size: inherit; font-family: inherit;
+  transition: color .15s;
+}
+.lp-legal-link:hover { color: #c5a572; }
 
 /* ---------- responsive ---------- */
 @media (max-width: 980px) {
