@@ -44,7 +44,9 @@ const TaxSimulator = lazy(() => import('./TaxSimulator.jsx'));
 export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
-  const [onboarded, setOnboarded] = useState(false);
+  const [onboarded, setOnboarded] = useState(() => {
+    try { return localStorage.getItem(STORAGE_KEYS.ONBOARDED) === '1'; } catch { return false; }
+  });
   const [view, setView] = useState('dashboard');
   // Account drawer + cross-view transaction filter (set when "voir toutes" is
   // clicked from the drawer, consumed by <Transactions> on mount).
@@ -302,9 +304,13 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
       setActiveMemberId(demoMode ? 'all' : am);
       setColumnMappings(await storage.get(STORAGE_KEYS.MAPPINGS, {}));
 
-      // Stale-while-revalidate: show cached data immediately (instant for
-      // returning users) then refresh from API in the background.
-      if (!demoMode) {
+      if (demoMode) {
+        // Demo data is local — load synchronously then show.
+        await reloadAll();
+        setOnboarded(true);
+        setLoading(false);
+      } else {
+        // Restore cache immediately (milliseconds — no network).
         try {
           const raw = localStorage.getItem(STORAGE_KEYS.DATA_CACHE);
           if (raw) {
@@ -319,42 +325,34 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             if (c.goals) setGoals(c.goals);
             if (c.fixedCharges) setFixedCharges(c.fixedCharges);
             if (c.customRules) setCustomRules(c.customRules);
-            setLoading(false); // Show app immediately with stale data
           }
         } catch {}
-      }
 
-      // Fetch server data (or load demo dataset if applicable)
-      await reloadAll();
-      if (demoMode) {
-        setOnboarded(true);
-      } else {
-        // First-time check: onboarded if at least one member exists
-        try {
-          const me = await api.auth.me();
-          const memList = await api.members.list();
-          const hasMembers = memList && memList.length > 0;
-          setOnboarded(hasMembers);
-          // Auto bank-sync at most once per day for admins. Best-effort: a
-          // 503 (not configured) or any error is silently swallowed — the
-          // user can still trigger a sync manually from Réglages.
-          if (me && me.is_admin) {
-            const lastSyncKey = `wealthly:lastBankSync:${me.id}`;
-            const last = parseInt(localStorage.getItem(lastSyncKey) || '0', 10);
-            if (Date.now() - last > 86400000) {
-              localStorage.setItem(lastSyncKey, String(Date.now()));
-              api.banks.syncAll().then(async (res) => {
-                if (res && res.inserted > 0) {
-                  await reloadAll();
-                }
-              }).catch(() => {});
+        // Show the app NOW — don't gate on Railway cold-start (15-30s).
+        // Empty states are fine; data fills in once the backend wakes up.
+        setLoading(false);
+
+        // Refresh from API in the background.
+        reloadAll().then(async () => {
+          try {
+            const me = await api.auth.me();
+            const memList = await api.members.list();
+            const hasMembers = memList && memList.length > 0;
+            setOnboarded(hasMembers);
+            try { localStorage.setItem(STORAGE_KEYS.ONBOARDED, hasMembers ? '1' : '0'); } catch {}
+            if (me && me.is_admin) {
+              const lastSyncKey = `wealthly:lastBankSync:${me.id}`;
+              const last = parseInt(localStorage.getItem(lastSyncKey) || '0', 10);
+              if (Date.now() - last > 86400000) {
+                localStorage.setItem(lastSyncKey, String(Date.now()));
+                api.banks.syncAll().then(async (res) => {
+                  if (res && res.inserted > 0) await reloadAll();
+                }).catch(() => {});
+              }
             }
-          }
-        } catch {
-          setOnboarded(false);
-        }
+          } catch {}
+        }).catch(() => {});
       }
-      setLoading(false);
     })();
   }, [reloadAll]);
 

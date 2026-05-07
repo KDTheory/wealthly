@@ -28,6 +28,7 @@ export const STORAGE_KEYS = {
   GOALS: 'w2:goals',
   SETTINGS: 'w2:settings',
   ONBOARDED: 'w2:onboarded',
+  DATA_CACHE: 'w2:data_cache',
   ACTIVE_MEMBER: 'w2:active_member',
   THEME: 'w2:theme',
 };
