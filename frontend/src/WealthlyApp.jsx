@@ -66,6 +66,9 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   const [recurringOverrides, setRecurringOverrides] = useState({});
   const [goals, setGoals] = useState([]);
   const [fixedCharges, setFixedCharges] = useState([]);
+  const [currentUser, setCurrentUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('w2:current_user') || 'null'); } catch { return null; }
+  });
   const [hideAmounts, setHideAmounts] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -336,6 +339,10 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
         reloadAll().then(async () => {
           try {
             const me = await api.auth.me();
+            if (me) {
+              setCurrentUser(me);
+              try { localStorage.setItem('w2:current_user', JSON.stringify(me)); } catch {}
+            }
             const memList = await api.members.list();
             const hasMembers = memList && memList.length > 0;
             setOnboarded(hasMembers);
@@ -999,18 +1006,29 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
           </nav>
 
           <div className="sidebar-footer">
-            <button className="primary-btn sidebar-import" onClick={() => { setView('import'); setImportStep('upload'); }}>
+            <button className="primary-btn sidebar-import" title={t('nav.import')} onClick={() => { setView('import'); setImportStep('upload'); }}>
               <Upload size={14}/> <span>{t('nav.import')}</span>
             </button>
             <div className="sidebar-utilities">
               <LangButton />
-              <button className="icon-btn" onClick={() => setHideAmounts(!hideAmounts)} title="Masquer/afficher">
+              <button className="icon-btn" onClick={() => setHideAmounts(!hideAmounts)} title="Masquer/afficher les montants">
                 {hideAmounts ? <EyeOff size={16}/> : <Eye size={16}/>}
               </button>
               <button className="icon-btn" onClick={logout} title="Déconnexion">
                 <LogOut size={16}/>
               </button>
             </div>
+            {currentUser && (
+              <div className="sidebar-user" title={currentUser.email}>
+                <div className="sidebar-user-avatar">
+                  {(currentUser.full_name || currentUser.email || '?')[0].toUpperCase()}
+                </div>
+                <div className="sidebar-user-info">
+                  <div className="sidebar-user-name">{currentUser.full_name || currentUser.email}</div>
+                  <div className="sidebar-user-email">{currentUser.email}</div>
+                </div>
+              </div>
+            )}
           </div>
         </aside>
 

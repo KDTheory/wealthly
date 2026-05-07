@@ -139,17 +139,17 @@ export function Styles({ theme }) {
 .app-sidebar { width: 244px; flex-shrink: 0; height: 100vh; position: sticky; top: 0; border-right: 1px solid var(--border); background: var(--bg-page); padding: 22px 14px 18px; display: flex; flex-direction: column; gap: 16px; z-index: 50; overflow-y: auto; scrollbar-width: thin; }
 .sidebar-brand { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 8px 18px; }
 .sidebar-brand:hover { opacity: 0.85; }
-.sidebar-brand .brand-mark { width: 36px; height: 36px; border-radius: 6px; background: var(--primary-soft); border: 1px solid ${dark ? 'rgba(197, 165, 114, 0.32)' : 'rgba(160, 133, 85, 0.3)'}; display: flex; align-items: center; justify-content: center; color: var(--primary); }
+.sidebar-brand .brand-mark { width: 36px; height: 36px; border-radius: 6px; background: var(--primary-soft); border: 1px solid ${dark ? 'rgba(197, 165, 114, 0.32)' : 'rgba(160, 133, 85, 0.3)'}; display: flex; align-items: center; justify-content: center; color: var(--primary); flex-shrink: 0; }
 .sidebar-brand .brand-name { font-size: 17px; font-weight: 600; letter-spacing: -0.025em; color: var(--text-primary); }
 
-.sidebar-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
-.sidebar-nav button { position: relative; display: inline-flex; align-items: center; gap: 11px; width: 100%; padding: 9px 12px; border: 1px solid transparent; background: transparent; color: var(--text-secondary); font-size: 13.5px; font-weight: 500; border-radius: 8px; cursor: pointer; transition: color .15s, background .15s, border-color .15s; font-family: inherit; letter-spacing: -0.005em; text-align: left; }
+.sidebar-nav { display: flex; flex-direction: column; gap: 1px; flex: 1; }
+.sidebar-nav button { position: relative; display: inline-flex; align-items: center; gap: 11px; width: 100%; padding: 9px 12px; border: none; background: transparent; color: var(--text-secondary); font-size: 13.5px; font-weight: 500; border-radius: 8px; cursor: pointer; transition: color .15s, background .15s; font-family: inherit; letter-spacing: -0.005em; text-align: left; overflow: hidden; }
 .sidebar-nav button svg { color: var(--text-tertiary); transition: color .15s; flex-shrink: 0; }
 .sidebar-nav button:hover { color: var(--text-primary); background: var(--bg-subtle); }
 .sidebar-nav button:hover svg { color: var(--text-secondary); }
-.sidebar-nav button.active { background: var(--bg-card); color: var(--primary); border-color: var(--border); }
+.sidebar-nav button.active { background: ${dark ? 'rgba(197,165,114,0.08)' : 'rgba(160,133,85,0.08)'}; color: var(--primary); font-weight: 600; }
 .sidebar-nav button.active svg { color: var(--primary); }
-.sidebar-nav button.active::before { content: ''; position: absolute; left: -2px; top: 8px; bottom: 8px; width: 2px; background: var(--primary); border-radius: 2px; }
+.sidebar-nav button.active::before { content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 3px; background: var(--primary); border-radius: 0 3px 3px 0; }
 .sidebar-nav button .nav-alert-dot { margin-left: auto; }
 
 .sidebar-footer { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--border-light); }
@@ -157,13 +157,39 @@ export function Styles({ theme }) {
 .sidebar-utilities { display: flex; gap: 6px; }
 .sidebar-utilities .icon-btn { flex: 1; }
 
-/* Mobile-only top header — hidden on desktop, shown <1024px */
+.sidebar-user { display: flex; align-items: center; gap: 10px; padding: 8px 6px 2px; border-top: 1px solid var(--border-light); margin-top: 2px; min-width: 0; }
+.sidebar-user-avatar { width: 28px; height: 28px; border-radius: 50%; background: ${dark ? 'rgba(197,165,114,0.15)' : 'rgba(160,133,85,0.12)'}; border: 1px solid ${dark ? 'rgba(197,165,114,0.3)' : 'rgba(160,133,85,0.25)'}; color: var(--primary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; letter-spacing: 0; }
+.sidebar-user-info { min-width: 0; }
+.sidebar-user-name { font-size: 12px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.01em; }
+.sidebar-user-email { font-size: 10.5px; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Mobile-only top header — hidden on desktop, shown <768px */
 .app-header-mobile { display: none; }
 
-/* Mobile bottom nav — hidden on desktop, shown <1024px */
+/* Mobile bottom nav — hidden on desktop, shown <768px */
 .bottom-nav { display: none; }
 
-@media (max-width: 1023px) {
+/* ── Tablet (768–1023px): sidebar collapsed to icons only ── */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .app-sidebar { width: 64px; padding: 18px 10px 14px; gap: 12px; align-items: center; }
+  .sidebar-brand { padding: 4px 0 14px; justify-content: center; }
+  .sidebar-brand .brand-name { display: none; }
+  .sidebar-nav { width: 100%; align-items: center; gap: 2px; }
+  .sidebar-nav button { padding: 10px; justify-content: center; gap: 0; border-radius: 10px; width: 44px; height: 44px; }
+  .sidebar-nav button span:not(.nav-alert-dot) { display: none; }
+  .sidebar-nav button svg { width: 18px; height: 18px; }
+  .sidebar-nav button.active::before { top: 5px; bottom: 5px; }
+  .sidebar-nav button .nav-alert-dot { position: absolute; top: 6px; right: 6px; min-width: 12px; height: 12px; padding: 0 3px; font-size: 8px; }
+  .sidebar-footer { width: 100%; align-items: center; padding-top: 10px; }
+  .sidebar-import { width: 44px; height: 44px; padding: 0; border-radius: 10px; }
+  .sidebar-import span { display: none; }
+  .sidebar-utilities { justify-content: center; flex-direction: column; gap: 4px; }
+  .sidebar-utilities .icon-btn { flex: none; }
+  .sidebar-user { display: none; }
+}
+
+/* ── Mobile (<768px): hide sidebar, show top header + bottom nav ── */
+@media (max-width: 767px) {
   .app-sidebar { display: none; }
   .app-header-mobile {
     display: flex; align-items: center; justify-content: space-between;
@@ -207,7 +233,7 @@ export function Styles({ theme }) {
 }
 
 .content { padding: 28px 32px 60px; max-width: 1280px; margin: 0 auto; min-height: calc(100vh - 140px); width: 100%; }
-@media (max-width: 1023px) {
+@media (max-width: 767px) {
   .content { padding: 16px 14px calc(96px + env(safe-area-inset-bottom, 0px)); max-width: none; }
 }
 
