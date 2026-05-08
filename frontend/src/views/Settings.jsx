@@ -14,11 +14,12 @@ import {
 import { useTranslation } from 'react-i18next';
 import * as api from '../api.js';
 import { MEMBER_PALETTE } from '../constants.js';
+import { ACCOUNT_ROLES, ACCOUNT_ROLE_KEYS } from '../utils.js';
 
 // ============================================================================
 // SETTINGS
 // ============================================================================
-export function SettingsView({ members, accounts, accountBalances, saveMember, deleteMember, deleteAccount, exportData, importData, resetAllData, categories = [], fmt }) {
+export function SettingsView({ members, accounts, accountBalances, saveMember, deleteMember, deleteAccount, updateAccount, exportData, importData, resetAllData, categories = [], fmt }) {
   const { t } = useTranslation();
   const [editingMember, setEditingMember] = useState(null);
   const COLORS = MEMBER_PALETTE;
@@ -54,22 +55,47 @@ export function SettingsView({ members, accounts, accountBalances, saveMember, d
       </section>
 
       <section className="card">
-        <div className="card-header"><h3><Wallet size={16}/> Comptes bancaires</h3></div>
+        <div className="card-header">
+          <h3><Wallet size={16}/> Comptes bancaires</h3>
+          <span className="card-meta">rôle = comment ce compte est compté dans les calculs</span>
+        </div>
         <div className="member-list">
           {accounts.length === 0 && <div className="empty-mini"><Wallet size={24}/><p>Aucun compte. Importez un CSV.</p></div>}
           {accounts.map(a => {
             const owners = (a.memberIds || []).map(id => members.find(m => m.id === id)?.name).filter(Boolean).join(' & ');
+            const role = a.role || 'principal';
+            const roleMeta = ACCOUNT_ROLES[role] || ACCOUNT_ROLES.principal;
             return (
-              <div key={a.id} className="member-card">
+              <div key={a.id} className="member-card" style={{ alignItems: 'center' }}>
                 <span className="member-avatar large" style={{ background: 'var(--info)' }}>{a.bank?.charAt(0) || '?'}</span>
                 <div className="member-card-info">
                   <div className="member-card-name">{a.name}</div>
                   <div className="member-card-role">{a.bank} · {owners} · {fmt(accountBalances[a.id] || 0)}</div>
                 </div>
+                {updateAccount && (
+                  <select
+                    value={role}
+                    onChange={(e) => updateAccount(a.id, { role: e.target.value })}
+                    title={roleMeta.desc}
+                    style={{ fontSize: 12, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-primary)', cursor: 'pointer', maxWidth: 200 }}
+                  >
+                    {ACCOUNT_ROLE_KEYS.map(k => (
+                      <option key={k} value={k}>{ACCOUNT_ROLES[k].label}</option>
+                    ))}
+                  </select>
+                )}
                 <button className="icon-btn-sm" onClick={() => deleteAccount(a.id)}><Trash2 size={13}/></button>
               </div>
             );
           })}
+        </div>
+        <div className="settings-info" style={{ marginTop: 12 }}>
+          <Lightbulb size={14}/>
+          <span>
+            <strong>Principal</strong> : tout compte. <strong>Dépenses</strong> (Revolut, voyage) : seules les sorties comptent.
+            <strong> Épargne / Investissement</strong> : exclus du cashflow mensuel mais comptent dans le patrimoine.
+            <strong> Professionnel</strong> : exclu du patrimoine personnel.
+          </span>
         </div>
       </section>
 

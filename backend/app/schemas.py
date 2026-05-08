@@ -75,6 +75,7 @@ class AccountBase(BaseModel):
     name: str
     bank: Optional[str] = None
     type: str = "checking"
+    role: str = "principal"  # principal | depenses | epargne | investissement | professionnel
     initial_balance: float = 0.0
 
 
@@ -86,6 +87,7 @@ class AccountUpdate(BaseModel):
     name: Optional[str] = None
     bank: Optional[str] = None
     type: Optional[str] = None
+    role: Optional[str] = None
     initial_balance: Optional[float] = None
     member_ids: Optional[List[str]] = None
 

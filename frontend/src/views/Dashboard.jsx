@@ -360,6 +360,26 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
               </li>
             )}
           </ul>
+          {/* Account-role exclusion footer — surface excluded accounts so the
+              user understands why the cashflow numbers may look different
+              from a naive "sum all transactions" view. */}
+          {(() => {
+            const excluded = visibleAccounts.filter(a => a.role && a.role !== 'principal');
+            if (excluded.length === 0) return null;
+            return (
+              <div className="mt-4 pt-3 border-t border-dotted border-[var(--color-w-border)] text-[11px] text-[var(--color-w-faint)] leading-[1.55] w-serif italic">
+                Exclus du calcul mensuel :{' '}
+                {excluded.map((a, i) => (
+                  <span key={a.id}>
+                    {i > 0 && ', '}
+                    <span className="text-[var(--color-w-muted)] not-italic">{a.name}</span>
+                    <span className="text-[var(--color-w-faint)]"> ({a.role})</span>
+                  </span>
+                ))}
+                .
+              </div>
+            );
+          })()}
         </div>
       </section>
 

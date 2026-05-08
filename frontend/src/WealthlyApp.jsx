@@ -14,6 +14,7 @@ import {
   formatCurrency, formatDate, monthKey, dayOfMonth, generateId, hashTransaction,
   parseCSV, detectBankProfile, autoDetectMapping, applyMapping,
   categorize, detectRecurring,
+  accountIncludeInNetWorth, accountCountsAsIncome, accountCountsAsExpense,
 } from './utils.js';
 import { Styles } from './Styles.jsx';
 import { Toast } from './components/Toast.jsx';
@@ -90,6 +91,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     name: a.name,
     bank: a.bank,
     type: a.type,
+    role: a.role || 'principal',
     initialBalance: a.initial_balance,
     memberIds: a.member_ids || [],
     currentBalance: a.current_balance,
@@ -98,6 +100,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     name: a.name,
     bank: a.bank,
     type: a.type,
+    role: a.role || 'principal',
     initial_balance: parseFloat(a.initialBalance) || 0,
     member_ids: a.memberIds || [],
   });
@@ -402,7 +405,12 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     return balances;
   }, [accounts, transactions]);
 
-  const liquidWealth = useMemo(() => visibleAccounts.reduce((sum, a) => sum + (accountBalances[a.id] || 0) * memberShare(a), 0), [visibleAccounts, accountBalances, memberShare]);
+  const liquidWealth = useMemo(
+    () => visibleAccounts
+      .filter(a => accountIncludeInNetWorth(a.role))
+      .reduce((sum, a) => sum + (accountBalances[a.id] || 0) * memberShare(a), 0),
+    [visibleAccounts, accountBalances, memberShare]
+  );
   const assetsValue = useMemo(() => visibleAssets.reduce((sum, a) => sum + (parseFloat(a.currentValue) || 0) * memberShare(a), 0), [visibleAssets, memberShare]);
   const liabilitiesValue = useMemo(() => visibleLiabilities.reduce((sum, l) => sum + (parseFloat(l.remainingCapital) || 0) * memberShare(l), 0), [visibleLiabilities, memberShare]);
   const netWorth = liquidWealth + assetsValue - liabilitiesValue;
@@ -473,7 +481,11 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     const months = new Set();
     sortedTx.forEach(t => months.add(monthKey(t.date)));
     const sortedMonths = Array.from(months).sort();
-    let runningTotal = visibleAccounts.reduce((sum, a) => sum + (a.initialBalance || 0) * memberShare(a), 0);
+    // Net worth running balance counts every account whose role contributes
+    // to patrimoine net (everything except 'professionnel' by default).
+    let runningTotal = visibleAccounts
+      .filter(a => accountIncludeInNetWorth(a.role))
+      .reduce((sum, a) => sum + (a.initialBalance || 0) * memberShare(a), 0);
     sortedMonths.forEach(m => { monthly[m] = { month: m, income: 0, expenses: 0, net: 0, balance: 0, fixed: 0, variable: 0, savings: 0 }; });
     sortedTx.forEach(t => {
       const m = monthKey(t.date);
@@ -481,15 +493,26 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
       const share = acc ? memberShare(acc) : 1;
       const sharedAmount = t.amount * share;
       const cat = categories.find(c => c.id === t.categoryId);
-      if (t.amount > 0) monthly[m].income += sharedAmount;
-      else {
-        const absShared = Math.abs(sharedAmount);
-        monthly[m].expenses += absShared;
-        if (recurringIds.has(t.id)) monthly[m].fixed += absShared;
-        else monthly[m].variable += absShared;
-        if (cat?.kind === 'savings') monthly[m].savings += absShared;
+      const role = acc?.role || 'principal';
+      // Cashflow attribution depends on the account's role. Transfers between
+      // a 'principal' and an 'epargne' account are NOT income/expenses for
+      // the foyer — they're internal movements between buckets the user owns.
+      if (t.amount > 0) {
+        if (accountCountsAsIncome(role)) monthly[m].income += sharedAmount;
+      } else {
+        if (accountCountsAsExpense(role)) {
+          const absShared = Math.abs(sharedAmount);
+          monthly[m].expenses += absShared;
+          if (recurringIds.has(t.id)) monthly[m].fixed += absShared;
+          else monthly[m].variable += absShared;
+          if (cat?.kind === 'savings') monthly[m].savings += absShared;
+        }
       }
-      monthly[m].net += sharedAmount;
+      // Running balance still tracks every transaction on a NW-eligible
+      // account, so the net worth chart stays correct even when an epargne
+      // account receives a transfer (the source account's symmetric outflow
+      // cancels it out at the foyer level).
+      if (accountIncludeInNetWorth(role)) monthly[m].net += sharedAmount;
     });
     sortedMonths.forEach(m => { runningTotal += monthly[m].net; monthly[m].balance = runningTotal; });
     return Object.values(monthly);
@@ -769,6 +792,19 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
       await api.accounts.delete(accId);
       setAccounts(prev => prev.filter(a => a.id !== accId));
       setTransactions(prev => prev.filter(t => t.accountId !== accId));
+    } catch (err) { showToast('Erreur : ' + err.message, 'error'); }
+  };
+
+  // Patch a single field on an account (e.g. role). Used by the Settings UI
+  // when the user re-classifies a freshly-imported account.
+  const updateAccount = async (accId, patch) => {
+    const acc = accounts.find(a => a.id === accId);
+    if (!acc) return;
+    const merged = { ...acc, ...patch };
+    try {
+      const saved = await api.accounts.update(accId, accountToApi(merged));
+      const mapped = accountFromApi(saved);
+      setAccounts(prev => prev.map(a => a.id === accId ? mapped : a));
     } catch (err) { showToast('Erreur : ' + err.message, 'error'); }
   };
 
@@ -1173,6 +1209,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             members={members} accounts={accounts} accountBalances={accountBalances}
             saveMember={saveMember} deleteMember={deleteMember}
             deleteAccount={deleteAccount}
+            updateAccount={updateAccount}
             exportData={exportData} importData={importData} resetAllData={resetAllData}
             categories={categories}
             fmt={fmt}

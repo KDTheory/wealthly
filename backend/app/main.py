@@ -79,6 +79,11 @@ def _run_lightweight_migrations() -> None:
             "ALTER TABLE assets ADD COLUMN IF NOT EXISTS construction_year INTEGER",
             "ALTER TABLE assets ADD COLUMN IF NOT EXISTS ownership_pct DOUBLE PRECISION DEFAULT 100.0",
             "ALTER TABLE assets ADD COLUMN IF NOT EXISTS address VARCHAR",
+            # Account cashflow role — drives income/expense exclusion in the
+            # monthly aggregator. Default 'principal' keeps existing accounts
+            # behaving exactly as before until the user opts in.
+            "ALTER TABLE accounts ADD COLUMN IF NOT EXISTS role VARCHAR DEFAULT 'principal' NOT NULL",
+            "CREATE INDEX IF NOT EXISTS ix_accounts_role ON accounts (role)",
         ]
     with engine.begin() as conn:
         for stmt in statements:

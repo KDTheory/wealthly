@@ -127,6 +127,17 @@ class Account(Base):
     name = Column(String, nullable=False)
     bank = Column(String, nullable=True)
     type = Column(String, nullable=False, default="checking")  # checking|savings|pea|credit
+    # Cashflow role — drives which accounts contribute to income / expenses
+    # aggregates. Independent from `type` (which is the bank product family).
+    #   principal      — main account, salary lands here, all flows count
+    #   depenses       — secondary spend wallet (Revolut style); outflows ARE
+    #                    real expenses, inflows are usually transfers from
+    #                    principal and DO NOT count as income
+    #   epargne        — savings; balance counts in net worth, neither inflows
+    #                    nor outflows count for monthly cashflow
+    #   investissement — broker; same rule as epargne for cashflow purposes
+    #   professionnel  — fully excluded from personal patrimoine and cashflow
+    role = Column(String, nullable=False, default="principal", index=True)
     initial_balance = Column(Float, nullable=False, default=0.0)
     created_at = Column(DateTime, default=datetime.utcnow)
 

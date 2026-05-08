@@ -8,6 +8,58 @@
 
 import { DEFAULT_RULES, BANK_PROFILES } from './constants.js';
 
+// ---- Account roles --------------------------------------------------------
+// Five cashflow roles, mapped to a 3-axis ruleset:
+//   includeInNetWorth   — does the balance count toward patrimoine net?
+//   countsAsIncome      — do positive transactions = real income?
+//   countsAsExpense     — do negative transactions = real spending?
+//
+// Defaults are designed so a fresh-imported account (role='principal') keeps
+// the historical behavior — no surprise behavior change for existing data.
+export const ACCOUNT_ROLES = {
+  principal: {
+    label: 'Principal',
+    desc: 'Compte courant principal — salaire, dépenses du quotidien.',
+    includeInNetWorth: true,
+    countsAsIncome: true,
+    countsAsExpense: true,
+  },
+  depenses: {
+    label: 'Dépenses secondaires',
+    desc: 'Revolut, N26, carte voyage… Les sorties sont des dépenses réelles, mais les entrées sont des virements depuis le compte principal.',
+    includeInNetWorth: true,
+    countsAsIncome: false,
+    countsAsExpense: true,
+  },
+  epargne: {
+    label: 'Épargne',
+    desc: 'Livret A, LDDS, PEL… Le solde compte dans le patrimoine, mais les flux entrants/sortants sont des arbitrages, pas du cashflow.',
+    includeInNetWorth: true,
+    countsAsIncome: false,
+    countsAsExpense: false,
+  },
+  investissement: {
+    label: 'Investissement',
+    desc: 'PEA, CTO, assurance vie… Le solde compte dans le patrimoine, mais les versements ne sont pas des dépenses.',
+    includeInNetWorth: true,
+    countsAsIncome: false,
+    countsAsExpense: false,
+  },
+  professionnel: {
+    label: 'Professionnel',
+    desc: 'Compte pro / micro-entreprise — entièrement exclu du patrimoine personnel et du cashflow mensuel.',
+    includeInNetWorth: false,
+    countsAsIncome: false,
+    countsAsExpense: false,
+  },
+};
+
+export const ACCOUNT_ROLE_KEYS = Object.keys(ACCOUNT_ROLES);
+
+export const accountIncludeInNetWorth = (role) => (ACCOUNT_ROLES[role] || ACCOUNT_ROLES.principal).includeInNetWorth;
+export const accountCountsAsIncome = (role) => (ACCOUNT_ROLES[role] || ACCOUNT_ROLES.principal).countsAsIncome;
+export const accountCountsAsExpense = (role) => (ACCOUNT_ROLES[role] || ACCOUNT_ROLES.principal).countsAsExpense;
+
 // ---- Formatting ------------------------------------------------------------
 
 export const formatCurrency = (amount, options = {}) => {
