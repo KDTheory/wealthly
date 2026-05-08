@@ -27,6 +27,7 @@ export function SettingsView({ members, accounts, accountBalances, saveMember, d
     <div className="settings-view">
       <div className="page-header">
         <div>
+          <div className="w-eyebrow">Relevé · Réglages</div>
           <h1 className="page-title">{t('settings.title')}</h1>
           <p className="page-subtitle">{t('settings.subtitle')}</p>
         </div>

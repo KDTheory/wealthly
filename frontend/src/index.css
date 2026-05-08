@@ -165,6 +165,8 @@
   text-transform: uppercase;
   color: var(--color-w-accent);
   font-weight: 500;
+  margin-bottom: 10px;
+  display: block;
 }
 
 /* Dotted divider used inside statement-style lists */

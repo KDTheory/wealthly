@@ -117,6 +117,13 @@ export function Cashflow({ transactions, categories, accounts, memberShare, fmt,
 
   return (
     <div className="cashflow-view">
+      <div className="page-header">
+        <div>
+          <div className="w-eyebrow">Relevé · Cashflow</div>
+          <h1 className="page-title">Vos <em>flux</em>.</h1>
+          <p className="page-subtitle">Entrées, sorties, soldes nets — visualisés sur la période.</p>
+        </div>
+      </div>
       <div className="cashflow-period">
         <div className="cashflow-period-nav">
           <button className="icon-btn" onClick={() => shiftAnchor(-1)} title="Période précédente"><ChevronLeft size={16}/></button>

@@ -42,7 +42,8 @@ export function Analysis({ transactions, categories, recurringIds, recurringGrou
     <div className="analysis-view">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Analyse</h1>
+          <div className="w-eyebrow">Relevé · Analyse</div>
+          <h1 className="page-title">Vos <em>tendances</em>.</h1>
           <p className="page-subtitle">Marchands, catégories et tendances sur la durée.</p>
         </div>
       </div>

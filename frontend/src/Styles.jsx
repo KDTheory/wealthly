@@ -281,7 +281,7 @@ export function Styles({ theme }) {
 .hub-tabs button.active svg { color: var(--primary); }
 @media (max-width: 760px) { .hub-tabs { width: 100%; align-self: stretch; } .hub-tabs button { flex: 1; justify-content: center; } }
 .page-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
-.page-title { font-family: 'Source Serif 4', 'Source Serif Pro', Georgia, serif; font-size: 44px; font-weight: 400; margin: 0 0 4px; letter-spacing: -0.02em; line-height: 1.04; }
+.page-title { font-family: 'Source Serif 4', 'Source Serif Pro', Georgia, serif; font-size: 44px; font-weight: 400; margin: 0 0 10px; letter-spacing: -0.02em; line-height: 1.04; }
 .page-title em { font-style: italic; color: var(--primary); font-weight: 400; }
 .page-subtitle { font-size: 13px; color: var(--text-tertiary); margin: 0; max-width: 580px; line-height: 1.5; }
 @media (max-width: 760px) { .page-title { font-size: 32px; letter-spacing: -0.018em; } }

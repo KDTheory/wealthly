@@ -136,7 +136,12 @@ export function Monthly({ transactions, accounts, categories, members, recurring
 
   return (
     <div className="monthly-view">
-      <div className="monthly-header">
+      <div className="page-header">
+        <div>
+          <div className="w-eyebrow">Relevé · Mensuel</div>
+          <h1 className="page-title">Votre <em>reste à vivre</em>.</h1>
+          <p className="page-subtitle">Charges fixes, abonnements, dépenses variables — mois par mois.</p>
+        </div>
         <select className="month-selector" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}>
           {availableMonths.map(m => (
             <option key={m} value={m}>{formatDate(m + '-01', { format: 'monthLong' })}{m === currentMonth ? ' (en cours)' : ''}</option>
