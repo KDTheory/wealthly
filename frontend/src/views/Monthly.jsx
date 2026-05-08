@@ -8,7 +8,7 @@ import {
 } from 'recharts';
 import {
   Plus, Trash2, Edit3, Check, AlertTriangle, Repeat, Sparkles, Lightbulb,
-  TrendingUp, ArrowUp, ArrowDown, Minus, Activity, BarChart3,
+  TrendingUp, ArrowUp, ArrowDown, Minus, Activity, BarChart3, X,
 } from 'lucide-react';
 import { formatCurrency, formatDate, monthKey } from '../utils.js';
 import { AnimatedNumber } from '../components/AnimatedNumber.jsx';

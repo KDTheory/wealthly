@@ -15,7 +15,7 @@ import {
 import {
   Plus, Trash2, Edit3, Check, ChevronLeft, ChevronRight, Home, Landmark,
   Wallet, CreditCard, Users, Sparkles, Lightbulb, BarChart3,
-  Bitcoin, PiggyBank, Target, Coins, Heart,
+  Bitcoin, PiggyBank, Target, Coins, Heart, X,
 } from 'lucide-react';
 import {
   ASSET_TYPES, ASSET_CLASS_MAP, LIABILITY_TYPES,

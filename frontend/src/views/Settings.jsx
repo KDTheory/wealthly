@@ -9,7 +9,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Plus, Trash2, Edit3, Check, Upload, Download, Users, Wallet,
-  Lightbulb, Sparkles, Activity, AlertCircle, RefreshCw, Link2, Unlink,
+  Lightbulb, Sparkles, Activity, AlertCircle, RefreshCw, Link2, Unlink, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import * as api from '../api.js';

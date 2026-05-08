@@ -2,7 +2,7 @@
 // Budgets — 50/30/20 method, per-category caps, savings goals
 // ============================================================================
 import { useState } from 'react';
-import { Target, Wallet, Plus, Edit3, Trash2, Check, Lightbulb } from 'lucide-react';
+import { Target, Wallet, Plus, Edit3, Trash2, Check, Lightbulb, X } from 'lucide-react';
 import { formatDate } from '../utils.js';
 
 export function Budgets({ categories, budgets, setBudget, categoryAnalysis, fiftyThirtyTwenty, thisMonthStats, cashflowProjection, goals, saveGoal, deleteGoal, fmt }) {
