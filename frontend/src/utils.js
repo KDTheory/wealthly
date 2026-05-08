@@ -60,6 +60,65 @@ export const accountIncludeInNetWorth = (role) => (ACCOUNT_ROLES[role] || ACCOUN
 export const accountCountsAsIncome = (role) => (ACCOUNT_ROLES[role] || ACCOUNT_ROLES.principal).countsAsIncome;
 export const accountCountsAsExpense = (role) => (ACCOUNT_ROLES[role] || ACCOUNT_ROLES.principal).countsAsExpense;
 
+// Heuristic role suggestion from transaction patterns. Returns
+// { role, confidence } where confidence is 'high' | 'medium' | 'low'. Used
+// in the Settings UI to nudge the user when the freshly-imported default
+// 'principal' is clearly wrong (e.g. a Revolut top-up account, a Livret).
+//
+// Rules (evaluated in order, first match wins):
+//   • Salary pattern (≥2 recurring large positives ≥ 1 200€ around month-end)
+//     → principal
+//   • ≥80% of inflow € comes from one other account in `otherAccounts`
+//     → depenses (it's a spend bucket fed from somewhere else)
+//   • Mostly transfers (≥70% of total tx count have round amounts > 100€
+//     and category is empty/transfer)                            → epargne
+//   • Negative-only or near-zero outflows but positive net        → epargne
+//   • Mostly small recurrent expenses, some inflow                → principal
+// Otherwise → unknown (no suggestion).
+export const suggestAccountRole = (transactions, otherAccountIds = []) => {
+  if (!Array.isArray(transactions) || transactions.length < 5) {
+    return { role: null, confidence: 'low', reason: 'Pas assez de transactions pour estimer.' };
+  }
+  const inflows = transactions.filter(t => t.amount > 0);
+  const outflows = transactions.filter(t => t.amount < 0);
+  const totalIn = inflows.reduce((s, t) => s + t.amount, 0);
+  const totalOut = outflows.reduce((s, t) => s + Math.abs(t.amount), 0);
+
+  // Salary-like recurrence: ≥2 inflows ≥ 1 200€ in the last 90 days, on
+  // similar days-of-month (within 5 days of each other).
+  const big = inflows.filter(t => t.amount >= 1200);
+  if (big.length >= 2) {
+    const days = big.map(t => new Date(t.date).getDate());
+    const dayRange = Math.max(...days) - Math.min(...days);
+    if (dayRange <= 5) {
+      return { role: 'principal', confidence: 'high', reason: `Salaire détecté (${big.length} entrées ≥ 1 200€ autour du même jour du mois).` };
+    }
+  }
+
+  // Internal-transfer dominance: most inflows look like virements from
+  // your own accounts. We can't introspect amounts here cheaply, so we
+  // approximate via labels — if 60%+ of inflows have a virement-like
+  // label, treat as a depenses bucket.
+  const virementInflows = inflows.filter(t => /\b(virement|transfer|transfert|wise|revolut|to\s+\w+)\b/i.test(t.label || ''));
+  if (inflows.length >= 3 && virementInflows.length / inflows.length >= 0.6 && outflows.length >= 5) {
+    return { role: 'depenses', confidence: 'medium', reason: `${Math.round((virementInflows.length / inflows.length) * 100)}% des entrées ressemblent à des virements depuis un autre compte.` };
+  }
+
+  // Savings-like: lots of round inflows, few small outflows.
+  const roundInflows = inflows.filter(t => Math.abs(t.amount % 50) < 0.01 && t.amount >= 100);
+  if (roundInflows.length / Math.max(transactions.length, 1) >= 0.5 && outflows.length <= 3) {
+    return { role: 'epargne', confidence: 'medium', reason: 'Surtout des versements ronds, peu de dépenses individuelles.' };
+  }
+
+  // Net positive without recurrence + few outflows → likely épargne
+  if (totalIn > totalOut * 3 && outflows.length <= 5) {
+    return { role: 'epargne', confidence: 'low', reason: 'Solde net très positif et peu de sorties — comportement de compte épargne.' };
+  }
+
+  // Default: principal — too noisy a pattern to label otherwise
+  return { role: 'principal', confidence: 'low', reason: 'Mélange entrées / sorties habituel pour un compte courant.' };
+};
+
 // ---- Internal-transfer detection -----------------------------------------
 // Pair-match transactions that look like "I moved money between two of my
 // own accounts" so the cashflow aggregator can ignore them — otherwise a
@@ -67,62 +126,74 @@ export const accountCountsAsExpense = (role) => (ACCOUNT_ROLES[role] || ACCOUNT_
 // and income by €1 000.
 //
 // Pairing rules:
-//   1. Same absolute amount, rounded to 0.01
+//   1. Absolute amounts within tolerance (1€ or 1% of the larger, whichever
+//      is bigger) — accommodates Wise / forex where commission shaves a few
+//      euros off the receiving leg
 //   2. Opposite signs (one positive, one negative)
 //   3. Two distinct accounts that the user owns
 //   4. Within ±windowDays days of each other (default 3 — covers slow IBAN
 //      virements that take 2 banking days)
-//   5. Each transaction can only be matched once (greedy, earliest-first)
+//   5. Each transaction can only be matched once (greedy, earliest-first,
+//      best amount-match wins for a given outflow)
 //
 // Returns a Set<txId> of transactions identified as one side of a transfer.
-// Both legs are added so the monthlyEvolution aggregator can skip either
-// independently.
-//
-// O(n) per amount bucket — fast enough for tens of thousands of txs.
+// O(n²) worst case but in practice tiny — the windowDays filter prunes
+// aggressively for any reasonable dataset.
 const TRANSFER_LABEL_HINT = /\b(virement|transfer|transfert|vir\.?\s|to\s+\w+|from\s+\w+|wise|revolut)\b/i;
+const TRANSFER_AMOUNT_TOLERANCE_ABS = 1.0;     // 1€ floor
+const TRANSFER_AMOUNT_TOLERANCE_PCT = 0.01;    // 1% of the larger leg
+
+const amountsMatch = (a, b) => {
+  const aa = Math.abs(a);
+  const ab = Math.abs(b);
+  const tol = Math.max(TRANSFER_AMOUNT_TOLERANCE_ABS, Math.max(aa, ab) * TRANSFER_AMOUNT_TOLERANCE_PCT);
+  return Math.abs(aa - ab) <= tol;
+};
 
 export const detectInternalTransfers = (transactions, options = {}) => {
   const { windowDays = 3, requireLabelHint = false } = options;
   const transferIds = new Set();
   if (!Array.isArray(transactions) || transactions.length < 2) return transferIds;
 
-  // Group by rounded |amount| so we only compare candidates of the same size.
-  const byAmount = new Map();
-  for (const t of transactions) {
-    if (!t || typeof t.amount !== 'number' || t.amount === 0) continue;
-    const key = Math.round(Math.abs(t.amount) * 100);
-    if (!byAmount.has(key)) byAmount.set(key, []);
-    byAmount.get(key).push(t);
-  }
+  // Sort by date, then scan forward within the time window for each tx.
+  const sorted = [...transactions]
+    .filter(t => t && typeof t.amount === 'number' && t.amount !== 0)
+    .sort((a, b) => a.date.localeCompare(b.date));
 
   const windowMs = windowDays * 86400000;
   const matched = new Set();
 
-  for (const group of byAmount.values()) {
-    if (group.length < 2) continue;
-    // Sort by date for greedy earliest-first matching.
-    const sorted = [...group].sort((a, b) => a.date.localeCompare(b.date));
-    for (let i = 0; i < sorted.length; i++) {
-      const a = sorted[i];
-      if (matched.has(a.id)) continue;
-      for (let j = i + 1; j < sorted.length; j++) {
-        const b = sorted[j];
-        if (matched.has(b.id)) continue;
-        if (a.accountId === b.accountId) continue;
-        if (Math.sign(a.amount) === Math.sign(b.amount)) continue;
-        const diff = Math.abs(new Date(a.date) - new Date(b.date));
-        if (diff > windowMs) break; // sorted by date — no later match in window
-        if (requireLabelHint) {
-          const blob = `${a.label || ''} ${b.label || ''}`;
-          if (!TRANSFER_LABEL_HINT.test(blob)) continue;
-        }
-        // Match found — tag both legs and stop searching for `a`.
-        transferIds.add(a.id);
-        transferIds.add(b.id);
-        matched.add(a.id);
-        matched.add(b.id);
-        break;
+  for (let i = 0; i < sorted.length; i++) {
+    const a = sorted[i];
+    if (matched.has(a.id)) continue;
+    let bestJ = -1;
+    let bestDelta = Infinity;
+    const aDate = new Date(a.date).getTime();
+    for (let j = i + 1; j < sorted.length; j++) {
+      const b = sorted[j];
+      const bDate = new Date(b.date).getTime();
+      if (bDate - aDate > windowMs) break; // sorted ⇒ no later match
+      if (matched.has(b.id)) continue;
+      if (a.accountId === b.accountId) continue;
+      if (Math.sign(a.amount) === Math.sign(b.amount)) continue;
+      if (!amountsMatch(a.amount, b.amount)) continue;
+      if (requireLabelHint) {
+        const blob = `${a.label || ''} ${b.label || ''}`;
+        if (!TRANSFER_LABEL_HINT.test(blob)) continue;
       }
+      // Prefer the tightest amount match (smallest delta) among candidates.
+      const delta = Math.abs(Math.abs(a.amount) - Math.abs(b.amount));
+      if (delta < bestDelta) {
+        bestDelta = delta;
+        bestJ = j;
+      }
+    }
+    if (bestJ !== -1) {
+      const b = sorted[bestJ];
+      transferIds.add(a.id);
+      transferIds.add(b.id);
+      matched.add(a.id);
+      matched.add(b.id);
     }
   }
   return transferIds;

@@ -14,12 +14,12 @@ import {
 import { useTranslation } from 'react-i18next';
 import * as api from '../api.js';
 import { MEMBER_PALETTE } from '../constants.js';
-import { ACCOUNT_ROLES, ACCOUNT_ROLE_KEYS } from '../utils.js';
+import { ACCOUNT_ROLES, ACCOUNT_ROLE_KEYS, suggestAccountRole } from '../utils.js';
 
 // ============================================================================
 // SETTINGS
 // ============================================================================
-export function SettingsView({ members, accounts, accountBalances, saveMember, deleteMember, deleteAccount, updateAccount, exportData, importData, resetAllData, categories = [], fmt }) {
+export function SettingsView({ members, accounts, accountBalances, saveMember, deleteMember, deleteAccount, updateAccount, transactions = [], exportData, importData, resetAllData, categories = [], fmt }) {
   const { t } = useTranslation();
   const [editingMember, setEditingMember] = useState(null);
   const COLORS = MEMBER_PALETTE;
@@ -65,12 +65,30 @@ export function SettingsView({ members, accounts, accountBalances, saveMember, d
             const owners = (a.memberIds || []).map(id => members.find(m => m.id === id)?.name).filter(Boolean).join(' & ');
             const role = a.role || 'principal';
             const roleMeta = ACCOUNT_ROLES[role] || ACCOUNT_ROLES.principal;
+            // Compute a role suggestion only when the user hasn't already
+            // picked something other than the default 'principal'. Otherwise
+            // we trust their explicit choice.
+            const accTx = role === 'principal' ? transactions.filter(t => t.accountId === a.id) : [];
+            const otherIds = accounts.filter(x => x.id !== a.id).map(x => x.id);
+            const suggestion = role === 'principal' ? suggestAccountRole(accTx, otherIds) : null;
+            const showSuggestion = suggestion && suggestion.role && suggestion.role !== 'principal' && suggestion.confidence !== 'low';
             return (
-              <div key={a.id} className="member-card" style={{ alignItems: 'center' }}>
+              <div key={a.id} className="member-card" style={{ alignItems: 'flex-start' }}>
                 <span className="member-avatar large" style={{ background: 'var(--info)' }}>{a.bank?.charAt(0) || '?'}</span>
-                <div className="member-card-info">
+                <div className="member-card-info" style={{ flex: 1 }}>
                   <div className="member-card-name">{a.name}</div>
                   <div className="member-card-role">{a.bank} · {owners} · {fmt(accountBalances[a.id] || 0)}</div>
+                  {showSuggestion && (
+                    <div style={{ marginTop: 6, fontSize: 11.5, color: 'var(--text-tertiary)', fontStyle: 'italic', fontFamily: "'Source Serif 4', Georgia, serif" }}>
+                      <span style={{ color: 'var(--primary)', fontStyle: 'normal', fontFamily: 'inherit' }}>↪ Suggéré : {ACCOUNT_ROLES[suggestion.role].label}</span> — {suggestion.reason}{' '}
+                      <button
+                        onClick={() => updateAccount(a.id, { role: suggestion.role })}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--primary)', cursor: 'pointer', textDecoration: 'underline', padding: 0, fontSize: 11.5, fontStyle: 'normal', fontFamily: 'inherit' }}
+                      >
+                        Appliquer
+                      </button>
+                    </div>
+                  )}
                 </div>
                 {updateAccount && (
                   <select

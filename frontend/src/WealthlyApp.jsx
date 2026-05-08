@@ -1228,6 +1228,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             saveMember={saveMember} deleteMember={deleteMember}
             deleteAccount={deleteAccount}
             updateAccount={updateAccount}
+            transactions={visibleTransactions}
             exportData={exportData} importData={importData} resetAllData={resetAllData}
             categories={categories}
             fmt={fmt}
