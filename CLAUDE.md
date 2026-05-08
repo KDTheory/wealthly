@@ -228,6 +228,100 @@ toast pipeline surfaces it without a special case. Limiter lives in
 
 ---
 
+## Latest session — 2026-05-08 (later: account roles + transfer detection)
+
+Real-data discovery: after only connecting Revolut (a travel/online-purchase
+wallet, not the user's main account), the dashboard showed nonsense
+numbers — net worth €17, savings rate −98 %, etc. Cause: every account
+contributed equally to income/expense aggregates regardless of how the
+user actually uses it. Two-axis fix shipped:
+
+### Account cashflow roles
+
+Five roles with explicit rules, configurable per account in Réglages:
+- **principal** — main account, all flows count (default)
+- **depenses** — Revolut-style; outflows ARE expenses, inflows are
+  transfers from principal and DO NOT count as income
+- **epargne** — Livret/PEL/LDDS; balance counts in NW but flows are
+  arbitrages, not cashflow
+- **investissement** — PEA/CTO/AV; same as epargne for cashflow
+- **professionnel** — fully excluded from personal patrimoine + cashflow
+
+Backend: `accounts.role VARCHAR DEFAULT 'principal' NOT NULL` (+ index),
+schema/serializer propagation, lightweight ALTER TABLE on startup.
+Frontend: `ACCOUNT_ROLES` table + helpers in utils.js
+(`accountIncludeInNetWorth`, `accountCountsAsIncome`,
+`accountCountsAsExpense`), aggregator integration in
+`monthlyEvolution`, `liquidWealth`, `categoryAnalysis`. Settings UI
+shows a per-account `<select>` with each role's tooltip.
+
+### Heuristic role suggestion (`suggestAccountRole`)
+
+When a freshly-imported account is still on the default 'principal',
+the Settings UI runs a heuristic on its transactions and proposes a
+better role inline: salary pattern (≥2 inflows ≥1 200€ same day-of-
+month) → principal; ≥60% virement-labelled inflows + real outflows →
+depenses; round inflows + few outflows → epargne; etc. One-click
+"Appliquer" on the suggestion.
+
+### Internal transfer detection (`detectInternalTransfers`)
+
+Pair-matches transactions that look like "I moved money between my own
+accounts" so cashflow aggregates ignore them. Pure frontend, recomputes
+on every visibleTransactions change. Rules:
+1. Same |amount| within tolerance `max(1€, 1% of larger leg)` — covers
+   Wise/forex commissions
+2. Opposite signs
+3. Two distinct accounts
+4. Within ±3 days (sliding date window)
+5. Greedy earliest-first, best amount-match wins
+
+Returns `Set<txId>` with a `.pairs` property exposing
+`{ outTxId, inTxId, fromAccountId, toAccountId, amount, date }` so
+the UI can render the actual pairs.
+
+### Manual override (`is_transfer_override`)
+
+Backend column on `transactions`, tri-state: null = defer to
+auto-detection, true = force-transfer, false = force-not-transfer.
+Frontend exposes `setTransferOverride(txId, value)` from WealthlyApp;
+effective `transferIds = auto ∪ {override:true} − {override:false}`.
+Override is the source of truth so the user can always correct a bad
+auto-classification.
+
+UI in Transactions row: gold `↔ Transfert` badge is clickable (= "no,
+not a transfer"); a faint `↔` appears on hover for non-detected rows
+(= "force this as a transfer"). Both persist immediately.
+
+### Surfacing in the Dashboard
+
+- Section III — Trésorerie footer lists role-based exclusions in serif
+  italic ("Exclus du calcul mensuel : Revolut (depenses)…")
+- New section `↔ Mouvements internes` lists pair-matched transfers of
+  the current month with direction (Boursorama → Livret A : 500€) +
+  count + total in the header. Caps at 6.
+- Activity recent: ↔ icon + gold "Transfert" pill, dimmed amount.
+- Transactions table: "↔ Virement interne" gold pill replaces the
+  category pill for detected transfers (clickable to override category).
+
+Commits chronologiques :
+- `1ae9c70` cashflow roles (backend + frontend + Settings UI)
+- `410f206` initial transfer detection + UI badges
+- `b5333fe` forex tolerance widening + auto-suggest role
+- `4050283` manual override (backend column) + Mouvements internes
+  panel + Virement interne pill
+
+### Known limits / not-yet-shipped
+
+- No "vue partielle" banner (skipped at the user's request) — the user
+  is fine seeing approximate data while connecting more accounts.
+- Manual transfer override only flags one leg; the *pair* info comes
+  from auto-detection only. Manually flagging a tx as transfer doesn't
+  reconstruct a counterpart, so it's excluded from cashflow but doesn't
+  appear in the Mouvements internes panel.
+
+---
+
 ## Latest session — 2026-05-08 (Méridien design pivot)
 
 Direction visuelle revue avec une référence externe ("Direction B —
