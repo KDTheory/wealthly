@@ -88,7 +88,7 @@ export function Styles({ theme }) {
 .brand:hover { opacity: 0.85; }
 .brand-mark { width: 38px; height: 38px; border-radius: 6px; background: var(--primary-soft); border: 1px solid ${dark ? 'rgba(197, 165, 114, 0.35)' : 'rgba(160, 133, 85, 0.3)'}; display: flex; align-items: center; justify-content: center; color: var(--primary); box-shadow: none; }
 .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
-.brand-name { font-size: 17px; font-weight: 700; letter-spacing: -0.025em; }
+.brand-name { font-family: 'Source Serif 4', 'Source Serif Pro', Georgia, serif; font-size: 20px; font-weight: 400; letter-spacing: -0.005em; }
 .brand-tagline { font-size: 10px; color: var(--text-tertiary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 1px; }
 .main-nav { display: flex; gap: 2px; background: var(--bg-subtle); padding: 4px; border-radius: 10px; overflow-x: auto; border: 1px solid var(--border-light); }
 .main-nav button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: none; background: transparent; color: var(--text-secondary); font-size: 13px; font-weight: 500; border-radius: 7px; cursor: pointer; transition: color 0.18s, background 0.18s; font-family: inherit; white-space: nowrap; letter-spacing: -0.01em; }
@@ -140,7 +140,7 @@ export function Styles({ theme }) {
 .sidebar-brand { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 8px 18px; }
 .sidebar-brand:hover { opacity: 0.85; }
 .sidebar-brand .brand-mark { width: 36px; height: 36px; border-radius: 6px; background: var(--primary-soft); border: 1px solid ${dark ? 'rgba(197, 165, 114, 0.32)' : 'rgba(160, 133, 85, 0.3)'}; display: flex; align-items: center; justify-content: center; color: var(--primary); flex-shrink: 0; }
-.sidebar-brand .brand-name { font-size: 17px; font-weight: 600; letter-spacing: -0.025em; color: var(--text-primary); }
+.sidebar-brand .brand-name { font-family: 'Source Serif 4', 'Source Serif Pro', Georgia, serif; font-size: 20px; font-weight: 400; letter-spacing: -0.005em; color: var(--text-primary); }
 
 .sidebar-nav { display: flex; flex-direction: column; gap: 1px; flex: 1; }
 .sidebar-nav button { position: relative; display: inline-flex; align-items: center; gap: 11px; width: 100%; padding: 9px 12px; border: none; background: transparent; color: var(--text-secondary); font-size: 13.5px; font-weight: 500; border-radius: 8px; cursor: pointer; transition: color .15s, background .15s; font-family: inherit; letter-spacing: -0.005em; text-align: left; overflow: hidden; }
@@ -305,8 +305,10 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .progress-step.active .progress-dot { background: var(--primary); color: ${dark ? '#0c0d10' : '#ffffff'}; border-color: var(--primary); }
 .progress-step.done .progress-dot { background: var(--primary-soft); color: var(--primary); border-color: var(--primary); }
 .progress-line { flex: 1; height: 2px; background: var(--border); border-radius: 1px; }
-.onboarding-step-content h1 { font-size: 32px; font-weight: 500; margin: 0 0 10px; letter-spacing: -0.035em; line-height: 1.1; }
-.onboarding-step-content h2 { font-size: 24px; font-weight: 500; margin: 0 0 8px; letter-spacing: -0.03em; line-height: 1.15; }
+.onboarding-step-content h1 { font-family: 'Source Serif 4', 'Source Serif Pro', Georgia, serif; font-size: 38px; font-weight: 400; margin: 0 0 10px; letter-spacing: -0.02em; line-height: 1.05; }
+.onboarding-step-content h1 em { font-style: italic; color: var(--primary); font-weight: 400; }
+.onboarding-step-content h2 { font-family: 'Source Serif 4', 'Source Serif Pro', Georgia, serif; font-size: 28px; font-weight: 400; margin: 0 0 8px; letter-spacing: -0.018em; line-height: 1.1; }
+.onboarding-step-content h2 em { font-style: italic; color: var(--primary); font-weight: 400; }
 .onboarding-lead { font-size: 15px; color: var(--text-secondary); margin: 0 0 28px; line-height: 1.6; max-width: 460px; letter-spacing: -0.005em; }
 .onboarding-hero { text-align: center; margin-bottom: 32px; }
 .ob-mark-large { width: 64px; height: 64px; border-radius: 8px; background: var(--primary-soft); border: 1px solid ${dark ? 'rgba(197, 165, 114, 0.32)' : 'rgba(160, 133, 85, 0.28)'}; display: inline-flex; align-items: center; justify-content: center; color: var(--primary); margin-bottom: 20px; }
@@ -387,8 +389,10 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 
 /* CARDS */
 .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; transition: border-color .2s; }
-.card-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
-.card-header h3 { font-size: 11px; font-weight: 500; margin: 0; display: flex; align-items: center; gap: 6px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-tertiary); }
+.card-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 0 0 16px; padding-bottom: 12px; border-bottom: 1px dotted var(--border); flex-wrap: wrap; }
+.card-header h3 { font-size: 10.5px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 7px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--primary); }
+.card-header h3 svg { color: var(--primary); opacity: 0.75; }
+.card-header .card-meta { font-family: 'Source Serif 4', 'Source Serif Pro', Georgia, serif; font-style: italic; font-size: 13px; color: var(--text-tertiary); letter-spacing: 0; text-transform: none; }
 
 /* HealthScore card — gauge on the left, breakdown on the right. */
 .health-score-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 22px; transition: border-color .2s; }
@@ -1152,7 +1156,8 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 /* IMPORT */
 .import-flow { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; box-shadow: var(--shadow-sm); }
 .import-header { margin-bottom: 24px; }
-.import-header h2 { font-size: 22px; font-weight: 700; margin: 12px 0 4px; letter-spacing: -0.02em; }
+.import-header h2 { font-family: 'Source Serif 4', 'Source Serif Pro', Georgia, serif; font-size: 28px; font-weight: 400; margin: 12px 0 4px; letter-spacing: -0.018em; line-height: 1.1; }
+.import-header h2 em { font-style: italic; color: var(--primary); font-weight: 400; }
 .import-header p { font-size: 13px; color: var(--text-tertiary); margin: 0; }
 .import-progress { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
 .import-progress .step { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-tertiary); font-weight: 600; }

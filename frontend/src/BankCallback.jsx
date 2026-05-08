@@ -300,7 +300,7 @@ const card = {
   color: '#ebe8e3',
 };
 
-const title = { fontSize: 22, fontWeight: 600, marginBottom: 12, letterSpacing: -0.2 };
+const title = { fontFamily: "'Source Serif 4', 'Source Serif Pro', Georgia, serif", fontSize: 28, fontWeight: 400, marginBottom: 12, letterSpacing: '-0.018em', lineHeight: 1.1 };
 const muted = { color: '#8c8a85', fontSize: 14, lineHeight: 1.5 };
 const errorText = { color: '#c47158', fontSize: 14, marginBottom: 16 };
 

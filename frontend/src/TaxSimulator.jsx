@@ -112,11 +112,11 @@ export default function TaxSimulator({ transactions = [] }) {
     <div className="w-redesign font-sans">
       {/* Header */}
       <div className="mb-7">
-        <p className={labelCls + ' mb-2'}>Outil fiscal</p>
-        <h1 className="text-[28px] leading-tight font-semibold tracking-tight text-[var(--color-w-text)]">
-          Simulateur d'impôt
+        <div className="w-eyebrow">Relevé · Impôts</div>
+        <h1 className="w-serif text-[clamp(34px,4.4vw,44px)] leading-[1.04] font-normal tracking-[-0.02em] text-[var(--color-w-text)]">
+          Simulateur <span className="w-serif-italic text-[var(--color-w-accent)]">d'impôt</span>.
         </h1>
-        <p className="text-sm text-[var(--color-w-faint)] mt-1">
+        <p className="text-sm text-[var(--color-w-faint)] mt-2">
           Revenus 2025 · barème déclaration 2026
         </p>
       </div>

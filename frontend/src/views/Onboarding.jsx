@@ -59,7 +59,7 @@ export function Onboarding({ onComplete }) {
                   <path d="M7 9 L9.5 15.5 L12 10.5 L14.5 15.5 L17 9"/>
                 </svg>
               </div>
-              <h1>Bienvenue chez Wealthly.</h1>
+              <h1>Bienvenue <em>chez Wealthly</em>.</h1>
               <p className="onboarding-lead">Suivez. Comprenez. Décidez. La vue consolidée de votre patrimoine familial, hébergée chez vous.</p>
             </div>
             <div className="onboarding-features-grid">
@@ -100,7 +100,7 @@ export function Onboarding({ onComplete }) {
 
         {step === 1 && (
           <div className="onboarding-step-content">
-            <h2>Qui compose votre foyer ?</h2>
+            <h2>Qui compose <em>votre foyer</em> ?</h2>
             <p className="onboarding-lead">Ajoutez chaque personne. Les adultes auront leur propre espace privé, les enfants seront associés à un parent (utile pour leur PEA jeune par exemple).</p>
 
             {members.length > 0 && (
@@ -142,7 +142,7 @@ export function Onboarding({ onComplete }) {
         {step === 2 && (
           <div className="onboarding-step-content">
             <div className="ready-icon"><Check size={28} strokeWidth={2}/></div>
-            <h2>Configuration terminée</h2>
+            <h2>Configuration <em>terminée</em>.</h2>
             <p className="onboarding-lead">Votre espace est prêt. Ajoutez vos comptes, votre patrimoine et vos prêts au fil du temps — commencez petit, enrichissez au rythme qui vous convient.</p>
 
             <div className="onboarding-summary">

@@ -103,7 +103,10 @@ export default function AuthScreen({ onAuth, onTryDemo, onBackToLanding, initial
         <div className="auth-hero">
           <div className="auth-eyebrow">ESPACE PERSONNEL</div>
           <h1 className="auth-headline">
-            {mode === 'register' ? <>Créer <em>votre compte.</em></> : <>Bon <em>retour.</em></>}
+            {mode === 'register' && <>Créer <em>votre compte.</em></>}
+            {mode === 'login' && <>Bon <em>retour.</em></>}
+            {mode === 'forgot' && <>Récupérer <em>votre accès.</em></>}
+            {mode === 'reset' && <>Choisir <em>un nouveau mot de passe.</em></>}
           </h1>
           <p className="auth-subhead">
             {mode === 'register'
@@ -146,10 +149,10 @@ export default function AuthScreen({ onAuth, onTryDemo, onBackToLanding, initial
             )}
 
             <h2 className="auth-title">
-              {mode === 'login' && 'Accéder à votre espace'}
-              {mode === 'register' && 'Créer votre espace'}
-              {mode === 'forgot' && 'Mot de passe oublié'}
-              {mode === 'reset' && 'Nouveau mot de passe'}
+              {mode === 'login' && <>Accéder à <em>votre espace</em></>}
+              {mode === 'register' && <>Créer <em>votre espace</em></>}
+              {mode === 'forgot' && <>Mot de passe <em>oublié</em></>}
+              {mode === 'reset' && <>Nouveau <em>mot de passe</em></>}
             </h2>
             <p className="auth-subtitle">
               {mode === 'login' && 'Identifiants confidentiels.'}
@@ -463,9 +466,11 @@ const authStyles = `
 }
 
 .auth-title {
-  font-size: 18px; font-weight: 600; letter-spacing: -0.02em;
+  font-family: 'Source Serif 4', 'Source Serif Pro', Georgia, serif;
+  font-size: 22px; font-weight: 400; letter-spacing: -0.018em;
   color: #ebe8e3; margin: 0 0 4px;
 }
+.auth-title em { font-style: italic; color: #c5a572; font-weight: 400; }
 .auth-subtitle {
   font-size: 13px; color: #8c8a85; margin: 0 0 20px;
 }

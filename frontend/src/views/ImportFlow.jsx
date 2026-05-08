@@ -16,7 +16,7 @@ export function ImportFlow({ step, parsedData, mapping, setMapping, account, set
     return (
       <div className="import-flow">
         <div className="import-header">
-          <h2>Importer un relevé CSV</h2>
+          <h2>Importer un <em>relevé CSV</em></h2>
           <p>Glissez votre fichier ou cliquez pour le sélectionner</p>
         </div>
         <label className="upload-zone">
@@ -41,7 +41,7 @@ export function ImportFlow({ step, parsedData, mapping, setMapping, account, set
             <span className="step"><div className="step-num">2</div>Compte</span>
             <span className="step"><div className="step-num">3</div>Aperçu</span>
           </div>
-          <h2>Vérifiez le mapping</h2>
+          <h2>Vérifiez <em>le mapping</em></h2>
           <p>{parsedData?.rows.length} lignes détectées · délimiteur "{parsedData?.delimiter === '\t' ? 'TAB' : parsedData?.delimiter}"</p>
           {detectedBank && (
             <div className="detection-badge">
@@ -84,7 +84,7 @@ export function ImportFlow({ step, parsedData, mapping, setMapping, account, set
             <span className="step active"><div className="step-num">2</div>Compte</span>
             <span className="step"><div className="step-num">3</div>Aperçu</span>
           </div>
-          <h2>À quel compte appartiennent ces transactions ?</h2>
+          <h2>À quel <em>compte</em> appartiennent ces transactions ?</h2>
         </div>
         <div className="account-form">
           <label><span>Banque</span>
@@ -140,7 +140,7 @@ export function ImportFlow({ step, parsedData, mapping, setMapping, account, set
             <span className="step done"><div className="step-num"><Check size={11}/></div>Compte</span>
             <span className="step active"><div className="step-num">3</div>Aperçu</span>
           </div>
-          <h2>Vérification avant import</h2>
+          <h2>Vérification <em>avant import</em></h2>
           <p><strong>{preview.length}</strong> transactions vers <strong>{account.name}</strong> · Net : <strong>{fmt(total, { sign: true })}</strong></p>
         </div>
         <div className="preview-list">
