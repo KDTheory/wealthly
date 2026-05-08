@@ -228,6 +228,49 @@ toast pipeline surfaces it without a special case. Limiter lives in
 
 ---
 
+## Latest session — 2026-05-08 (Méridien design pivot)
+
+Direction visuelle revue avec une référence externe ("Direction B —
+Méridien" dans `frontend/public/design-b.html` et `design-d.html`,
+mockups standalone HTML conservés au cas où). On part désormais sur :
+**relevé Pictet** — eyebrow doré "Relevé · …", titres Source Serif 4
+avec accent italique or sur le mot-clé, sections numérotées en
+chiffres romains italiques (I —, II —, III —…), dotted dividers
+façon papier imprimé, hero number serif avec deltas inline 30j/3M/YTD
+en serif italique vert/rouge.
+
+Commits chronologiques :
+- `505110b` palette + tokens + Source Serif 4 chargée + Dashboard +
+  Landing + AuthScreen passés en Méridien
+- `83d4e7e` page-headers Méridien sur toutes les vues (Patrimoine,
+  Analyse, Transactions, Réglages, Mensuel, Cashflow, Budgets)
+- `df32421` chrome (sidebar brand serif), card-header globalement
+  upgradé (gold + dotted underline + meta italique), Onboarding /
+  ImportFlow / BankCallback / TaxSimulator / AuthScreen modes secondaires
+- `4d90961` **Dashboard rebuild fidèle au PDF B** : title+curve sur la
+  même ligne, paragraphe sub auto, règle dorée, total NW band avec 3
+  deltas inline, 3 sections I/II/III côte à côte avec règles verticales
+  (Allocation / Santé / Trésorerie). Sections IV/V/VI en dessous.
+
+### Backup — ancien Dashboard conservé
+
+L'ancien Dashboard (avant le rebuild Méridien) est sauvegardé tel quel
+dans `frontend/src/views/Dashboard.legacy.jsx` (486 lignes). Pour
+rollback : remplacer dans `WealthlyApp.jsx` l'import
+`from './views/Dashboard.jsx'` par `from './views/Dashboard.legacy.jsx'`
+— une ligne, retour immédiat à l'ancien design. Le fichier legacy n'est
+pas tree-shaken hors d'un import explicite, donc zéro impact bundle.
+
+### Reste à faire (Phase 3+ optionnelle)
+
+- Sparklines compactes sur les KPI (emprunt direction C)
+- Mini-sankey dans Cashflow (emprunt C)
+- Annotation auto-détectée sur la courbe NetWorthChart ("drawdown
+  estival") en serif italique gold
+- Empty states éditoriaux
+
+---
+
 ## Last work session — 2026-05-06 (investor-ready push, 3 phases)
 
 **Morning**: full visual refonte (hero overhaul, sidebar desktop, mobile
