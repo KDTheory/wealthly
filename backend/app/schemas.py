@@ -112,6 +112,7 @@ class TransactionBase(BaseModel):
     category_slug: Optional[str] = None
     is_manual_category: bool = False
     is_recurring_override: Optional[bool] = None
+    is_transfer_override: Optional[bool] = None
     notes: Optional[str] = ""
 
 
@@ -124,6 +125,7 @@ class TransactionUpdate(BaseModel):
     category_slug: Optional[str] = None
     is_manual_category: Optional[bool] = None
     is_recurring_override: Optional[bool] = None
+    is_transfer_override: Optional[bool] = None
     notes: Optional[str] = None
 
 

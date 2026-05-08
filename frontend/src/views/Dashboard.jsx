@@ -15,7 +15,7 @@ import { AnimatedNumber } from '../components/AnimatedNumber.jsx';
 import { NetWorthChart } from '../components/NetWorthChart.jsx';
 import { computeHealthScore } from '../components/HealthScore.jsx';
 
-export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, thisMonthStats, monthlyEvolution, visibleAccounts, accountBalances, visibleAssets, visibleLiabilities, members, activeMemberId, transactions, categories, fmt, memberShare, categoryAnalysis, anomalies, cashflowProjection, goals, budgets = {}, wealthHistory = [], recurringGroups, currentMonth, transferIds = new Set(), setView, onAccountClick }) {
+export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, thisMonthStats, monthlyEvolution, visibleAccounts, accountBalances, visibleAssets, visibleLiabilities, members, activeMemberId, transactions, categories, fmt, memberShare, categoryAnalysis, anomalies, cashflowProjection, goals, budgets = {}, wealthHistory = [], recurringGroups, currentMonth, transferIds = new Set(), transferPairs = [], setView, onAccountClick }) {
   const last12Months = monthlyEvolution.slice(-12);
   const recentTx = [...transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
   const activeMember = members.find(m => m.id === activeMemberId);
@@ -360,38 +360,61 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
               </li>
             )}
           </ul>
-          {/* Footer surfacing the deliberate exclusions in the cashflow:
-              (a) accounts whose role excludes them; (b) auto-detected
-              internal transfers between two of the user's accounts. */}
+          {/* Footer surfacing role-based exclusions (transfers get their own
+              richer panel below). */}
           {(() => {
             const excluded = visibleAccounts.filter(a => a.role && a.role !== 'principal');
-            const transfersThisMonth = transactions.filter(t => transferIds.has(t.id) && t.date.startsWith(currentMonth));
-            if (excluded.length === 0 && transfersThisMonth.length === 0) return null;
+            if (excluded.length === 0) return null;
             return (
               <div className="mt-4 pt-3 border-t border-dotted border-[var(--color-w-border)] text-[11px] text-[var(--color-w-faint)] leading-[1.55] w-serif italic">
-                {excluded.length > 0 && (
-                  <div>
-                    Exclus du calcul mensuel :{' '}
-                    {excluded.map((a, i) => (
-                      <span key={a.id}>
-                        {i > 0 && ', '}
-                        <span className="text-[var(--color-w-muted)] not-italic">{a.name}</span>
-                        <span className="text-[var(--color-w-faint)]"> ({a.role})</span>
-                      </span>
-                    ))}
-                    .
-                  </div>
-                )}
-                {transfersThisMonth.length > 0 && (
-                  <div>
-                    <span className="text-[var(--color-w-accent)] not-italic">↔</span> {transfersThisMonth.length} transfert{transfersThisMonth.length > 1 ? 's' : ''} détecté{transfersThisMonth.length > 1 ? 's' : ''} entre vos comptes ce mois — non compté{transfersThisMonth.length > 1 ? 's' : ''} comme dépense.
-                  </div>
-                )}
+                Exclus du calcul mensuel :{' '}
+                {excluded.map((a, i) => (
+                  <span key={a.id}>
+                    {i > 0 && ', '}
+                    <span className="text-[var(--color-w-muted)] not-italic">{a.name}</span>
+                    <span className="text-[var(--color-w-faint)]"> ({a.role})</span>
+                  </span>
+                ))}
+                .
               </div>
             );
           })()}
         </div>
       </section>
+
+      {/* Mouvements internes — pair-matched transfers between own accounts.
+          Surfaced as useful info ("you saved €2 000 by moving to épargne")
+          rather than hidden noise. */}
+      {(() => {
+        const monthPairs = transferPairs
+          .filter(p => p.date && p.date.startsWith(currentMonth))
+          .sort((a, b) => b.date.localeCompare(a.date))
+          .slice(0, 6);
+        if (monthPairs.length === 0) return null;
+        const totalMoved = monthPairs.reduce((s, p) => s + p.amount, 0);
+        const accName = (id) => visibleAccounts.find(a => a.id === id)?.name || '—';
+        return (
+          <section className={`${cardCls} p-6 mb-5`}>
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-[var(--color-w-border)]">
+              <h3 className="w-section-h"><span className="w-roman">↔</span>Mouvements internes</h3>
+              <span className="text-xs text-[var(--color-w-faint)] w-num">{monthPairs.length} ce mois · {fmt(totalMoved)} déplacés</span>
+            </div>
+            <div className="divide-y divide-dotted divide-[var(--color-w-border)]">
+              {monthPairs.map(p => (
+                <div key={p.outTxId} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0 text-[13px]">
+                  <div className="text-[11px] text-[var(--color-w-faint)] w-num w-[70px] shrink-0">{formatDate(p.date)}</div>
+                  <div className="flex-1 min-w-0 flex items-center gap-2 text-[var(--color-w-text)]">
+                    <span className="truncate">{accName(p.fromAccountId)}</span>
+                    <span className="text-[var(--color-w-accent)] shrink-0">→</span>
+                    <span className="truncate">{accName(p.toAccountId)}</span>
+                  </div>
+                  <div className="w-serif italic text-[14px] text-[var(--color-w-accent)] w-num shrink-0">{fmt(p.amount)}</div>
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+      })()}
 
       {/* Anomalies — alert strip */}
       {anomalies.length > 0 && (

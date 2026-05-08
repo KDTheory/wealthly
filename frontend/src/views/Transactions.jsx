@@ -20,7 +20,7 @@ const EMPTY_FILTERS = {
   type: 'all',       // all | income | expense
 };
 
-export function Transactions({ transactions, accounts, categories, members = [], recurringIds, toggleRecurring, transferIds = new Set(), updateCategory, deleteTransaction, fmt, initialAccountFilter, onConsumeInitialFilter }) {
+export function Transactions({ transactions, accounts, categories, members = [], recurringIds, toggleRecurring, transferIds = new Set(), setTransferOverride, updateCategory, deleteTransaction, fmt, initialAccountFilter, onConsumeInitialFilter }) {
   const [search, setSearch] = useState('');
   // Seed the account filter on mount if the parent passed one (e.g. coming
   // from the AccountDrawer "voir toutes les transactions" CTA).
@@ -298,7 +298,18 @@ export function Transactions({ transactions, accounts, categories, members = [],
                 <div className="td td-label">
                   <span>{tx.label || 'Sans libellé'}</span>
                   {isTransfer && (
-                    <span className="tx-transfer-badge" title="Transfert détecté entre deux de vos comptes — exclu du cashflow mensuel">↔ Transfert</span>
+                    <button
+                      className="tx-transfer-badge"
+                      onClick={() => setTransferOverride && setTransferOverride(tx.id, false)}
+                      title="Transfert détecté — clic pour marquer comme transaction normale"
+                    >↔ Transfert</button>
+                  )}
+                  {!isTransfer && setTransferOverride && (
+                    <button
+                      className="tx-transfer-toggle"
+                      onClick={() => setTransferOverride(tx.id, true)}
+                      title="Marquer cette transaction comme transfert interne (l'exclure du cashflow)"
+                    >↔</button>
                   )}
                   <button className={`recurring-toggle ${isRecurring ? 'active' : ''}`} onClick={() => toggleRecurring(tx.id, !isRecurring)} title={isRecurring ? 'Marquer comme non-récurrent' : 'Marquer comme récurrent'}>
                     <Repeat size={11}/>
@@ -309,6 +320,10 @@ export function Transactions({ transactions, accounts, categories, members = [],
                     <select autoFocus defaultValue={tx.categoryId || ''} onBlur={() => setEditingTx(null)} onChange={(e) => { updateCategory(tx.id, e.target.value); setEditingTx(null); }}>
                       {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                     </select>
+                  ) : isTransfer ? (
+                    <button className="cat-pill" style={{ background: 'var(--primary-soft)', color: 'var(--primary)' }} onClick={() => setEditingTx(tx.id)} title="Cliquez pour catégoriser malgré tout">
+                      ↔ Virement interne
+                    </button>
                   ) : (
                     <button className="cat-pill" style={{ background: (cat?.color || '#999') + '1f', color: cat?.color || '#666' }} onClick={() => setEditingTx(tx.id)}>
                       {cat?.icon} {cat?.name || 'Non catégorisé'}

@@ -115,6 +115,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     categoryId: t.category_slug, // we treat slugs as ids on the frontend
     isManualCategory: t.is_manual_category,
     isRecurringOverride: t.is_recurring_override,
+    isTransferOverride: t.is_transfer_override ?? null,
     notes: t.notes || '',
   });
   const txToApi = (t) => ({
@@ -125,6 +126,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     category_slug: t.categoryId || null,
     is_manual_category: t.isManualCategory || false,
     is_recurring_override: t.isRecurringOverride ?? null,
+    is_transfer_override: t.isTransferOverride ?? null,
     notes: t.notes || '',
   });
   // Assets
@@ -479,10 +481,23 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   // Identify pair-matched transfers between the user's own accounts so we
   // can exclude them from cashflow aggregates. Recomputes whenever the
   // visible transaction set changes.
-  const transferIds = useMemo(
-    () => detectInternalTransfers(visibleTransactions),
-    [visibleTransactions]
-  );
+  // Effective set = auto-detected ∪ {override:true} − {override:false}.
+  // Override is the source of truth so the user can always correct a bad
+  // auto-classification. Pairs come from auto-detection only — manual
+  // overrides don't reconstruct a counterpart.
+  const { transferIds, transferPairs } = useMemo(() => {
+    const auto = detectInternalTransfers(visibleTransactions);
+    const ids = new Set();
+    visibleTransactions.forEach(t => {
+      if (t.isTransferOverride === true) ids.add(t.id);
+      else if (t.isTransferOverride === false) { /* explicitly NOT a transfer */ }
+      else if (auto.has(t.id)) ids.add(t.id);
+    });
+    // Filter out pairs whose either leg has been overridden to "not a transfer"
+    const overriddenOff = new Set(visibleTransactions.filter(t => t.isTransferOverride === false).map(t => t.id));
+    const pairs = (auto.pairs || []).filter(p => !overriddenOff.has(p.outTxId) && !overriddenOff.has(p.inTxId));
+    return { transferIds: ids, transferPairs: pairs };
+  }, [visibleTransactions]);
 
   const monthlyEvolution = useMemo(() => {
     const monthly = {};
@@ -792,6 +807,15 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     await persist(STORAGE_KEYS.RECURRING_OVERRIDES, newOverrides);
     // Also persist to backend
     try { await api.transactions.update(txId, { is_recurring_override: isFixed }); } catch {}
+  };
+
+  // Override the auto-detected internal-transfer flag for a single tx.
+  // Tri-state: true = force-transfer, false = force-not-transfer, null =
+  // defer to auto-detection. Persisted to the backend via PUT /transactions.
+  const setTransferOverride = async (txId, value) => {
+    setTransactions(prev => prev.map(t => t.id === txId ? { ...t, isTransferOverride: value } : t));
+    try { await api.transactions.update(txId, { is_transfer_override: value }); }
+    catch (err) { showToast('Erreur : ' + err.message, 'error'); }
   };
 
   const deleteTransaction = async (txId) => {
@@ -1143,7 +1167,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             anomalies={anomalies} cashflowProjection={cashflowProjection}
             goals={goals} budgets={budgets} wealthHistory={wealthHistory}
             recurringGroups={recurringGroups} currentMonth={currentMonth}
-            transferIds={transferIds}
+            transferIds={transferIds} transferPairs={transferPairs}
             setView={setView}
             onAccountClick={(a) => setDrawerAccount(a)}
           />
@@ -1209,7 +1233,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             transactions={visibleTransactions} accounts={accounts} categories={categories}
             members={members}
             recurringIds={recurringIds} toggleRecurring={toggleRecurring}
-            transferIds={transferIds}
+            transferIds={transferIds} setTransferOverride={setTransferOverride}
             updateCategory={updateTransactionCategory} deleteTransaction={deleteTransaction} fmt={fmt}
             initialAccountFilter={txInitialAccountFilter}
             onConsumeInitialFilter={() => setTxInitialAccountFilter(null)}

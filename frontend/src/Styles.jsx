@@ -870,7 +870,11 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .tx-row:hover { background: var(--bg-subtle); }
 .tx-row:last-child { border-bottom: none; }
 .tx-row-transfer .td-amount, .tx-row-transfer .td-label > span { opacity: 0.6; }
-.tx-transfer-badge { display: inline-flex; align-items: center; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--primary); padding: 2px 7px; border: 1px solid var(--primary-soft); background: var(--primary-soft); border-radius: 3px; flex-shrink: 0; }
+.tx-transfer-badge { display: inline-flex; align-items: center; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--primary); padding: 2px 7px; border: 1px solid var(--primary-soft); background: var(--primary-soft); border-radius: 3px; flex-shrink: 0; cursor: pointer; font-family: inherit; transition: opacity .15s; }
+.tx-transfer-badge:hover { opacity: 0.7; }
+.tx-transfer-toggle { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0; font-size: 11px; color: var(--text-tertiary); background: transparent; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; flex-shrink: 0; opacity: 0; transition: opacity .15s, color .15s, border-color .15s; font-family: inherit; }
+.tx-row:hover .tx-transfer-toggle { opacity: 1; }
+.tx-transfer-toggle:hover { color: var(--primary); border-color: var(--primary); }
 .td { font-size: 13px; }
 .td-date { color: var(--text-tertiary); font-size: 12px; font-variant-numeric: tabular-nums; }
 .td-label { display: flex; align-items: center; gap: 8px; min-width: 0; }

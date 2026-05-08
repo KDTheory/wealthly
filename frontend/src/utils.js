@@ -153,9 +153,12 @@ const amountsMatch = (a, b) => {
 export const detectInternalTransfers = (transactions, options = {}) => {
   const { windowDays = 3, requireLabelHint = false } = options;
   const transferIds = new Set();
-  if (!Array.isArray(transactions) || transactions.length < 2) return transferIds;
+  const pairs = []; // [{ outTxId, inTxId, fromAccountId, toAccountId, amount, date }]
+  if (!Array.isArray(transactions) || transactions.length < 2) {
+    transferIds.pairs = pairs;
+    return transferIds;
+  }
 
-  // Sort by date, then scan forward within the time window for each tx.
   const sorted = [...transactions]
     .filter(t => t && typeof t.amount === 'number' && t.amount !== 0)
     .sort((a, b) => a.date.localeCompare(b.date));
@@ -172,7 +175,7 @@ export const detectInternalTransfers = (transactions, options = {}) => {
     for (let j = i + 1; j < sorted.length; j++) {
       const b = sorted[j];
       const bDate = new Date(b.date).getTime();
-      if (bDate - aDate > windowMs) break; // sorted ⇒ no later match
+      if (bDate - aDate > windowMs) break;
       if (matched.has(b.id)) continue;
       if (a.accountId === b.accountId) continue;
       if (Math.sign(a.amount) === Math.sign(b.amount)) continue;
@@ -181,7 +184,6 @@ export const detectInternalTransfers = (transactions, options = {}) => {
         const blob = `${a.label || ''} ${b.label || ''}`;
         if (!TRANSFER_LABEL_HINT.test(blob)) continue;
       }
-      // Prefer the tightest amount match (smallest delta) among candidates.
       const delta = Math.abs(Math.abs(a.amount) - Math.abs(b.amount));
       if (delta < bestDelta) {
         bestDelta = delta;
@@ -194,8 +196,21 @@ export const detectInternalTransfers = (transactions, options = {}) => {
       transferIds.add(b.id);
       matched.add(a.id);
       matched.add(b.id);
+      const out = a.amount < 0 ? a : b;
+      const inLeg = a.amount < 0 ? b : a;
+      pairs.push({
+        outTxId: out.id,
+        inTxId: inLeg.id,
+        fromAccountId: out.accountId,
+        toAccountId: inLeg.accountId,
+        amount: Math.abs(out.amount),
+        date: out.date < inLeg.date ? out.date : inLeg.date,
+      });
     }
   }
+  // Attach pairs as a property on the Set so existing callers that just
+  // need ID membership keep working unchanged.
+  transferIds.pairs = pairs;
   return transferIds;
 };
 

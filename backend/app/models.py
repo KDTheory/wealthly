@@ -160,6 +160,7 @@ class Transaction(Base):
     category_id = Column(String, ForeignKey("categories.id", ondelete="SET NULL"), nullable=True)
     is_manual_category = Column(Boolean, default=False)
     is_recurring_override = Column(Boolean, nullable=True)  # null = auto-detect, true/false = manual override
+    is_transfer_override = Column(Boolean, nullable=True)   # null = auto-detect, true/false = manual override on internal-transfer detection
     notes = Column(Text, nullable=True, default="")
     # Hash for deduplication on import: account_id|date|amount|label_truncated
     dedup_hash = Column(String, nullable=False, index=True)

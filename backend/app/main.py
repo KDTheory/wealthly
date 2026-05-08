@@ -84,6 +84,8 @@ def _run_lightweight_migrations() -> None:
             # behaving exactly as before until the user opts in.
             "ALTER TABLE accounts ADD COLUMN IF NOT EXISTS role VARCHAR DEFAULT 'principal' NOT NULL",
             "CREATE INDEX IF NOT EXISTS ix_accounts_role ON accounts (role)",
+            # Manual override on the auto-detected internal-transfer flag
+            "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS is_transfer_override BOOLEAN",
         ]
     with engine.begin() as conn:
         for stmt in statements:
