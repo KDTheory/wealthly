@@ -39,7 +39,7 @@ function lerp(value, inMin, inMax, outMin, outMax) {
   return outMin + ((value - inMin) / (inMax - inMin)) * (outMax - outMin);
 }
 
-function computeHealthScore({
+export function computeHealthScore({
   monthlyEvolution = [],
   liquidWealth = 0,
   assetsValue = 0,

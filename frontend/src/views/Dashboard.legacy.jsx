@@ -3,17 +3,18 @@
 // ============================================================================
 import { useMemo } from 'react';
 import {
-  AreaChart, Area, ResponsiveContainer, Tooltip,
+  AreaChart, Area, PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
 } from 'recharts';
 import {
-  Upload, Plus, Users, ChevronRight, AlertTriangle, Zap, ArrowUp, ArrowDown,
+  Upload, Plus, TrendingUp, TrendingDown, Wallet, CreditCard, Users,
+  ChevronRight, AlertTriangle, PiggyBank, Sparkles, Zap, ArrowUp, ArrowDown,
   FileText, Landmark,
 } from 'lucide-react';
 import { ASSET_CLASS_MAP } from '../constants.js';
 import { formatCurrency, formatDate } from '../utils.js';
 import { AnimatedNumber } from '../components/AnimatedNumber.jsx';
 import { NetWorthChart } from '../components/NetWorthChart.jsx';
-import { computeHealthScore } from '../components/HealthScore.jsx';
+import { HealthScore } from '../components/HealthScore.jsx';
 
 export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, thisMonthStats, monthlyEvolution, visibleAccounts, accountBalances, visibleAssets, visibleLiabilities, members, activeMemberId, transactions, categories, fmt, memberShare, categoryAnalysis, anomalies, cashflowProjection, goals, budgets = {}, wealthHistory = [], recurringGroups, currentMonth, setView, onAccountClick }) {
   const last12Months = monthlyEvolution.slice(-12);
@@ -51,26 +52,6 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
 
   const liquidityRatio = netWorth > 0 ? (liquidWealth / netWorth) * 100 : null;
   const debtRatio = (assetsValue + liquidWealth) > 0 ? (liabilitiesValue / (assetsValue + liquidWealth)) * 100 : null;
-
-  // Méridien: YTD performance — compare current netWorth to first snapshot of the year.
-  const ytdPerf = useMemo(() => {
-    const yearPrefix = `${new Date().getFullYear()}-`;
-    const sorted = [...monthlyEvolution].sort((a, b) => a.month.localeCompare(b.month));
-    const yearStart = sorted.find(m => m.month.startsWith(yearPrefix));
-    if (!yearStart || !yearStart.balance) return { pct: null, amount: null };
-    const amount = netWorth - yearStart.balance;
-    const pct = (amount / Math.abs(yearStart.balance)) * 100;
-    return { pct, amount };
-  }, [monthlyEvolution, netWorth]);
-
-  // Pre-computed health score so we can render the Méridien panel directly
-  // instead of using the legacy gauge wrapper.
-  const health = useMemo(
-    () => computeHealthScore({ monthlyEvolution, liquidWealth, assetsValue, liabilitiesValue, visibleAssets, budgets, categoryAnalysis }),
-    [monthlyEvolution, liquidWealth, assetsValue, liabilitiesValue, visibleAssets, budgets, categoryAnalysis]
-  );
-  const healthRating = health.total < 40 ? 'À surveiller' : health.total < 70 ? 'Correct' : 'Solide';
-  const healthColor = health.total < 40 ? 'var(--color-w-danger)' : health.total < 70 ? 'var(--color-w-warning)' : 'var(--color-w-success)';
 
   const streak = useMemo(() => {
     let count = 0;
@@ -132,8 +113,11 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
   })();
 
   const dateLong = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const m1Positive = perf.m1 === null ? null : perf.m1 >= 0;
+
   // Card primitives — Tailwind classes referencing the design tokens.
   const cardCls = 'bg-[var(--color-w-surface)] border border-[var(--color-w-border)] rounded-[var(--radius-w-lg)]';
+  const labelCls = 'text-[11px] uppercase tracking-[0.08em] text-[var(--color-w-muted)] font-medium';
 
   // Méridien: quarter label for the statement eyebrow ("Relevé · T2 2026").
   const quarter = (() => {
@@ -185,183 +169,145 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
         </div>
       </div>
 
-      {/* === Méridien layout — fidèle PDF B === */}
+      {/* HERO — net worth giant + sparkline backdrop */}
+      <section className="mb-4">
+        <div className="relative overflow-hidden bg-[var(--color-w-surface)] border border-[var(--color-w-border-strong)] rounded-[var(--radius-w-xl)] px-6 sm:px-10 pt-7 sm:pt-9 pb-7 sm:pb-9 border-t-2 border-t-[var(--color-w-accent)]">
+          {/* Subtle area sparkline behind the value */}
+          {monthlyEvolution.length >= 2 && (
+            <div className="absolute inset-x-0 bottom-0 h-[62%] pointer-events-none opacity-90" aria-hidden="true">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={monthlyEvolution.slice(-12)} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="hero-area" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--color-w-accent)" stopOpacity="0.18"/>
+                      <stop offset="100%" stopColor="var(--color-w-accent)" stopOpacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <Area type="monotone" dataKey="balance" stroke="var(--color-w-accent)" strokeWidth={1.25} strokeOpacity={0.45} fill="url(#hero-area)"/>
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
 
-      {/* Hero row: title (left) + curve (right) on the same line */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.25fr_1fr] gap-x-12 gap-y-6 items-end mb-5">
-        <div>
-          {/* the editorial title is rendered above; this column carries the subtitle paragraph */}
-          <p className="text-[14px] leading-[1.65] text-[var(--color-w-muted)] max-w-[600px]">
-            Patrimoine consolidé sur <span className="text-[var(--color-w-text)]">{visibleAccounts.length} compte{visibleAccounts.length > 1 ? 's' : ''}</span>.
-            {perf.m1 !== null && (
-              <> Variation sur 30 jours : <span className="text-[var(--color-w-text)] w-num">{perf.m1 >= 0 ? '+' : ''}{perf.m1.toFixed(2)} %</span>.</>
-            )}
-            {ytdPerf.pct !== null && (
-              <> Depuis le début d'année : <span className="text-[var(--color-w-text)] w-num">{ytdPerf.pct >= 0 ? '+' : ''}{ytdPerf.pct.toFixed(2)} %</span>.</>
-            )}
-          </p>
+          <div className="relative">
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-[10px] uppercase tracking-[0.18em] text-[var(--color-w-muted)] font-medium">Patrimoine net</span>
+              {perf.m1 !== null && (
+                <span
+                  className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-md w-num"
+                  style={{
+                    color: m1Positive ? 'var(--color-w-success)' : 'var(--color-w-danger)',
+                    background: m1Positive ? 'rgba(136,169,120,0.13)' : 'rgba(196,113,88,0.13)',
+                  }}
+                >
+                  {m1Positive ? <ArrowUp size={11}/> : <ArrowDown size={11}/>}
+                  <span>{m1Positive ? '+' : ''}{perf.m1.toFixed(2)}%</span>
+                  <span className="opacity-60 ml-0.5">1M</span>
+                </span>
+              )}
+            </div>
+
+            <div className="w-serif text-[clamp(54px,10vw,98px)] leading-[1] font-normal tracking-[-0.028em] w-num text-[var(--color-w-text)] mt-3">
+              <AnimatedNumber value={netWorth} format={(v) => fmt(v)}/>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-7 gap-y-2 mt-5 text-[13px]">
+              {liquidWealth > 0 && (
+                <span className="inline-flex items-center gap-2">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-w-asset-cash)]"/>
+                  <span className="w-num text-[var(--color-w-text)]">{fmt(liquidWealth)}</span>
+                  <span className="text-[var(--color-w-faint)]">liquidités</span>
+                </span>
+              )}
+              {assetsValue > 0 && (
+                <span className="inline-flex items-center gap-2">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-w-asset-equity)]"/>
+                  <span className="w-num text-[var(--color-w-text)]">{fmt(assetsValue)}</span>
+                  <span className="text-[var(--color-w-faint)]">actifs</span>
+                </span>
+              )}
+              {liabilitiesValue > 0 && (
+                <span className="inline-flex items-center gap-2">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-w-danger)]"/>
+                  <span className="w-num text-[var(--color-w-text)]">−{fmt(liabilitiesValue)}</span>
+                  <span className="text-[var(--color-w-faint)]">dettes</span>
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Secondary KPI strip — 3 sober cards */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+        <div className={`${cardCls} px-5 py-4`}>
+          <div className="flex items-center justify-between">
+            <span className={labelCls}>Performance 3 mois</span>
+            {perf.m3 !== null && (perf.m3 >= 0 ? <TrendingUp size={14} className="text-[var(--color-w-success)]"/> : <TrendingDown size={14} className="text-[var(--color-w-danger)]"/>)}
+          </div>
+          <div className={`w-serif text-[28px] leading-none font-normal w-num mt-2 ${perf.m3 === null ? 'text-[var(--color-w-faint)]' : perf.m3 >= 0 ? 'text-[var(--color-w-text)]' : 'text-[var(--color-w-danger)]'}`}>
+            {perf.m3 !== null ? `${perf.m3 >= 0 ? '+' : ''}${perf.m3.toFixed(1)}%` : '—'}
+          </div>
         </div>
 
-        {monthlyEvolution.length >= 2 && (
-          <div className="relative h-[140px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={monthlyEvolution.slice(-12)} margin={{ top: 8, right: 4, left: 4, bottom: 4 }}>
-                <defs>
-                  <linearGradient id="hero-area" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--color-w-accent)" stopOpacity="0.22"/>
-                    <stop offset="100%" stopColor="var(--color-w-accent)" stopOpacity="0"/>
-                  </linearGradient>
-                </defs>
-                <Area type="monotone" dataKey="balance" stroke="var(--color-w-accent)" strokeWidth={1.4} strokeOpacity={1} fill="url(#hero-area)"/>
-                <Tooltip contentStyle={{ background: 'var(--color-w-surface-2)', border: '1px solid var(--color-w-border-strong)', borderRadius: 8, fontSize: 11, color: 'var(--color-w-text)' }} formatter={(v) => formatCurrency(v)} labelFormatter={(l) => formatDate(l + '-01', { format: 'monthYear' })}/>
-              </AreaChart>
-            </ResponsiveContainer>
+        {liabilitiesValue > 0 ? (
+          <div className={`${cardCls} px-5 py-4`}>
+            <div className="flex items-center justify-between">
+              <span className={labelCls}>Ratio d'endettement</span>
+              <CreditCard size={14} className="text-[var(--color-w-faint)]"/>
+            </div>
+            <div className="w-serif text-[28px] leading-none font-normal w-num mt-2 text-[var(--color-w-text)]">
+              {debtRatio !== null ? `${debtRatio.toFixed(1)}%` : '—'}
+            </div>
+            <div className="text-[11px] mt-1 uppercase tracking-wider">
+              {debtRatio === null ? null : debtRatio < 30 ? (
+                <span className="text-[var(--color-w-success)]">Sain</span>
+              ) : debtRatio < 50 ? (
+                <span className="text-[var(--color-w-warning)]">Surveillé</span>
+              ) : (
+                <span className="text-[var(--color-w-danger)]">Élevé</span>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className={`${cardCls} px-5 py-4`}>
+            <div className="flex items-center justify-between">
+              <span className={labelCls}>Épargne du mois</span>
+              <PiggyBank size={14} className="text-[var(--color-w-faint)]"/>
+            </div>
+            <div className={`w-serif text-[28px] leading-none font-normal w-num mt-2 ${thisMonthStats.net >= 0 ? 'text-[var(--color-w-text)]' : 'text-[var(--color-w-danger)]'}`}>
+              <AnimatedNumber value={thisMonthStats.net} format={(v) => fmt(v, { sign: true })}/>
+            </div>
+            {thisMonthStats.income > 0 && (
+              <div className="text-[11px] text-[var(--color-w-faint)] mt-1 w-num">{((thisMonthStats.net / thisMonthStats.income) * 100).toFixed(0)}% des revenus</div>
+            )}
           </div>
         )}
-      </div>
 
-      {/* Gold rule — start of the statement body */}
-      <div className="relative h-px bg-[var(--color-w-border)] mt-2 mb-8">
-        <span className="absolute left-0 top-0 h-px w-16 bg-[var(--color-w-accent)]"/>
-      </div>
-
-      {/* TOTAL NET WORTH band — number + 3 inline deltas */}
-      <section className="mb-12">
-        <div className="w-eyebrow mb-4">Patrimoine net total</div>
-        <div className="flex flex-wrap items-end gap-x-12 gap-y-6">
-          <div className="w-serif text-[clamp(54px,9.5vw,96px)] leading-[1] font-normal tracking-[-0.028em] w-num text-[var(--color-w-text)]">
-            <AnimatedNumber value={netWorth} format={(v) => fmt(v)}/>
+        <div className={`${cardCls} px-5 py-4`}>
+          <div className="flex items-center justify-between">
+            <span className={labelCls}>Part liquide</span>
+            <Wallet size={14} className="text-[var(--color-w-faint)]"/>
           </div>
-          <div className="flex flex-wrap gap-x-10 gap-y-4 pb-2">
-            {[
-              { label: '30 jours', pct: perf.m1, amount: perf.m1 !== null && monthlyEvolution.length >= 2 ? netWorth - monthlyEvolution[monthlyEvolution.length - 2].balance : null },
-              { label: '3 mois', pct: perf.m3, amount: perf.m3 !== null && monthlyEvolution.length >= 4 ? netWorth - monthlyEvolution[monthlyEvolution.length - 4].balance : null },
-              { label: 'YTD', pct: ytdPerf.pct, amount: ytdPerf.amount },
-            ].map(d => (
-              <div key={d.label} className="flex flex-col gap-1">
-                <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--color-w-muted)] font-medium">{d.label}</span>
-                {d.pct !== null ? (
-                  <>
-                    <span className="w-serif italic text-[26px] leading-none font-medium w-num" style={{ color: d.pct >= 0 ? 'var(--color-w-success)' : 'var(--color-w-danger)' }}>
-                      {d.pct >= 0 ? '+' : ''}{d.pct.toFixed(2)} %
-                    </span>
-                    {d.amount !== null && (
-                      <span className="text-[11.5px] text-[var(--color-w-faint)] w-num">{d.amount >= 0 ? '+' : ''}{fmt(d.amount)}</span>
-                    )}
-                  </>
-                ) : (
-                  <span className="w-serif italic text-[26px] leading-none font-normal text-[var(--color-w-faint)]">—</span>
-                )}
-              </div>
-            ))}
+          <div className="w-serif text-[28px] leading-none font-normal w-num mt-2 text-[var(--color-w-text)]">
+            {liquidityRatio !== null ? `${liquidityRatio.toFixed(0)}%` : '—'}
           </div>
+          <div className="text-[11px] text-[var(--color-w-faint)] mt-1">disponibles immédiatement</div>
         </div>
       </section>
 
-      {/* Three numbered sections side-by-side, separated by vertical rules */}
-      <section className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr_1fr] gap-y-10 lg:gap-y-0 mb-12 lg:pt-7 pt-7 border-t border-[var(--color-w-border)]">
-
-        {/* I — Allocation */}
-        <div className="lg:pr-8 lg:border-r border-[var(--color-w-border)]">
-          <div className="flex items-baseline justify-between mb-4">
-            <h3 className="w-section-h"><span className="w-roman">I</span>— Allocation</h3>
-            <button onClick={() => setView('wealth')} className="text-xs text-[var(--color-w-muted)] hover:text-[var(--color-w-text)] inline-flex items-center gap-1 transition-colors">
-              Détails <ChevronRight size={12}/>
-            </button>
-          </div>
-          {allocationData.length > 0 ? (
-            <>
-              <div className="h-[6px] rounded-[3px] overflow-hidden flex mb-4">
-                {allocationData.map((d, i) => {
-                  const pct = allocationTotal > 0 ? (d.value / allocationTotal) * 100 : 0;
-                  return <div key={i} style={{ width: `${pct}%`, background: d.color }}/>;
-                })}
-              </div>
-              <ul className="m-0 p-0 list-none">
-                {allocationData.map(d => {
-                  const pct = allocationTotal > 0 ? (d.value / allocationTotal) * 100 : 0;
-                  return (
-                    <li key={d.name} className="grid grid-cols-[12px_1fr_auto_auto] items-baseline gap-3 py-[9px] text-[13px] border-b border-dotted border-[var(--color-w-border)] last:border-b-0">
-                      <span className="block w-[10px] h-[10px] rounded-[2px]" style={{ background: d.color }}/>
-                      <span className="text-[var(--color-w-text)] truncate">{d.name}</span>
-                      <span className="w-serif italic text-[14px] text-[var(--color-w-muted)] w-num min-w-[56px] text-right">{pct.toFixed(1)} %</span>
-                      <span className="text-[12px] text-[var(--color-w-faint)] w-num min-w-[88px] text-right">{fmt(d.value)}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </>
-          ) : (
-            <p className="text-sm text-[var(--color-w-faint)] italic">Pas encore d'actifs renseignés.</p>
-          )}
-        </div>
-
-        {/* II — Santé financière */}
-        <div className="lg:px-8 lg:border-r border-[var(--color-w-border)]">
-          <h3 className="w-section-h mb-4"><span className="w-roman">II</span>— Santé</h3>
-          <div className="w-serif text-[64px] leading-none font-normal tracking-[-0.02em] text-[var(--color-w-text)] w-num">
-            {health.total}<span className="w-serif italic text-[22px] text-[var(--color-w-muted)] ml-1">/100</span>
-          </div>
-          <div className="text-[10.5px] uppercase tracking-[0.14em] mt-2 font-semibold" style={{ color: healthColor }}>{healthRating}</div>
-          <div className="text-[12.5px] text-[var(--color-w-muted)] mt-3 leading-[1.55] w-serif italic max-w-[240px]">
-            {health.total >= 70 ? 'Posture financière solide.' : health.total >= 40 ? 'Quelques pistes d\'amélioration.' : 'Plusieurs critères à renforcer.'}
-          </div>
-          <ul className="m-0 mt-5 p-0 list-none flex flex-col gap-[10px]">
-            {health.items.map(it => (
-              <li key={it.key} className="grid grid-cols-[1fr_70px_28px] items-center gap-[10px] text-[12px]" title={it.hint}>
-                <span className="text-[var(--color-w-text)]">{it.label}</span>
-                <span className="h-[3px] bg-[var(--color-w-surface-3)] rounded-[2px] overflow-hidden block">
-                  <span className="block h-full" style={{ width: `${(it.pts / it.max) * 100}%`, background: it.ok ? 'var(--color-w-accent)' : 'var(--color-w-danger)' }}/>
-                </span>
-                <span className="text-[var(--color-w-faint)] text-[11px] text-right w-num">{Math.round(it.pts)}/{it.max}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* III — Trésorerie */}
-        <div className="lg:pl-8">
-          <h3 className="w-section-h mb-4"><span className="w-roman">III</span>— Trésorerie</h3>
-          <div className="w-serif text-[44px] leading-none font-normal tracking-[-0.02em] text-[var(--color-w-text)] w-num">
-            {fmt(liquidWealth)}
-          </div>
-          <div className="text-[12px] text-[var(--color-w-muted)] mt-2 w-serif italic">
-            {liquidityRatio !== null ? `${liquidityRatio.toFixed(0)} % du patrimoine net` : 'sur les comptes liquides'}
-          </div>
-          <ul className="m-0 mt-5 p-0 list-none flex flex-col">
-            {thisMonthStats.income > 0 && (
-              <li className="flex justify-between py-[9px] text-[12.5px] border-b border-dotted border-[var(--color-w-border)]">
-                <span className="text-[var(--color-w-text)]">Entrées · ce mois</span>
-                <span className="text-[var(--color-w-text)] w-num">+{fmt(thisMonthStats.income)}</span>
-              </li>
-            )}
-            {thisMonthStats.expenses > 0 && (
-              <li className="flex justify-between py-[9px] text-[12.5px] border-b border-dotted border-[var(--color-w-border)]">
-                <span className="text-[var(--color-w-text)]">Sorties · ce mois</span>
-                <span className="text-[var(--color-w-text)] w-num">−{fmt(thisMonthStats.expenses)}</span>
-              </li>
-            )}
-            <li className="flex justify-between py-[9px] text-[12.5px] border-b border-dotted border-[var(--color-w-border)]">
-              <span className="text-[var(--color-w-text)]">Épargne nette</span>
-              <span className="w-serif italic text-[14px] w-num" style={{ color: thisMonthStats.net >= 0 ? 'var(--color-w-accent)' : 'var(--color-w-danger)' }}>
-                {thisMonthStats.net >= 0 ? '+' : ''}{fmt(thisMonthStats.net)}
-              </span>
-            </li>
-            {thisMonthStats.income > 0 && (
-              <li className="flex justify-between py-[9px] text-[12.5px] border-b border-dotted border-[var(--color-w-border)]">
-                <span className="text-[var(--color-w-text)]">Taux d'épargne</span>
-                <span className="text-[var(--color-w-text)] w-num">{((thisMonthStats.net / thisMonthStats.income) * 100).toFixed(1)} %</span>
-              </li>
-            )}
-            {liabilitiesValue > 0 && debtRatio !== null && (
-              <li className="flex justify-between py-[9px] text-[12.5px]">
-                <span className="text-[var(--color-w-text)]">Ratio d'endettement</span>
-                <span className="text-[var(--color-w-text)] w-num">{debtRatio.toFixed(1)} %</span>
-              </li>
-            )}
-          </ul>
-        </div>
-      </section>
+      {/* Score santé financière — gauge + 5-criteria breakdown */}
+      <div className="mb-5">
+        <HealthScore
+          monthlyEvolution={monthlyEvolution}
+          liquidWealth={liquidWealth}
+          assetsValue={assetsValue}
+          liabilitiesValue={liabilitiesValue}
+          visibleAssets={visibleAssets}
+          budgets={budgets}
+          categoryAnalysis={categoryAnalysis}
+        />
+      </div>
 
       {/* Anomalies — alert strip */}
       {anomalies.length > 0 && (
@@ -392,12 +338,52 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
         <NetWorthChart snapshots={wealthHistory} fmt={fmt}/>
       </section>
 
-      {/* Top dépenses (section IV) */}
-      <div className="mb-5">
+      {/* Two-col grid: composition + top expenses */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+        {allocationData.length > 0 && (
+          <section className={`${cardCls} p-6`}>
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-[var(--color-w-border)]">
+              <h3 className="w-section-h"><span className="w-roman">I</span>— Allocation</h3>
+              <button onClick={() => setView('wealth')} className="text-xs text-[var(--color-w-muted)] hover:text-[var(--color-w-text)] inline-flex items-center gap-1 transition-colors">
+                Détails <ChevronRight size={12}/>
+              </button>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="shrink-0 relative">
+                <ResponsiveContainer width={170} height={170}>
+                  <PieChart>
+                    <Pie data={allocationData} dataKey="value" cx="50%" cy="50%" innerRadius={56} outerRadius={80} paddingAngle={2} stroke="none">
+                      {allocationData.map((d, i) => <Cell key={i} fill={d.color}/>)}
+                    </Pie>
+                    <Tooltip contentStyle={{ background: 'var(--color-w-surface-2)', border: '1px solid var(--color-w-border-strong)', borderRadius: 10, fontSize: 12, color: 'var(--color-w-text)' }} formatter={(v) => formatCurrency(v)}/>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-[10px] uppercase tracking-wider text-[var(--color-w-muted)]">Total</span>
+                  <span className="text-sm font-semibold w-num text-[var(--color-w-text)]">{fmt(allocationTotal)}</span>
+                </div>
+              </div>
+              <div className="flex-1 min-w-0 space-y-2">
+                {allocationData.map(d => {
+                  const pct = allocationTotal > 0 ? (d.value / allocationTotal) * 100 : 0;
+                  return (
+                    <div key={d.name} className="flex items-center gap-3 text-sm">
+                      <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ background: d.color }}/>
+                      <span className="text-[var(--color-w-text)] flex-1 truncate">{d.name}</span>
+                      <span className="text-xs text-[var(--color-w-muted)] w-num">{pct.toFixed(0)}%</span>
+                      <span className="w-num text-[var(--color-w-text)] tabular-nums">{fmt(d.value)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        )}
+
         {topCategoriesThisMonth.length > 0 && (
           <section className={`${cardCls} p-6`}>
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-[var(--color-w-border)]">
-              <h3 className="w-section-h"><span className="w-roman">IV</span>— Top dépenses du mois</h3>
+              <h3 className="w-section-h"><span className="w-roman">II</span>— Top dépenses du mois</h3>
               <button onClick={() => setView('monthly')} className="text-xs text-[var(--color-w-muted)] hover:text-[var(--color-w-text)] inline-flex items-center gap-1 transition-colors">
                 Voir tout <ChevronRight size={12}/>
               </button>
@@ -435,7 +421,7 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
         {visibleAccounts.length > 0 && (
           <section className={`${cardCls} p-6`}>
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-[var(--color-w-border)]">
-              <h3 className="w-section-h"><span className="w-roman">V</span>— Comptes</h3>
+              <h3 className="w-section-h"><span className="w-roman">III</span>— Comptes</h3>
               <span className="text-xs text-[var(--color-w-faint)]">{visibleAccounts.length}</span>
             </div>
             <div className="divide-y divide-[var(--color-w-border)]">
@@ -470,7 +456,7 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
         {recentTx.length > 0 && (
           <section className={`${cardCls} p-6`}>
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-[var(--color-w-border)]">
-              <h3 className="w-section-h"><span className="w-roman">VI</span>— Activité récente</h3>
+              <h3 className="w-section-h"><span className="w-roman">IV</span>— Activité récente</h3>
               <button onClick={() => setView('transactions')} className="text-xs text-[var(--color-w-muted)] hover:text-[var(--color-w-text)] inline-flex items-center gap-1 transition-colors">
                 Voir tout <ChevronRight size={12}/>
               </button>
