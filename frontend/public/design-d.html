@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Wealthly · Direction D — Aurora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --ivory: #f4efe7;
+    --ivory-2: #ece5d8;
+    --paper: #faf6ee;
+    --ink: #1a1815;
+    --graphite: #2a2622;
+    --graphite-2: #3a342e;
+    --muted: #6b6359;
+    --muted-2: #8a8175;
+    --rule: #d8cfbe;
+    --rule-2: #e6dfd0;
+    --plum: #4a2842;
+    --plum-2: #5d3553;
+    --gold: #b8965a;
+    --gold-2: #d4b07a;
+    --sage: #7d8a6b;
+    --terra: #b66a4e;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--ivory); color: var(--ink); font-family: 'Inter', system-ui, sans-serif; font-feature-settings: "ss01", "cv11"; -webkit-font-smoothing: antialiased; }
+  body { min-height: 100vh; }
+  .num { font-variant-numeric: tabular-nums; }
+  .serif { font-family: 'Fraunces', 'Times New Roman', serif; font-feature-settings: "ss01"; letter-spacing: -0.01em; }
+  .italic { font-style: italic; }
+
+  /* ========== App shell ========== */
+  .app { display: grid; grid-template-columns: 232px 1fr 320px; min-height: 100vh; }
+
+  /* ========== Sidebar ========== */
+  .side { background: var(--paper); border-right: 1px solid var(--rule-2); padding: 28px 22px; display: flex; flex-direction: column; gap: 24px; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-mark { width: 26px; height: 26px; border-radius: 4px; background: var(--ink); color: var(--paper); font-family: 'Fraunces', serif; font-style: italic; font-weight: 500; display: grid; place-items: center; font-size: 16px; }
+  .brand-name { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 400; letter-spacing: 0.005em; }
+  .brand-name em { font-style: italic; color: var(--plum); font-weight: 500; }
+  .nav { display: flex; flex-direction: column; gap: 1px; }
+  .nav a { display: flex; align-items: center; gap: 11px; padding: 9px 11px; border-radius: 6px; text-decoration: none; color: var(--graphite-2); font-size: 13.5px; transition: background .15s; }
+  .nav a:hover { background: var(--ivory-2); }
+  .nav a.active { background: var(--ink); color: var(--paper); }
+  .nav a.active .dot { background: var(--gold); }
+  .nav .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--rule); }
+  .nav-section-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted-2); padding: 0 11px; margin: 14px 0 6px; }
+  .accounts-mini { display: flex; flex-direction: column; gap: 1px; }
+  .account-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 11px; border-radius: 6px; font-size: 12.5px; }
+  .account-row:hover { background: var(--ivory-2); cursor: pointer; }
+  .account-row .name { color: var(--graphite-2); display: flex; gap: 8px; align-items: center; }
+  .account-row .live { width: 5px; height: 5px; border-radius: 50%; background: var(--sage); }
+  .account-row .bal { color: var(--muted); font-size: 12px; }
+  .side-footer { margin-top: auto; font-size: 11px; color: var(--muted-2); display: flex; justify-content: space-between; }
+
+  /* ========== Main ========== */
+  .main { padding: 36px 44px 60px; max-width: 920px; }
+  .topline { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 28px; }
+  .crumb { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted-2); }
+  .crumb b { color: var(--ink); font-weight: 600; }
+  .topline-meta { font-size: 12px; color: var(--muted); display: flex; gap: 16px; align-items: center; }
+  .pill { padding: 4px 10px; border: 1px solid var(--rule); border-radius: 99px; font-size: 11px; color: var(--graphite-2); background: var(--paper); }
+  .pill.gold { border-color: var(--gold-2); color: var(--graphite); background: #faf3e3; }
+
+  /* Hero "carte patrimoine" */
+  .hero { background: var(--paper); border: 1px solid var(--rule-2); border-radius: 14px; padding: 36px 38px 30px; position: relative; overflow: hidden; }
+  .hero::before { content: ""; position: absolute; top: 0; left: 0; height: 3px; width: 70px; background: var(--gold); }
+  .hero-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
+  .hero-eyebrow { font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted-2); }
+  .hero-eyebrow b { color: var(--graphite); font-weight: 600; }
+  .hero-figure { font-size: 76px; line-height: 1; font-weight: 400; letter-spacing: -0.02em; color: var(--ink); }
+  .hero-figure .euro { color: var(--muted); font-weight: 300; margin-right: 4px; }
+  .hero-deltas { display: flex; gap: 36px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--rule-2); }
+  .delta { display: flex; flex-direction: column; gap: 4px; }
+  .delta-label { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted-2); }
+  .delta-value { font-size: 18px; font-weight: 500; color: var(--graphite); }
+  .delta-value.up { color: #4d6b3f; }
+  .delta-sub { font-size: 11.5px; color: var(--muted); }
+
+  /* Sculpted curve */
+  .curve-wrap { margin-top: 22px; height: 142px; position: relative; }
+  .curve-axis { position: absolute; inset: 0; display: flex; justify-content: space-between; align-items: flex-end; font-size: 10px; color: var(--muted-2); padding-bottom: 0; pointer-events: none; }
+  .curve-annot { position: absolute; right: 18%; top: 22%; font-size: 11px; color: var(--plum); font-style: italic; }
+  .curve-annot::before { content: ""; position: absolute; left: -14px; top: 8px; width: 10px; height: 1px; background: var(--plum); }
+
+  /* Editorial AI line */
+  .editorial { margin-top: 26px; padding: 16px 0; border-top: 1px solid var(--rule-2); border-bottom: 1px solid var(--rule-2); display: flex; gap: 14px; align-items: flex-start; }
+  .editorial-mark { font-family: 'Fraunces', serif; font-style: italic; color: var(--gold); font-size: 22px; line-height: 1; padding-top: 2px; }
+  .editorial-text { font-family: 'Fraunces', serif; font-style: italic; font-size: 15.5px; line-height: 1.5; color: var(--graphite); flex: 1; }
+  .editorial-text b { font-weight: 500; color: var(--plum); font-style: normal; font-family: 'Inter', sans-serif; font-size: 14px; padding: 1px 6px; border-radius: 3px; background: #f1e8e0; }
+  .editorial-author { font-size: 11px; color: var(--muted-2); letter-spacing: 0.1em; text-transform: uppercase; padding-top: 4px; }
+
+  /* Section grid below hero */
+  .grid-2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; margin-top: 22px; }
+  .panel { background: var(--paper); border: 1px solid var(--rule-2); border-radius: 12px; padding: 22px 24px; }
+  .panel-title { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted-2); display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .panel-title .roman { font-family: 'Fraunces', serif; font-style: italic; font-size: 14px; color: var(--gold); letter-spacing: 0; text-transform: none; margin-right: 10px; }
+
+  .alloc-bar { height: 8px; border-radius: 4px; overflow: hidden; display: flex; margin-bottom: 14px; }
+  .alloc-bar > div { height: 100%; }
+  .alloc-list { display: flex; flex-direction: column; }
+  .alloc-row { display: grid; grid-template-columns: 14px 1fr auto auto; gap: 12px; align-items: baseline; padding: 7px 0; border-bottom: 1px dotted var(--rule); font-size: 13px; }
+  .alloc-row:last-child { border: none; }
+  .alloc-row .sw { width: 10px; height: 10px; border-radius: 2px; }
+  .alloc-row .name { color: var(--graphite); }
+  .alloc-row .pct { color: var(--muted); font-size: 12.5px; min-width: 48px; text-align: right; }
+  .alloc-row .val { color: var(--ink); font-weight: 500; min-width: 78px; text-align: right; }
+
+  /* Health */
+  .health-num { font-family: 'Fraunces', serif; font-size: 60px; line-height: 1; font-weight: 400; letter-spacing: -0.02em; color: var(--ink); }
+  .health-num small { font-size: 18px; color: var(--muted); margin-left: 4px; }
+  .health-label { font-size: 11.5px; color: var(--sage); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 4px; font-weight: 600; }
+  .health-bars { margin-top: 18px; display: flex; flex-direction: column; gap: 9px; }
+  .hbar { display: grid; grid-template-columns: 1fr 70px 28px; align-items: center; gap: 10px; font-size: 12px; }
+  .hbar .lab { color: var(--graphite-2); }
+  .hbar .track { height: 4px; background: var(--rule-2); border-radius: 2px; overflow: hidden; }
+  .hbar .fill { height: 100%; background: var(--graphite); }
+  .hbar .v { color: var(--muted); font-size: 11.5px; text-align: right; }
+
+  /* "Today" printed card */
+  .today { margin-top: 22px; background: var(--paper); border: 1px solid var(--rule-2); border-radius: 12px; padding: 26px 28px; position: relative; }
+  .today::after { content: ""; position: absolute; top: 14px; right: 18px; width: 50px; height: 50px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, var(--gold-2), var(--gold) 60%, transparent 62%); opacity: .14; }
+  .today-eyebrow { font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; color: var(--gold); letter-spacing: 0.02em; }
+  .today-h { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 400; letter-spacing: -0.01em; margin: 4px 0 12px; }
+  .today-h em { font-style: italic; color: var(--plum); }
+  .today-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--rule-2); }
+  .today-cell .lab { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted-2); }
+  .today-cell .v { font-family: 'Fraunces', serif; font-size: 22px; margin-top: 4px; color: var(--ink); }
+  .today-cell .sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+
+  /* ========== Right contextual sidebar ========== */
+  .ctx { background: var(--paper); border-left: 1px solid var(--rule-2); padding: 36px 28px; display: flex; flex-direction: column; gap: 26px; }
+  .ctx h3 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 400; font-size: 17px; margin: 0 0 12px; color: var(--graphite); }
+  .ctx-card { background: var(--ivory); border: 1px solid var(--rule-2); border-radius: 10px; padding: 16px 18px; }
+  .ctx-card .lab { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted-2); }
+  .ctx-card .v { font-family: 'Fraunces', serif; font-size: 26px; margin-top: 4px; }
+  .ctx-card .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .ctx-list { display: flex; flex-direction: column; }
+  .ctx-row { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px dotted var(--rule); font-size: 12.5px; }
+  .ctx-row:last-child { border: none; }
+  .ctx-row .l { color: var(--graphite-2); }
+  .ctx-row .r { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .ctx-cta { background: var(--ink); color: var(--paper); padding: 11px 16px; border-radius: 8px; font-size: 13px; text-align: center; cursor: pointer; border: none; width: 100%; font-family: inherit; }
+  .ctx-cta:hover { background: var(--graphite); }
+
+  /* compare bar */
+  .compare-bar { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 10px 18px; border-radius: 99px; font-size: 12px; display: flex; gap: 14px; align-items: center; box-shadow: 0 8px 24px rgba(26,24,21,.18); }
+  .compare-bar a { color: var(--paper); text-decoration: none; opacity: .55; padding: 2px 8px; border-radius: 4px; transition: opacity .15s, background .15s; }
+  .compare-bar a:hover { opacity: 1; background: rgba(255,255,255,.08); }
+  .compare-bar a.cur { opacity: 1; color: var(--gold-2); }
+  .compare-bar .sep { width: 1px; height: 14px; background: rgba(255,255,255,.2); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Left sidebar -->
+  <aside class="side">
+    <div class="brand">
+      <div class="brand-mark">W</div>
+      <div class="brand-name">Wealthly</div>
+    </div>
+
+    <nav class="nav">
+      <a href="#" class="active"><span class="dot"></span>Vue d'ensemble</a>
+      <a href="#"><span class="dot"></span>Patrimoine</a>
+      <a href="#"><span class="dot"></span>Suivi mensuel</a>
+      <a href="#"><span class="dot"></span>Cashflow</a>
+      <a href="#"><span class="dot"></span>Budgets</a>
+      <a href="#"><span class="dot"></span>Activité</a>
+      <a href="#"><span class="dot"></span>Objectifs</a>
+      <a href="#"><span class="dot"></span>Impôts</a>
+
+      <div class="nav-section-label">Comptes</div>
+      <div class="accounts-mini">
+        <div class="account-row"><span class="name"><span class="live"></span>Boursorama</span><span class="bal num">42,8 k €</span></div>
+        <div class="account-row"><span class="name"><span class="live"></span>BNP Joint</span><span class="bal num">87,4 k €</span></div>
+        <div class="account-row"><span class="name"><span class="live"></span>Trade Republic</span><span class="bal num">187,0 k €</span></div>
+        <div class="account-row"><span class="name"><span class="live"></span>Linxea Spirit</span><span class="bal num">89,0 k €</span></div>
+        <div class="account-row"><span class="name"><span class="live"></span>Livret A</span><span class="bal num">22,9 k €</span></div>
+      </div>
+    </nav>
+
+    <div class="side-footer">
+      <span>FR · EUR</span>
+      <span>v0.4.2</span>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main">
+    <div class="topline">
+      <div class="crumb">Vue d'ensemble · <b>Mai 2026</b></div>
+      <div class="topline-meta">
+        <span class="pill gold">○ synchronisé · 38 s</span>
+        <span class="pill">⌘K rechercher</span>
+      </div>
+    </div>
+
+    <!-- Hero card -->
+    <section class="hero">
+      <div class="hero-head">
+        <div class="hero-eyebrow">Patrimoine net · au <b>7 mai 2026</b></div>
+      </div>
+      <div class="hero-figure num"><span class="euro">€</span>1 247 830</div>
+
+      <div class="hero-deltas">
+        <div class="delta">
+          <span class="delta-label">30 jours</span>
+          <span class="delta-value up num">+2,34 %</span>
+          <span class="delta-sub num">+28 543 €</span>
+        </div>
+        <div class="delta">
+          <span class="delta-label">3 mois</span>
+          <span class="delta-value up num">+5,81 %</span>
+          <span class="delta-sub num">+68 524 €</span>
+        </div>
+        <div class="delta">
+          <span class="delta-label">Année en cours</span>
+          <span class="delta-value up num">+12,47 %</span>
+          <span class="delta-sub num">+138 830 €</span>
+        </div>
+        <div class="delta">
+          <span class="delta-label">Performance 3M</span>
+          <span class="delta-value num">+5,81 %</span>
+          <span class="delta-sub">contre objectif <span class="num">+2 %</span></span>
+        </div>
+      </div>
+
+      <!-- Sculpted curve -->
+      <div class="curve-wrap">
+        <svg viewBox="0 0 800 142" preserveAspectRatio="none" style="width:100%;height:100%">
+          <defs>
+            <linearGradient id="fillGrad" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="#4a2842" stop-opacity="0.18"/>
+              <stop offset="100%" stop-color="#4a2842" stop-opacity="0"/>
+            </linearGradient>
+            <linearGradient id="strokeGrad" x1="0" x2="1" y1="0" y2="0">
+              <stop offset="0%" stop-color="#4a2842"/>
+              <stop offset="60%" stop-color="#5d3553"/>
+              <stop offset="100%" stop-color="#b8965a"/>
+            </linearGradient>
+          </defs>
+          <path d="M0,108 C60,102 110,95 160,98 C220,102 260,86 320,78 C390,68 420,84 470,72 C530,58 570,50 620,42 C680,32 720,28 800,18 L800,142 L0,142 Z" fill="url(#fillGrad)"/>
+          <path d="M0,108 C60,102 110,95 160,98 C220,102 260,86 320,78 C390,68 420,84 470,72 C530,58 570,50 620,42 C680,32 720,28 800,18" fill="none" stroke="url(#strokeGrad)" stroke-width="1.6"/>
+          <circle cx="800" cy="18" r="4.5" fill="#b8965a"/>
+          <circle cx="800" cy="18" r="9" fill="#b8965a" fill-opacity="0.18"/>
+        </svg>
+        <div class="curve-axis">
+          <span>Mai 25</span><span>Juil 25</span><span>Sep 25</span><span>Nov 25</span><span>Jan 26</span><span>Mars 26</span><span>Mai 26</span>
+        </div>
+        <div class="curve-annot">drawdown estival · −1,8 %</div>
+      </div>
+
+      <!-- Editorial AI line -->
+      <div class="editorial">
+        <span class="editorial-mark">”</span>
+        <div class="editorial-text">
+          Vous tenez le rythme de l'objectif annuel. L'allocation actions a dérivé de
+          <b>+2,1 %</b> au-dessus de la cible — un rééquilibrage léger sur le PEA suffirait.
+        </div>
+        <span class="editorial-author">par Wealthly</span>
+      </div>
+    </section>
+
+    <!-- Two-column under hero -->
+    <div class="grid-2">
+
+      <section class="panel">
+        <div class="panel-title">
+          <span><span class="roman serif italic">I.</span>Allocation</span>
+          <span style="color:var(--muted-2);font-size:11px;letter-spacing:0;text-transform:none">6 classes · objectif</span>
+        </div>
+        <div class="alloc-bar">
+          <div style="width:55.2%;background:#3a342e"></div>
+          <div style="width:22.0%;background:#4a2842"></div>
+          <div style="width:10.9%;background:#b8965a"></div>
+          <div style="width:6.8%;background:#7d8a6b"></div>
+          <div style="width:3.3%;background:#b66a4e"></div>
+          <div style="width:1.8%;background:#8a8175"></div>
+        </div>
+        <div class="alloc-list">
+          <div class="alloc-row"><span class="sw" style="background:#3a342e"></span><span class="name">Immobilier <small style="color:var(--muted-2)">· résidence + locatif</small></span><span class="pct num">55,2 %</span><span class="val num">720 000 €</span></div>
+          <div class="alloc-row"><span class="sw" style="background:#4a2842"></span><span class="name">Actions <small style="color:var(--muted-2)">· PEA + CTO</small></span><span class="pct num">22,0 %</span><span class="val num">287 000 €</span></div>
+          <div class="alloc-row"><span class="sw" style="background:#b8965a"></span><span class="name">Liquidités <small style="color:var(--muted-2)">· courants + épargne</small></span><span class="pct num">10,9 %</span><span class="val num">142 500 €</span></div>
+          <div class="alloc-row"><span class="sw" style="background:#7d8a6b"></span><span class="name">Obligations <small style="color:var(--muted-2)">· assurance vie</small></span><span class="pct num">6,8 %</span><span class="val num">89 000 €</span></div>
+          <div class="alloc-row"><span class="sw" style="background:#b66a4e"></span><span class="name">Crypto <small style="color:var(--muted-2)">· BTC + ETH</small></span><span class="pct num">3,3 %</span><span class="val num">42 830 €</span></div>
+          <div class="alloc-row"><span class="sw" style="background:#8a8175"></span><span class="name">Autre <small style="color:var(--muted-2)">· art + horlogerie</small></span><span class="pct num">1,8 %</span><span class="val num">24 000 €</span></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">
+          <span><span class="roman serif italic">II.</span>Santé financière</span>
+        </div>
+        <div class="health-num num">78<small>/100</small></div>
+        <div class="health-label">Solide</div>
+        <div class="health-bars">
+          <div class="hbar"><span class="lab">Taux d'épargne</span><span class="track"><span class="fill" style="width:92%"></span></span><span class="v num">92</span></div>
+          <div class="hbar"><span class="lab">Fonds d'urgence</span><span class="track"><span class="fill" style="width:67%"></span></span><span class="v num">67</span></div>
+          <div class="hbar"><span class="lab">Ratio d'endettement</span><span class="track"><span class="fill" style="width:88%"></span></span><span class="v num">88</span></div>
+          <div class="hbar"><span class="lab">Diversification</span><span class="track"><span class="fill" style="width:80%"></span></span><span class="v num">80</span></div>
+          <div class="hbar"><span class="lab">Croissance nette</span><span class="track"><span class="fill" style="width:95%"></span></span><span class="v num">95</span></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Today card (printed feel) -->
+    <section class="today">
+      <div class="today-eyebrow serif italic">Aujourd'hui · 7 mai</div>
+      <div class="today-h serif">Une journée <em>équilibrée</em>.</div>
+      <div class="today-grid">
+        <div class="today-cell">
+          <div class="lab">Entrées</div>
+          <div class="v num">+2 140 €</div>
+          <div class="sub">salaire partiel</div>
+        </div>
+        <div class="today-cell">
+          <div class="lab">Sorties</div>
+          <div class="v num">−312 €</div>
+          <div class="sub">3 transactions</div>
+        </div>
+        <div class="today-cell">
+          <div class="lab">Net</div>
+          <div class="v num" style="color:#4d6b3f">+1 828 €</div>
+          <div class="sub">au-dessus de la moyenne</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Right contextual sidebar -->
+  <aside class="ctx">
+    <div>
+      <h3>À surveiller</h3>
+      <div class="ctx-card">
+        <div class="lab">Allocation actions</div>
+        <div class="v num">+2,1 %</div>
+        <div class="sub">au-dessus de l'objectif — rééquilibrage suggéré</div>
+      </div>
+    </div>
+
+    <div>
+      <h3>Ce mois-ci</h3>
+      <div class="ctx-list">
+        <div class="ctx-row"><span class="l">Revenus</span><span class="r">8 420 €</span></div>
+        <div class="ctx-row"><span class="l">Dépenses</span><span class="r">−5 624 €</span></div>
+        <div class="ctx-row"><span class="l">Épargne</span><span class="r">2 796 €</span></div>
+        <div class="ctx-row"><span class="l">Taux d'épargne</span><span class="r">33,2 %</span></div>
+      </div>
+    </div>
+
+    <div>
+      <h3>Prochaines échéances</h3>
+      <div class="ctx-list">
+        <div class="ctx-row"><span class="l">Loyer rue Lafayette</span><span class="r">10 mai</span></div>
+        <div class="ctx-row"><span class="l">Crédit immo</span><span class="r">15 mai</span></div>
+        <div class="ctx-row"><span class="l">EDF mensualisé</span><span class="r">18 mai</span></div>
+        <div class="ctx-row"><span class="l">Échéance PEL</span><span class="r">28 mai</span></div>
+      </div>
+    </div>
+
+    <button class="ctx-cta">Demander à Wealthly · ⌘K</button>
+  </aside>
+
+</div>
+
+<div class="compare-bar">
+  <span style="opacity:.5;letter-spacing:.08em">DIRECTIONS</span>
+  <a href="#">A · Slate</a>
+  <a href="#">B · Méridien</a>
+  <a href="#">C · Obsidian</a>
+  <span class="sep"></span>
+  <a href="#" class="cur">D · Aurora</a>
+</div>
+
+</body>
+</html>

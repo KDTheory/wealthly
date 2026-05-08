@@ -71,6 +71,7 @@
   /* Typography */
   --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-mono: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-serif: "Source Serif 4", "Source Serif Pro", "Times New Roman", Georgia, serif;
 }
 
 /* Light mode — sober paper, deep ink, refined gold.
@@ -121,4 +122,52 @@
 .w-num {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1, "cv11" 1;
+}
+
+/* Méridien — editorial serif typography used for hero numbers,
+   roman numerals, italic accents. Pairs with DM Sans for everything else. */
+.w-serif {
+  font-family: var(--font-serif);
+  letter-spacing: -0.005em;
+}
+.w-serif-italic {
+  font-family: var(--font-serif);
+  font-style: italic;
+  letter-spacing: -0.005em;
+}
+
+/* Section header pattern — "I — Asset Allocation" style.
+   Wrap the roman numeral in <span class="w-roman"> followed by the title. */
+.w-section-h {
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-w-accent);
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-weight: 600;
+}
+.w-roman {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 16px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-w-accent);
+  font-weight: 400;
+}
+
+/* Statement eyebrow — "Quarterly Statement · Q2 2026" */
+.w-eyebrow {
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-w-accent);
+  font-weight: 500;
+}
+
+/* Dotted divider used inside statement-style lists */
+.w-divider-dot {
+  border-bottom: 1px dotted var(--color-w-border-strong);
 }

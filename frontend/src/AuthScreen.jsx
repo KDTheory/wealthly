@@ -103,7 +103,7 @@ export default function AuthScreen({ onAuth, onTryDemo, onBackToLanding, initial
         <div className="auth-hero">
           <div className="auth-eyebrow">ESPACE PERSONNEL</div>
           <h1 className="auth-headline">
-            {mode === 'register' ? 'Créer votre compte' : 'Bon retour.'}
+            {mode === 'register' ? <>Créer <em>votre compte.</em></> : <>Bon <em>retour.</em></>}
           </h1>
           <p className="auth-subhead">
             {mode === 'register'
@@ -388,13 +388,15 @@ const authStyles = `
   background: rgba(197, 165, 114, 0.05);
 }
 .auth-headline {
-  font-size: clamp(34px, 6vw, 54px);
-  font-weight: 700;
-  letter-spacing: -0.035em;
-  line-height: 1.05;
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: clamp(38px, 6.4vw, 60px);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.04;
   color: #ebe8e3;
   margin: 4px 0 0;
 }
+.auth-headline em { font-style: italic; color: #c5a572; font-weight: 400; }
 .auth-subhead {
   font-size: 15px; line-height: 1.6;
   color: #b5b2ab;

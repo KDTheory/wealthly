@@ -79,9 +79,9 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
       <div className="w-redesign min-h-[60vh] flex items-center justify-center px-6">
         <div className="max-w-xl w-full">
           <div className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-w-accent)] font-medium mb-4">Bienvenue chez Wealthly</div>
-          <h1 className="text-[clamp(34px,5vw,52px)] leading-[1.05] font-medium tracking-[-0.04em] text-[var(--color-w-text)] mb-4">
+          <h1 className="w-serif text-[clamp(38px,5.5vw,58px)] leading-[1.04] font-normal tracking-[-0.02em] text-[var(--color-w-text)] mb-4">
             {activeMember ? `Bonjour ${activeMember.name}.` : 'Votre patrimoine,'}<br/>
-            <span className="text-[var(--color-w-muted)]">consolidé en quelques minutes.</span>
+            <span className="w-serif-italic text-[var(--color-w-accent)]">consolidé en quelques minutes.</span>
           </h1>
           <p className="text-[var(--color-w-muted)] leading-relaxed mb-7 max-w-md">
             Importez vos relevés ou saisissez vos actifs. Tout reste chiffré, hébergé chez vous.
@@ -119,10 +119,24 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
   const cardCls = 'bg-[var(--color-w-surface)] border border-[var(--color-w-border)] rounded-[var(--radius-w-lg)]';
   const labelCls = 'text-[11px] uppercase tracking-[0.08em] text-[var(--color-w-muted)] font-medium';
 
+  // Méridien: quarter label for the statement eyebrow ("Relevé · T2 2026").
+  const quarter = (() => {
+    const d = new Date();
+    return `T${Math.floor(d.getMonth() / 3) + 1} ${d.getFullYear()}`;
+  })();
+
   return (
     <div className="w-redesign font-sans">
+      {/* Statement eyebrow + editorial title (Méridien) */}
+      <div className="mb-3">
+        <div className="w-eyebrow mb-3">Relevé · {quarter}</div>
+        <h1 className="w-serif text-[clamp(40px,5.4vw,60px)] leading-[1.04] font-normal tracking-[-0.018em] text-[var(--color-w-muted)] m-0">
+          Position <span className="w-serif-italic text-[var(--color-w-accent)]">en un coup d'œil</span>.
+        </h1>
+      </div>
+
       {/* Top bar: subtle greeting + utility actions only — no redundant page title */}
-      <div className="flex items-center justify-between flex-wrap gap-3 mb-5">
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-5 mt-5">
         <div className="text-[13px] text-[var(--color-w-faint)] font-medium tracking-tight">
           {greeting}{activeMember ? ` · ${activeMember.name}` : ''} <span className="text-[var(--color-w-faint)]/70">— {dateLong}</span>
         </div>
@@ -193,7 +207,7 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
               )}
             </div>
 
-            <div className="text-[clamp(46px,9.2vw,84px)] leading-[1.02] font-medium tracking-[-0.045em] w-num text-[var(--color-w-text)] mt-3">
+            <div className="w-serif text-[clamp(54px,10vw,98px)] leading-[1] font-normal tracking-[-0.028em] w-num text-[var(--color-w-text)] mt-3">
               <AnimatedNumber value={netWorth} format={(v) => fmt(v)}/>
             </div>
 
@@ -231,7 +245,7 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
             <span className={labelCls}>Performance 3 mois</span>
             {perf.m3 !== null && (perf.m3 >= 0 ? <TrendingUp size={14} className="text-[var(--color-w-success)]"/> : <TrendingDown size={14} className="text-[var(--color-w-danger)]"/>)}
           </div>
-          <div className={`text-[22px] leading-tight font-medium w-num mt-2 ${perf.m3 === null ? 'text-[var(--color-w-faint)]' : perf.m3 >= 0 ? 'text-[var(--color-w-text)]' : 'text-[var(--color-w-danger)]'}`}>
+          <div className={`w-serif text-[28px] leading-none font-normal w-num mt-2 ${perf.m3 === null ? 'text-[var(--color-w-faint)]' : perf.m3 >= 0 ? 'text-[var(--color-w-text)]' : 'text-[var(--color-w-danger)]'}`}>
             {perf.m3 !== null ? `${perf.m3 >= 0 ? '+' : ''}${perf.m3.toFixed(1)}%` : '—'}
           </div>
         </div>
@@ -242,7 +256,7 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
               <span className={labelCls}>Ratio d'endettement</span>
               <CreditCard size={14} className="text-[var(--color-w-faint)]"/>
             </div>
-            <div className="text-[22px] leading-tight font-medium w-num mt-2 text-[var(--color-w-text)]">
+            <div className="w-serif text-[28px] leading-none font-normal w-num mt-2 text-[var(--color-w-text)]">
               {debtRatio !== null ? `${debtRatio.toFixed(1)}%` : '—'}
             </div>
             <div className="text-[11px] mt-1 uppercase tracking-wider">
@@ -261,7 +275,7 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
               <span className={labelCls}>Épargne du mois</span>
               <PiggyBank size={14} className="text-[var(--color-w-faint)]"/>
             </div>
-            <div className={`text-[22px] leading-tight font-medium w-num mt-2 ${thisMonthStats.net >= 0 ? 'text-[var(--color-w-text)]' : 'text-[var(--color-w-danger)]'}`}>
+            <div className={`w-serif text-[28px] leading-none font-normal w-num mt-2 ${thisMonthStats.net >= 0 ? 'text-[var(--color-w-text)]' : 'text-[var(--color-w-danger)]'}`}>
               <AnimatedNumber value={thisMonthStats.net} format={(v) => fmt(v, { sign: true })}/>
             </div>
             {thisMonthStats.income > 0 && (
@@ -275,7 +289,7 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
             <span className={labelCls}>Part liquide</span>
             <Wallet size={14} className="text-[var(--color-w-faint)]"/>
           </div>
-          <div className="text-[22px] leading-tight font-medium w-num mt-2 text-[var(--color-w-text)]">
+          <div className="w-serif text-[28px] leading-none font-normal w-num mt-2 text-[var(--color-w-text)]">
             {liquidityRatio !== null ? `${liquidityRatio.toFixed(0)}%` : '—'}
           </div>
           <div className="text-[11px] text-[var(--color-w-faint)] mt-1">disponibles immédiatement</div>
@@ -328,8 +342,8 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
         {allocationData.length > 0 && (
           <section className={`${cardCls} p-6`}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-[var(--color-w-text)]">Composition</h3>
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-[var(--color-w-border)]">
+              <h3 className="w-section-h"><span className="w-roman">I</span>— Allocation</h3>
               <button onClick={() => setView('wealth')} className="text-xs text-[var(--color-w-muted)] hover:text-[var(--color-w-text)] inline-flex items-center gap-1 transition-colors">
                 Détails <ChevronRight size={12}/>
               </button>
@@ -368,8 +382,8 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
 
         {topCategoriesThisMonth.length > 0 && (
           <section className={`${cardCls} p-6`}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-[var(--color-w-text)]">Top dépenses du mois</h3>
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-[var(--color-w-border)]">
+              <h3 className="w-section-h"><span className="w-roman">II</span>— Top dépenses du mois</h3>
               <button onClick={() => setView('monthly')} className="text-xs text-[var(--color-w-muted)] hover:text-[var(--color-w-text)] inline-flex items-center gap-1 transition-colors">
                 Voir tout <ChevronRight size={12}/>
               </button>
@@ -406,8 +420,8 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
         {visibleAccounts.length > 0 && (
           <section className={`${cardCls} p-6`}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-[var(--color-w-text)]">Comptes</h3>
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-[var(--color-w-border)]">
+              <h3 className="w-section-h"><span className="w-roman">III</span>— Comptes</h3>
               <span className="text-xs text-[var(--color-w-faint)]">{visibleAccounts.length}</span>
             </div>
             <div className="divide-y divide-[var(--color-w-border)]">
@@ -441,8 +455,8 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
 
         {recentTx.length > 0 && (
           <section className={`${cardCls} p-6`}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-[var(--color-w-text)]">Activité récente</h3>
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-[var(--color-w-border)]">
+              <h3 className="w-section-h"><span className="w-roman">IV</span>— Activité récente</h3>
               <button onClick={() => setView('transactions')} className="text-xs text-[var(--color-w-muted)] hover:text-[var(--color-w-text)] inline-flex items-center gap-1 transition-colors">
                 Voir tout <ChevronRight size={12}/>
               </button>

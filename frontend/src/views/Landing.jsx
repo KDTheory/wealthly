@@ -50,7 +50,7 @@ export default function Landing({ onSignIn, onSignUp, onTryDemo }) {
       <section className="lp-hero">
         <div className="lp-eyebrow-pill">PATRIMOINE FAMILIAL · DSP2 · UE</div>
         <h1 className="lp-h1">
-          Suivre. Comprendre.<br/>Décider.
+          Suivre. Comprendre.<br/><em>Décider.</em>
         </h1>
         <p className="lp-sub">
           Wealthly agrège vos comptes, actifs, dettes et charges fixes — par
@@ -91,7 +91,7 @@ export default function Landing({ onSignIn, onSignUp, onTryDemo }) {
       <section className="lp-pilot" id="pilot">
         <div className="lp-pilot-text">
           <div className="lp-eyebrow gold">SUIVI AUTOMATIQUE</div>
-          <h2 className="lp-h2">Votre patrimoine,<br/>en pilote auto.</h2>
+          <h2 className="lp-h2">Votre patrimoine,<br/><em>en pilote auto.</em></h2>
           <p className="lp-p">
             On ne peut pas améliorer ce qu'on ne suit pas. Wealthly synchronise
             vos comptes via la DSP2 et calcule en temps réel votre patrimoine net,
@@ -135,7 +135,7 @@ export default function Landing({ onSignIn, onSignUp, onTryDemo }) {
       <section className="lp-bento" id="features">
         <div className="lp-section-head">
           <div className="lp-eyebrow gold">OPTIMISEZ VOTRE PATRIMOINE</div>
-          <h2 className="lp-h2">Trois outils pour décider mieux.</h2>
+          <h2 className="lp-h2">Trois outils pour <em>décider mieux.</em></h2>
           <p className="lp-p">
             Score santé, cashflow, simulateur fiscal — tout est calculé localement,
             sans envoyer vos données ailleurs.
@@ -182,7 +182,7 @@ export default function Landing({ onSignIn, onSignUp, onTryDemo }) {
       <section className="lp-security" id="security">
         <div className="lp-section-head">
           <div className="lp-eyebrow gold">SÉCURITÉ</div>
-          <h2 className="lp-h2">La confidentialité est<br/>la valeur par défaut.</h2>
+          <h2 className="lp-h2">La confidentialité est<br/><em>la valeur par défaut.</em></h2>
         </div>
         <div className="lp-sec-grid">
           <div className="lp-sec-item">
@@ -212,7 +212,7 @@ export default function Landing({ onSignIn, onSignUp, onTryDemo }) {
       <section className="lp-steps">
         <div className="lp-section-head">
           <div className="lp-eyebrow gold">EN 3 ÉTAPES</div>
-          <h2 className="lp-h2">Démarrez en moins<br/>d'une minute.</h2>
+          <h2 className="lp-h2">Démarrez en moins<br/><em>d'une minute.</em></h2>
         </div>
         <div className="lp-steps-grid">
           <div className="lp-step">
@@ -242,7 +242,7 @@ export default function Landing({ onSignIn, onSignUp, onTryDemo }) {
       <section className="lp-faq" id="faq">
         <div className="lp-section-head">
           <div className="lp-eyebrow gold">QUESTIONS FRÉQUENTES</div>
-          <h2 className="lp-h2">Une question ?</h2>
+          <h2 className="lp-h2"><em>Une question ?</em></h2>
         </div>
         <div className="lp-faq-list">
           <details className="lp-faq-q">
@@ -344,17 +344,21 @@ const styles = `
   margin-bottom: 22px;
 }
 .lp-h1 {
-  font-size: clamp(40px, 7vw, 84px);
-  font-weight: 700;
-  letter-spacing: -0.04em; line-height: 1.02;
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: clamp(44px, 7.4vw, 92px);
+  font-weight: 400;
+  letter-spacing: -0.022em; line-height: 1.02;
   color: #ebe8e3; margin: 0 0 22px;
 }
+.lp-h1 em { font-style: italic; color: #c5a572; font-weight: 400; }
 .lp-h2 {
-  font-size: clamp(30px, 4.5vw, 48px);
-  font-weight: 700;
-  letter-spacing: -0.03em; line-height: 1.1;
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: clamp(32px, 4.8vw, 54px);
+  font-weight: 400;
+  letter-spacing: -0.018em; line-height: 1.08;
   color: #ebe8e3; margin: 14px 0 18px;
 }
+.lp-h2 em { font-style: italic; color: #c5a572; font-weight: 400; }
 .lp-p, .lp-sub {
   font-size: 16px; line-height: 1.65;
   color: #b5b2ab;
