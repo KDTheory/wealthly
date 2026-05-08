@@ -15,7 +15,7 @@ import { AnimatedNumber } from '../components/AnimatedNumber.jsx';
 import { NetWorthChart } from '../components/NetWorthChart.jsx';
 import { computeHealthScore } from '../components/HealthScore.jsx';
 
-export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, thisMonthStats, monthlyEvolution, visibleAccounts, accountBalances, visibleAssets, visibleLiabilities, members, activeMemberId, transactions, categories, fmt, memberShare, categoryAnalysis, anomalies, cashflowProjection, goals, budgets = {}, wealthHistory = [], recurringGroups, currentMonth, setView, onAccountClick }) {
+export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValue, thisMonthStats, monthlyEvolution, visibleAccounts, accountBalances, visibleAssets, visibleLiabilities, members, activeMemberId, transactions, categories, fmt, memberShare, categoryAnalysis, anomalies, cashflowProjection, goals, budgets = {}, wealthHistory = [], recurringGroups, currentMonth, transferIds = new Set(), setView, onAccountClick }) {
   const last12Months = monthlyEvolution.slice(-12);
   const recentTx = [...transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
   const activeMember = members.find(m => m.id === activeMemberId);
@@ -360,23 +360,33 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
               </li>
             )}
           </ul>
-          {/* Account-role exclusion footer — surface excluded accounts so the
-              user understands why the cashflow numbers may look different
-              from a naive "sum all transactions" view. */}
+          {/* Footer surfacing the deliberate exclusions in the cashflow:
+              (a) accounts whose role excludes them; (b) auto-detected
+              internal transfers between two of the user's accounts. */}
           {(() => {
             const excluded = visibleAccounts.filter(a => a.role && a.role !== 'principal');
-            if (excluded.length === 0) return null;
+            const transfersThisMonth = transactions.filter(t => transferIds.has(t.id) && t.date.startsWith(currentMonth));
+            if (excluded.length === 0 && transfersThisMonth.length === 0) return null;
             return (
               <div className="mt-4 pt-3 border-t border-dotted border-[var(--color-w-border)] text-[11px] text-[var(--color-w-faint)] leading-[1.55] w-serif italic">
-                Exclus du calcul mensuel :{' '}
-                {excluded.map((a, i) => (
-                  <span key={a.id}>
-                    {i > 0 && ', '}
-                    <span className="text-[var(--color-w-muted)] not-italic">{a.name}</span>
-                    <span className="text-[var(--color-w-faint)]"> ({a.role})</span>
-                  </span>
-                ))}
-                .
+                {excluded.length > 0 && (
+                  <div>
+                    Exclus du calcul mensuel :{' '}
+                    {excluded.map((a, i) => (
+                      <span key={a.id}>
+                        {i > 0 && ', '}
+                        <span className="text-[var(--color-w-muted)] not-italic">{a.name}</span>
+                        <span className="text-[var(--color-w-faint)]"> ({a.role})</span>
+                      </span>
+                    ))}
+                    .
+                  </div>
+                )}
+                {transfersThisMonth.length > 0 && (
+                  <div>
+                    <span className="text-[var(--color-w-accent)] not-italic">↔</span> {transfersThisMonth.length} transfert{transfersThisMonth.length > 1 ? 's' : ''} détecté{transfersThisMonth.length > 1 ? 's' : ''} entre vos comptes ce mois — non compté{transfersThisMonth.length > 1 ? 's' : ''} comme dépense.
+                  </div>
+                )}
               </div>
             );
           })()}
@@ -499,14 +509,20 @@ export function Dashboard({ netWorth, liquidWealth, assetsValue, liabilitiesValu
               {recentTx.map(tx => {
                 const cat = categories.find(c => c.id === tx.categoryId);
                 const acc = visibleAccounts.find(a => a.id === tx.accountId);
+                const isTransfer = transferIds.has(tx.id);
                 return (
                   <div key={tx.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                    <div className="w-9 h-9 rounded-[var(--radius-w-sm)] flex items-center justify-center text-sm shrink-0" style={{ background: (cat?.color || '#888') + '22', color: cat?.color || '#888' }}>{cat?.icon || '·'}</div>
+                    <div className="w-9 h-9 rounded-[var(--radius-w-sm)] flex items-center justify-center text-sm shrink-0" style={{ background: isTransfer ? 'var(--color-w-accent-soft)' : (cat?.color || '#888') + '22', color: isTransfer ? 'var(--color-w-accent)' : (cat?.color || '#888') }}>{isTransfer ? '↔' : (cat?.icon || '·')}</div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm text-[var(--color-w-text)] truncate">{tx.label || 'Sans libellé'}</div>
+                      <div className="text-sm text-[var(--color-w-text)] truncate flex items-center gap-2">
+                        <span className="truncate">{tx.label || 'Sans libellé'}</span>
+                        {isTransfer && (
+                          <span className="text-[10px] uppercase tracking-[0.14em] font-semibold text-[var(--color-w-accent)] px-1.5 py-px rounded-sm border border-[var(--color-w-accent-soft)] bg-[var(--color-w-accent-soft)] shrink-0">Transfert</span>
+                        )}
+                      </div>
                       <div className="text-xs text-[var(--color-w-muted)] truncate">{formatDate(tx.date)} · {acc?.name}</div>
                     </div>
-                    <div className={`text-sm w-num ${tx.amount >= 0 ? 'text-[var(--color-w-accent)]' : 'text-[var(--color-w-text)]'}`}>{fmt(tx.amount, { sign: true })}</div>
+                    <div className={`text-sm w-num ${isTransfer ? 'text-[var(--color-w-faint)]' : tx.amount >= 0 ? 'text-[var(--color-w-accent)]' : 'text-[var(--color-w-text)]'}`}>{fmt(tx.amount, { sign: true })}</div>
                   </div>
                 );
               })}

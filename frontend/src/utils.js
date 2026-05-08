@@ -60,6 +60,74 @@ export const accountIncludeInNetWorth = (role) => (ACCOUNT_ROLES[role] || ACCOUN
 export const accountCountsAsIncome = (role) => (ACCOUNT_ROLES[role] || ACCOUNT_ROLES.principal).countsAsIncome;
 export const accountCountsAsExpense = (role) => (ACCOUNT_ROLES[role] || ACCOUNT_ROLES.principal).countsAsExpense;
 
+// ---- Internal-transfer detection -----------------------------------------
+// Pair-match transactions that look like "I moved money between two of my
+// own accounts" so the cashflow aggregator can ignore them — otherwise a
+// virement of €1 000 from principal to épargne would inflate both expenses
+// and income by €1 000.
+//
+// Pairing rules:
+//   1. Same absolute amount, rounded to 0.01
+//   2. Opposite signs (one positive, one negative)
+//   3. Two distinct accounts that the user owns
+//   4. Within ±windowDays days of each other (default 3 — covers slow IBAN
+//      virements that take 2 banking days)
+//   5. Each transaction can only be matched once (greedy, earliest-first)
+//
+// Returns a Set<txId> of transactions identified as one side of a transfer.
+// Both legs are added so the monthlyEvolution aggregator can skip either
+// independently.
+//
+// O(n) per amount bucket — fast enough for tens of thousands of txs.
+const TRANSFER_LABEL_HINT = /\b(virement|transfer|transfert|vir\.?\s|to\s+\w+|from\s+\w+|wise|revolut)\b/i;
+
+export const detectInternalTransfers = (transactions, options = {}) => {
+  const { windowDays = 3, requireLabelHint = false } = options;
+  const transferIds = new Set();
+  if (!Array.isArray(transactions) || transactions.length < 2) return transferIds;
+
+  // Group by rounded |amount| so we only compare candidates of the same size.
+  const byAmount = new Map();
+  for (const t of transactions) {
+    if (!t || typeof t.amount !== 'number' || t.amount === 0) continue;
+    const key = Math.round(Math.abs(t.amount) * 100);
+    if (!byAmount.has(key)) byAmount.set(key, []);
+    byAmount.get(key).push(t);
+  }
+
+  const windowMs = windowDays * 86400000;
+  const matched = new Set();
+
+  for (const group of byAmount.values()) {
+    if (group.length < 2) continue;
+    // Sort by date for greedy earliest-first matching.
+    const sorted = [...group].sort((a, b) => a.date.localeCompare(b.date));
+    for (let i = 0; i < sorted.length; i++) {
+      const a = sorted[i];
+      if (matched.has(a.id)) continue;
+      for (let j = i + 1; j < sorted.length; j++) {
+        const b = sorted[j];
+        if (matched.has(b.id)) continue;
+        if (a.accountId === b.accountId) continue;
+        if (Math.sign(a.amount) === Math.sign(b.amount)) continue;
+        const diff = Math.abs(new Date(a.date) - new Date(b.date));
+        if (diff > windowMs) break; // sorted by date — no later match in window
+        if (requireLabelHint) {
+          const blob = `${a.label || ''} ${b.label || ''}`;
+          if (!TRANSFER_LABEL_HINT.test(blob)) continue;
+        }
+        // Match found — tag both legs and stop searching for `a`.
+        transferIds.add(a.id);
+        transferIds.add(b.id);
+        matched.add(a.id);
+        matched.add(b.id);
+        break;
+      }
+    }
+  }
+  return transferIds;
+};
+
 // ---- Formatting ------------------------------------------------------------
 
 export const formatCurrency = (amount, options = {}) => {

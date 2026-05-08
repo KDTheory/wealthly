@@ -20,7 +20,7 @@ const EMPTY_FILTERS = {
   type: 'all',       // all | income | expense
 };
 
-export function Transactions({ transactions, accounts, categories, members = [], recurringIds, toggleRecurring, updateCategory, deleteTransaction, fmt, initialAccountFilter, onConsumeInitialFilter }) {
+export function Transactions({ transactions, accounts, categories, members = [], recurringIds, toggleRecurring, transferIds = new Set(), updateCategory, deleteTransaction, fmt, initialAccountFilter, onConsumeInitialFilter }) {
   const [search, setSearch] = useState('');
   // Seed the account filter on mount if the parent passed one (e.g. coming
   // from the AccountDrawer "voir toutes les transactions" CTA).
@@ -291,11 +291,15 @@ export function Transactions({ transactions, accounts, categories, members = [],
             const cat = categories.find(c => c.id === tx.categoryId);
             const acc = accounts.find(a => a.id === tx.accountId);
             const isRecurring = recurringIds.has(tx.id);
+            const isTransfer = transferIds.has(tx.id);
             return (
-              <div key={tx.id} className="tx-row">
+              <div key={tx.id} className={`tx-row ${isTransfer ? 'tx-row-transfer' : ''}`}>
                 <div className="td td-date">{formatDate(tx.date)}</div>
                 <div className="td td-label">
                   <span>{tx.label || 'Sans libellé'}</span>
+                  {isTransfer && (
+                    <span className="tx-transfer-badge" title="Transfert détecté entre deux de vos comptes — exclu du cashflow mensuel">↔ Transfert</span>
+                  )}
                   <button className={`recurring-toggle ${isRecurring ? 'active' : ''}`} onClick={() => toggleRecurring(tx.id, !isRecurring)} title={isRecurring ? 'Marquer comme non-récurrent' : 'Marquer comme récurrent'}>
                     <Repeat size={11}/>
                   </button>

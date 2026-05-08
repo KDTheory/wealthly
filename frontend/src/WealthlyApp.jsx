@@ -15,6 +15,7 @@ import {
   parseCSV, detectBankProfile, autoDetectMapping, applyMapping,
   categorize, detectRecurring,
   accountIncludeInNetWorth, accountCountsAsIncome, accountCountsAsExpense,
+  detectInternalTransfers,
 } from './utils.js';
 import { Styles } from './Styles.jsx';
 import { Toast } from './components/Toast.jsx';
@@ -475,6 +476,14 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   const recurringIds = recurringData.recurringIds;
   const recurringGroups = recurringData.recurringGroups;
 
+  // Identify pair-matched transfers between the user's own accounts so we
+  // can exclude them from cashflow aggregates. Recomputes whenever the
+  // visible transaction set changes.
+  const transferIds = useMemo(
+    () => detectInternalTransfers(visibleTransactions),
+    [visibleTransactions]
+  );
+
   const monthlyEvolution = useMemo(() => {
     const monthly = {};
     const sortedTx = [...visibleTransactions].sort((a, b) => a.date.localeCompare(b.date));
@@ -494,18 +503,21 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
       const sharedAmount = t.amount * share;
       const cat = categories.find(c => c.id === t.categoryId);
       const role = acc?.role || 'principal';
-      // Cashflow attribution depends on the account's role. Transfers between
-      // a 'principal' and an 'epargne' account are NOT income/expenses for
-      // the foyer — they're internal movements between buckets the user owns.
-      if (t.amount > 0) {
-        if (accountCountsAsIncome(role)) monthly[m].income += sharedAmount;
-      } else {
-        if (accountCountsAsExpense(role)) {
-          const absShared = Math.abs(sharedAmount);
-          monthly[m].expenses += absShared;
-          if (recurringIds.has(t.id)) monthly[m].fixed += absShared;
-          else monthly[m].variable += absShared;
-          if (cat?.kind === 'savings') monthly[m].savings += absShared;
+      const isTransfer = transferIds.has(t.id);
+      // Cashflow attribution depends on (1) whether this tx is an internal
+      // transfer (excluded from income/expense regardless of role), and
+      // (2) the account's role for non-transfer flows.
+      if (!isTransfer) {
+        if (t.amount > 0) {
+          if (accountCountsAsIncome(role)) monthly[m].income += sharedAmount;
+        } else {
+          if (accountCountsAsExpense(role)) {
+            const absShared = Math.abs(sharedAmount);
+            monthly[m].expenses += absShared;
+            if (recurringIds.has(t.id)) monthly[m].fixed += absShared;
+            else monthly[m].variable += absShared;
+            if (cat?.kind === 'savings') monthly[m].savings += absShared;
+          }
         }
       }
       // Running balance still tracks every transaction on a NW-eligible
@@ -516,7 +528,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     });
     sortedMonths.forEach(m => { runningTotal += monthly[m].net; monthly[m].balance = runningTotal; });
     return Object.values(monthly);
-  }, [visibleTransactions, visibleAccounts, accounts, categories, recurringIds, memberShare]);
+  }, [visibleTransactions, visibleAccounts, accounts, categories, recurringIds, memberShare, transferIds]);
 
   const currentMonth = useMemo(() => {
     const now = new Date();
@@ -554,7 +566,11 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     });
     visibleTransactions.forEach(t => {
       if (t.amount >= 0) return;
+      if (transferIds.has(t.id)) return; // skip internal transfers
       const acc = accounts.find(a => a.id === t.accountId);
+      // Honor the account's role: epargne / investissement / professionnel
+      // outflows are not real expenses, don't count them in the analysis.
+      if (acc && !accountCountsAsExpense(acc.role)) return;
       const share = acc ? memberShare(acc) : 1;
       const m = monthKey(t.date);
       const abs = Math.abs(t.amount) * share;
@@ -568,7 +584,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
       v.avg3m = histVals.length > 0 ? histVals.reduce((s, x) => s + x, 0) / histVals.length : 0;
     });
     return result;
-  }, [visibleTransactions, categories, currentMonth, monthlyEvolution, accounts, memberShare]);
+  }, [visibleTransactions, categories, currentMonth, monthlyEvolution, accounts, memberShare, transferIds]);
 
   // Number of budget categories the user has overspent this month — drives
   // the red dot on the "Budgets" nav button so the user notices without
@@ -1127,6 +1143,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             anomalies={anomalies} cashflowProjection={cashflowProjection}
             goals={goals} budgets={budgets} wealthHistory={wealthHistory}
             recurringGroups={recurringGroups} currentMonth={currentMonth}
+            transferIds={transferIds}
             setView={setView}
             onAccountClick={(a) => setDrawerAccount(a)}
           />
@@ -1192,6 +1209,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             transactions={visibleTransactions} accounts={accounts} categories={categories}
             members={members}
             recurringIds={recurringIds} toggleRecurring={toggleRecurring}
+            transferIds={transferIds}
             updateCategory={updateTransactionCategory} deleteTransaction={deleteTransaction} fmt={fmt}
             initialAccountFilter={txInitialAccountFilter}
             onConsumeInitialFilter={() => setTxInitialAccountFilter(null)}
