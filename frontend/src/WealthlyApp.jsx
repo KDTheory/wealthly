@@ -74,6 +74,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   });
   const [hideAmounts, setHideAmounts] = useState(false);
   const [toast, setToast] = useState(null);
+  const [sidebarMenuOpen, setSidebarMenuOpen] = useState(false);
 
   const [importFile, setImportFile] = useState(null);
   const [importStep, setImportStep] = useState('upload');
@@ -1081,27 +1082,36 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
           </nav>
 
           <div className="sidebar-footer">
-            <button className="primary-btn sidebar-import" title={t('nav.import')} onClick={() => { setView('import'); setImportStep('upload'); }}>
-              <Upload size={14}/> <span>{t('nav.import')}</span>
-            </button>
-            <div className="sidebar-utilities">
-              <LangButton />
-              <button className="icon-btn" onClick={() => setHideAmounts(!hideAmounts)} title="Masquer/afficher les montants">
-                {hideAmounts ? <EyeOff size={16}/> : <Eye size={16}/>}
-              </button>
-              <button className="icon-btn" onClick={logout} title="Déconnexion">
-                <LogOut size={16}/>
-              </button>
-            </div>
             {currentUser && (
-              <div className="sidebar-user" title={currentUser.email}>
+              <button
+                className="sidebar-member-switcher"
+                onClick={() => setSidebarMenuOpen(o => !o)}
+                title={currentUser.email}
+              >
                 <div className="sidebar-user-avatar">
                   {(currentUser.full_name || currentUser.email || '?')[0].toUpperCase()}
                 </div>
                 <div className="sidebar-user-info">
-                  <div className="sidebar-user-name">{currentUser.full_name || currentUser.email}</div>
-                  <div className="sidebar-user-email">{currentUser.email}</div>
+                  <div className="sidebar-user-name">{currentUser.full_name || currentUser.email.split('@')[0]}</div>
+                  <div className="sidebar-user-email">{members.length > 1 ? `+ ${members.length - 1} membre${members.length > 2 ? 's' : ''}` : 'Foyer'}</div>
                 </div>
+                <ChevronUp size={14} className="sidebar-user-chevron"/>
+              </button>
+            )}
+            {sidebarMenuOpen && (
+              <div className="sidebar-popover">
+                <button onClick={() => { setHideAmounts(!hideAmounts); setSidebarMenuOpen(false); }}>
+                  {hideAmounts ? <Eye size={14}/> : <EyeOff size={14}/>}
+                  <span>{hideAmounts ? 'Afficher les montants' : 'Masquer les montants'}</span>
+                </button>
+                <div className="sidebar-popover-row">
+                  <span style={{ fontSize: 12, color: 'var(--text-tertiary)', flex: 1 }}>Langue</span>
+                  <LangButton />
+                </div>
+                <button onClick={() => { logout(); setSidebarMenuOpen(false); }} className="sidebar-popover-danger">
+                  <LogOut size={14}/>
+                  <span>Déconnexion</span>
+                </button>
               </div>
             )}
           </div>
@@ -1127,25 +1137,22 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             </div>
           </header>
 
-          <div className="member-bar">
-            <div className="member-tabs">
-              <button className={`member-tab ${activeMemberId === 'all' ? 'active' : ''}`} onClick={() => setActiveMemberId('all')}>
-                <Users size={13}/> <span>Famille</span>
-              </button>
-              {members.map(m => (
-                <button key={m.id} className={`member-tab ${activeMemberId === m.id ? 'active' : ''}`} onClick={() => setActiveMemberId(m.id)}>
-                  <span className="member-avatar" style={{ background: m.color }}>{m.name.charAt(0).toUpperCase()}</span>
-                  <span>{m.name}</span>
-                  {m.role === 'child' && <span className="role-badge">enfant</span>}
+          {members.length > 1 && (
+            <div className="member-bar">
+              <div className="member-tabs">
+                <button className={`member-tab ${activeMemberId === 'all' ? 'active' : ''}`} onClick={() => setActiveMemberId('all')}>
+                  <Users size={13}/> <span>Famille</span>
                 </button>
-              ))}
-            </div>
-            {activeMember && (
-              <div className="member-context">
-                Comptes perso de <strong>{activeMember.name}</strong> + comptes joints partagés
+                {members.map(m => (
+                  <button key={m.id} className={`member-tab ${activeMemberId === m.id ? 'active' : ''}`} onClick={() => setActiveMemberId(m.id)}>
+                    <span className="member-avatar" style={{ background: m.color }}>{m.name.charAt(0).toUpperCase()}</span>
+                    <span>{m.name}</span>
+                    {m.role === 'child' && <span className="role-badge">enfant</span>}
+                  </button>
+                ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           <main className="content">
         {view === 'dashboard' && (

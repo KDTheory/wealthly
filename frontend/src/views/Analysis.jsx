@@ -40,11 +40,10 @@ export function Analysis({ transactions, categories, recurringIds, recurringGrou
 
   return (
     <div className="analysis-view">
-      <div className="page-header">
+      <div className="subview-header">
         <div>
-          <div className="w-eyebrow">Relevé · Analyse</div>
-          <h1 className="page-title">Vos <em>tendances</em>.</h1>
-          <p className="page-subtitle">Marchands, catégories et tendances sur la durée.</p>
+          <h1>Analyse</h1>
+          <p>Marchands, catégories et tendances de vos dépenses sur la durée.</p>
         </div>
       </div>
 

@@ -101,13 +101,12 @@ export function Wealth({ assets, liabilities, members, activeMemberId, visibleAs
 
   return (
     <div className="wealth-view">
-      <div className="page-header">
+      <div className="subview-header">
         <div>
-          <div className="w-eyebrow">Relevé · Patrimoine</div>
-          <h1 className="page-title">Votre <em>composition</em>.</h1>
-          <p className="page-subtitle">Actifs, passifs, allocation par classe.</p>
+          <h1>Patrimoine</h1>
+          <p>Actifs, passifs et allocation de votre patrimoine — par classe d'actif.</p>
         </div>
-        <button className="primary-btn" onClick={() => setShowAddPicker(true)}><Plus size={14}/> Compléter mon patrimoine</button>
+        <button className="primary-btn" onClick={() => setShowAddPicker(true)}><Plus size={14}/> Ajouter</button>
       </div>
 
       <nav className="wealth-subnav">

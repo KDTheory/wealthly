@@ -117,11 +117,10 @@ export function Cashflow({ transactions, categories, accounts, memberShare, fmt,
 
   return (
     <div className="cashflow-view">
-      <div className="page-header">
+      <div className="subview-header">
         <div>
-          <div className="w-eyebrow">Relevé · Cashflow</div>
-          <h1 className="page-title">Vos <em>flux</em>.</h1>
-          <p className="page-subtitle">Entrées, sorties, soldes nets — visualisés sur la période.</p>
+          <h1>Cashflow</h1>
+          <p>Entrées, sorties et soldes nets — visualisés sur la période.</p>
         </div>
       </div>
       <div className="cashflow-period">

@@ -125,11 +125,10 @@ export function Transactions({ transactions, accounts, categories, members = [],
 
   return (
     <div className="transactions-view">
-      <div className="page-header">
+      <div className="subview-header">
         <div>
-          <div className="w-eyebrow">Relevé · Activité</div>
-          <h1 className="page-title">Vos <em>opérations</em>.</h1>
-          <p className="page-subtitle">Toutes vos opérations. Cliquez une catégorie pour la modifier.</p>
+          <h1>Transactions</h1>
+          <p>Toutes vos opérations bancaires. Cliquez une catégorie pour la modifier.</p>
         </div>
       </div>
 

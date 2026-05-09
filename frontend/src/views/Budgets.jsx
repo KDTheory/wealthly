@@ -36,11 +36,10 @@ export function Budgets({ categories, budgets, setBudget, categoryAnalysis, fift
 
   return (
     <div className="budgets-view">
-      <div className="page-header">
+      <div className="subview-header">
         <div>
-          <div className="w-eyebrow">Relevé · Budgets</div>
-          <h1 className="page-title">Vos <em>limites</em>.</h1>
-          <p className="page-subtitle">Méthode 50/30/20, plafonds par catégorie, objectifs d'épargne.</p>
+          <h1>Budgets &amp; objectifs</h1>
+          <p>Méthode 50/30/20, plafonds par catégorie et objectifs d&apos;épargne.</p>
         </div>
       </div>
       {/* 50/30/20 visualization */}
