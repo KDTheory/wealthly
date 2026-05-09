@@ -26,12 +26,7 @@ import { Analysis } from './views/Analysis.jsx';
 import { Monthly } from './views/Monthly.jsx';
 import { Cashflow } from './views/Cashflow.jsx';
 import { Budgets } from './views/Budgets.jsx';
-import { Dashboard as DashboardMeridien } from './views/Dashboard.jsx';
-import { Dashboard as DashboardLegacy } from './views/Dashboard.legacy.jsx';
-// Toggle entre les deux designs via ?legacy=1 dans l'URL (compare visuel temporaire)
-const Dashboard = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('legacy') === '1'
-  ? DashboardLegacy
-  : DashboardMeridien;
+import { Dashboard } from './views/Dashboard.jsx';
 import { Wealth } from './views/Wealth.jsx';
 import { SettingsView } from './views/Settings.jsx';
 import { ImportFlow } from './views/ImportFlow.jsx';
@@ -1066,13 +1061,11 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
         {/* Desktop sidebar (≥1024px) */}
         <aside className="app-sidebar">
           <div className="sidebar-brand" onClick={() => setView('dashboard')}>
-            <div className="brand-mark">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" strokeLinejoin="miter" width="22" height="22">
-                <rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/>
-                <path d="M7 9 L9.5 15.5 L12 10.5 L14.5 15.5 L17 9"/>
-              </svg>
+            <div className="brand-mark">T</div>
+            <div className="brand-text">
+              <div className="brand-name">{APP_NAME}</div>
+              <div className="brand-tagline">Patrimoine familial</div>
             </div>
-            <div className="brand-name">{APP_NAME}</div>
           </div>
 
           <nav className="sidebar-nav">
@@ -1121,12 +1114,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
               <Menu size={20}/>
             </button>
             <div className="brand" onClick={() => setView('dashboard')}>
-              <div className="brand-mark">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" strokeLinejoin="miter" width="22" height="22">
-                  <rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/>
-                  <path d="M7 9 L9.5 15.5 L12 10.5 L14.5 15.5 L17 9"/>
-                </svg>
-              </div>
+              <div className="brand-mark">T</div>
               <div className="brand-name">{APP_NAME}</div>
             </div>
             <div className="header-actions">
@@ -1284,12 +1272,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
           <aside className="nav-drawer" onClick={e => e.stopPropagation()}>
             <div className="nav-drawer-header">
               <div className="sidebar-brand" style={{padding:'0 0 0 4px', cursor:'default'}}>
-                <div className="brand-mark">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" strokeLinejoin="miter" width="20" height="20">
-                    <rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/>
-                    <path d="M7 9 L9.5 15.5 L12 10.5 L14.5 15.5 L17 9"/>
-                  </svg>
-                </div>
+                <div className="brand-mark">T</div>
                 <div className="brand-name">{APP_NAME}</div>
               </div>
               <button className="icon-btn" onClick={() => setNavOpen(false)}><X size={18}/></button>

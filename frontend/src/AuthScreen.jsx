@@ -88,15 +88,28 @@ export default function AuthScreen({ onAuth, onTryDemo, onBackToLanding, initial
           </button>
         )}
 
-        {/* Tiny brand mark + wordmark, centered at the top */}
+        {/* Brand mark + wordmark — Trove identity */}
         <div className="auth-brand-row">
-          <div className="auth-brand-mark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" strokeLinejoin="miter" width="22" height="22">
-              <rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/>
-              <path d="M7 9 L9.5 15.5 L12 10.5 L14.5 15.5 L17 9"/>
-            </svg>
+          <div
+            className="auth-brand-mark"
+            style={{
+              background: 'linear-gradient(135deg, #5285ee 0%, #3b6fe0 50%, #7d5cf0 100%)',
+              border: '1px solid rgba(255,255,255,0.10)',
+              borderRadius: 10,
+              boxShadow: '0 4px 14px rgba(59,111,224,0.35), inset 0 1px 0 rgba(255,255,255,0.20)',
+              color: 'white',
+              width: 36,
+              height: 36,
+              display: 'grid',
+              placeItems: 'center',
+              fontWeight: 800,
+              fontSize: 17,
+              letterSpacing: '-0.04em',
+            }}
+          >
+            T
           </div>
-          <div className="auth-wordmark">Wealthly</div>
+          <div className="auth-wordmark">Trove</div>
         </div>
 
         {/* Hero — slim version (full marketing is on Landing now) */}

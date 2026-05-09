@@ -106,7 +106,7 @@ function drawHeader(doc, subtitle) {
   doc.setFont(FONT, 'bold');
   doc.setFontSize(14);
   doc.setTextColor(...C.ink);
-  doc.text('Wealthly', x + monogramSize + 12, yBase, { charSpace: 0.4 });
+  doc.text('Trove', x + monogramSize + 12, yBase, { charSpace: 0.4 });
 
   // Subtitle right-aligned, in muted ink
   if (subtitle) {
@@ -134,7 +134,7 @@ function drawFooter(doc, page, total) {
   doc.setFont(FONT, 'normal');
   doc.setFontSize(8);
   doc.setTextColor(...C.faint);
-  doc.text('Document confidentiel · Wealthly', PAGE_M, h - 24, { charSpace: 0.2 });
+  doc.text('Document confidentiel · Trove', PAGE_M, h - 24, { charSpace: 0.2 });
   doc.text(`${page} / ${total}`, w - PAGE_M, h - 24, { align: 'right' });
 }
 
@@ -518,7 +518,7 @@ export function generateBilanPdf({
   doc.setFont(FONT, 'bold');
   doc.setFontSize(13);
   doc.setTextColor(...C.ink);
-  doc.text('Wealthly', PAGE_M + 36, 74, { charSpace: 0.4 });
+  doc.text('Trove', PAGE_M + 36, 74, { charSpace: 0.4 });
 
   doc.setFont(FONT, 'normal');
   doc.setFontSize(8.5);
