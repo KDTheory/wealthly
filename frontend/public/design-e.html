@@ -3,21 +3,21 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Foyer · Modern Fintech Direction</title>
+<title>Money · Modern Fintech Direction</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
   :root {
-    /* Surfaces */
-    --bg:         #0a0a0c;
-    --bg-2:       #0f0f12;
-    --card:       #141417;
-    --card-2:     #18181c;
-    --hover:      #1c1c21;
-    --border:     #23232a;
-    --border-2:   #2d2d36;
-    --border-strong: #3a3a44;
+    /* Surfaces — dark with subtle blue tint, less Bloomberg */
+    --bg:         #0e1119;
+    --bg-2:       #131722;
+    --card:       #181c28;
+    --card-2:     #1d2230;
+    --hover:      #232838;
+    --border:     #262b3a;
+    --border-2:   #303547;
+    --border-strong: #3d4358;
 
     /* Text */
     --text:       #f5f5f7;
@@ -25,11 +25,11 @@
     --muted:      #8b8b94;
     --faint:      #5e5e68;
 
-    /* Accent — electric blue */
-    --accent:     #5b8def;
-    --accent-2:   #7aa3ff;
-    --accent-soft: rgba(91,141,239,0.12);
-    --accent-glow: rgba(91,141,239,0.25);
+    /* Accent — deeper electric blue */
+    --accent:     #3b6fe0;
+    --accent-2:   #5285ee;
+    --accent-soft: rgba(59,111,224,0.14);
+    --accent-glow: rgba(59,111,224,0.28);
 
     /* Status */
     --success:    #34d399;
@@ -39,7 +39,7 @@
     --warning:    #fbbf24;
 
     /* Asset class hues (subtle, not screaming) */
-    --c-cash:     #5b8def;
+    --c-cash:     #3b6fe0;
     --c-equity:   #a78bfa;
     --c-realestate: #34d399;
     --c-crypto:   #fbbf24;
@@ -52,6 +52,12 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { background: var(--bg); color: var(--text); font-family: 'Inter Tight', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  body {
+    background-image:
+      radial-gradient(1200px 500px at 80% -10%, rgba(59,111,224,0.10), transparent 60%),
+      radial-gradient(900px 400px at 0% 110%, rgba(120,90,220,0.07), transparent 60%);
+    background-attachment: fixed;
+  }
   body { font-size: 14px; line-height: 1.5; }
   .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
   .mono { font-family: 'JetBrains Mono', monospace; }
@@ -322,9 +328,9 @@
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="brand">
-      <div class="brand-mark">F</div>
+      <div class="brand-mark">M</div>
       <div>
-        <div class="brand-name">Foyer</div>
+        <div class="brand-name">Money</div>
         <div class="brand-tag">Patrimoine familial</div>
       </div>
     </div>
@@ -394,8 +400,8 @@
         <svg viewBox="0 0 800 180" preserveAspectRatio="none">
           <defs>
             <linearGradient id="chartGrad" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stop-color="#5b8def" stop-opacity="0.32"/>
-              <stop offset="100%" stop-color="#5b8def" stop-opacity="0"/>
+              <stop offset="0%" stop-color="#3b6fe0" stop-opacity="0.32"/>
+              <stop offset="100%" stop-color="#3b6fe0" stop-opacity="0"/>
             </linearGradient>
           </defs>
           <!-- grid -->
@@ -407,8 +413,8 @@
           <path class="chart-area-path" d="M 0 130 C 60 125, 110 110, 180 100 S 320 80, 400 88 S 560 60, 640 50 S 760 35, 800 30 L 800 180 L 0 180 Z"/>
           <path class="chart-line-path" d="M 0 130 C 60 125, 110 110, 180 100 S 320 80, 400 88 S 560 60, 640 50 S 760 35, 800 30"/>
           <!-- last point -->
-          <circle cx="800" cy="30" r="4" fill="#5b8def"/>
-          <circle cx="800" cy="30" r="8" fill="#5b8def" opacity="0.25"/>
+          <circle cx="800" cy="30" r="4" fill="#3b6fe0"/>
+          <circle cx="800" cy="30" r="8" fill="#3b6fe0" opacity="0.25"/>
         </svg>
       </div>
 
