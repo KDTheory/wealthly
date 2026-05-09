@@ -68,9 +68,9 @@ export default function App() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#0a0b0e',
+        background: '#151926',
         color: '#8c8a85',
-        fontFamily: "'DM Sans', system-ui, sans-serif",
+        fontFamily: "'Inter Tight', system-ui, sans-serif",
         fontSize: 14,
       }}>
         Chargement…
@@ -85,7 +85,7 @@ export default function App() {
   if (authState === 'unauthed') {
     if (unauthedView === 'landing') {
       return (
-        <Suspense fallback={<div style={{minHeight:'100vh',background:'#0a0b0e'}}/>}>
+        <Suspense fallback={<div style={{minHeight:'100vh',background:'#151926'}}/>}>
           <Landing
             onSignIn={() => { setAuthInitialMode('login'); setUnauthedView('auth'); }}
             onSignUp={() => { setAuthInitialMode('register'); setUnauthedView('auth'); }}
@@ -106,7 +106,7 @@ export default function App() {
 
   if (isBankCallback) {
     return (
-      <Suspense fallback={<div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0a0b0e',color:'#8c8a85',fontFamily:"'DM Sans', system-ui, sans-serif",fontSize:14}}>Chargement…</div>}>
+      <Suspense fallback={<div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#151926',color:'#9ea3b3',fontFamily:"'Inter Tight', system-ui, sans-serif",fontSize:14}}>Chargement…</div>}>
         <BankCallback
           onDone={() => {
             setIsBankCallback(false);

@@ -695,7 +695,7 @@ const authStyles = `
 .mockup-dot.d3 { background: #88a978; }
 .mockup-url {
   margin-left: 14px;
-  font-family: 'DM Mono', ui-monospace, monospace;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 10.5px; color: #6e6a64;
   letter-spacing: 0.02em;
 }

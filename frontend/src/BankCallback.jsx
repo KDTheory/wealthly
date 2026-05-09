@@ -300,7 +300,7 @@ const card = {
   color: '#ebe8e3',
 };
 
-const title = { fontFamily: "'Source Serif 4', 'Source Serif Pro', Georgia, serif", fontSize: 28, fontWeight: 400, marginBottom: 12, letterSpacing: '-0.018em', lineHeight: 1.1 };
+const title = { fontFamily: "'Inter Tight', system-ui, sans-serif", fontSize: 28, fontWeight: 400, marginBottom: 12, letterSpacing: '-0.018em', lineHeight: 1.1 };
 const muted = { color: '#8c8a85', fontSize: 14, lineHeight: 1.5 };
 const errorText = { color: '#c47158', fontSize: 14, marginBottom: 16 };
 
@@ -335,7 +335,7 @@ const input = {
   boxSizing: 'border-box',
 };
 const primaryBtn = {
-  background: '#c5a572',
+  background: '#3b6fe0',
   color: '#0c0d10',
   border: 'none',
   padding: '10px 16px',

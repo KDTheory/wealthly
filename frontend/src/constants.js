@@ -155,4 +155,6 @@ export const LIABILITY_TYPES = [
 
 // Member avatar palette — harmonised with the private-banking tokens. Stable
 // order so the same person keeps the same colour across renders.
-export const MEMBER_PALETTE = ['#c5a572', '#88a978', '#7a8aa8', '#c8855a', '#9d8bb5', '#d4a554', '#c47158', '#8c918f'];
+// Trove member palette — vivid but cohesive, all in the same family as the
+// Trove brand gradient. Used for member dots / avatars across the app.
+export const MEMBER_PALETTE = ['#3b6fe0', '#a78bfa', '#34d399', '#fbbf24', '#ec5a13', '#f472b6', '#06b6d4', '#94a3b8'];
