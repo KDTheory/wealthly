@@ -37,6 +37,7 @@ export function Dashboard({
   recurringGroups, currentMonth,
   transferIds = new Set(), transferPairs = [],
   setView, onAccountClick,
+  baseCurrency = 'EUR', rates = null,
 }) {
   const [period, setPeriod] = useState('6m');
   const activeMember = members.find(m => m.id === activeMemberId);
@@ -237,6 +238,22 @@ export function Dashboard({
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          {rates && baseCurrency !== 'EUR' && (
+            <button
+              onClick={() => setView('settings')}
+              title={`1 EUR = ${rates[baseCurrency]?.toFixed(4)} ${baseCurrency} · taux Frankfurter`}
+              className="inline-flex items-center gap-1.5 px-3 h-9 rounded-full text-[12px] font-semibold transition-colors"
+              style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border)',
+                color: 'var(--text-secondary)',
+              }}
+            >
+              <span className="w-live-dot" style={{ width: 6, height: 6 }}/>
+              <span>{baseCurrency}</span>
+              <span style={{ color: 'var(--text-muted)' }}>· {rates[baseCurrency]?.toFixed(2)} / €</span>
+            </button>
+          )}
           {streak >= 2 && (
             <span className="inline-flex items-center gap-1.5 px-3 h-9 rounded-full bg-[var(--color-w-success-soft)] text-[var(--color-w-success)] text-[12.5px] font-semibold">
               <Zap size={12}/> {streak} mois positifs

@@ -216,9 +216,44 @@ export const detectInternalTransfers = (transactions, options = {}) => {
 
 // ---- Formatting ------------------------------------------------------------
 
+// Supported display currencies for Trove. Adding more is a one-line addition
+// here + Frankfurter handles ~30 ISO codes natively.
+export const SUPPORTED_CURRENCIES = ['EUR', 'USD', 'GBP', 'CHF'];
+
+export const CURRENCY_LOCALE = {
+  EUR: 'fr-FR',
+  USD: 'en-US',
+  GBP: 'en-GB',
+  CHF: 'de-CH',
+};
+
+/**
+ * Convert an amount from one ISO currency to another using a rates table
+ * shaped like { EUR: 1, USD: 1.08, GBP: 0.85, CHF: 0.97 } (rates relative
+ * to the base of the table — Frankfurter returns rates relative to the
+ * `from` parameter so we always fetch with base=EUR and convert through it).
+ *
+ * Returns the amount unchanged if either currency is unknown or if rates
+ * are missing — never throws so the UI keeps rendering even without rates.
+ */
+export const convertCurrency = (amount, fromCurrency, toCurrency, rates) => {
+  if (!amount || amount === 0) return amount;
+  if (!fromCurrency || !toCurrency || fromCurrency === toCurrency) return amount;
+  if (!rates) return amount;
+  // rates are EUR-base (1 EUR = X foreign). To go from→to via EUR:
+  //   amountEUR  = amount / rates[from]
+  //   amountTo   = amountEUR * rates[to]
+  const r = (c) => (c === 'EUR' ? 1 : rates[c]);
+  const fromR = r(fromCurrency);
+  const toR = r(toCurrency);
+  if (!fromR || !toR) return amount;
+  return (amount / fromR) * toR;
+};
+
 export const formatCurrency = (amount, options = {}) => {
   const { compact = false, sign = false, currency = 'EUR' } = options;
-  const formatted = new Intl.NumberFormat('fr-FR', {
+  const locale = CURRENCY_LOCALE[currency] || 'fr-FR';
+  const formatted = new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
     notation: compact ? 'compact' : 'standard',

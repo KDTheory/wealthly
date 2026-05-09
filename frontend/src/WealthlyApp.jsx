@@ -15,8 +15,10 @@ import {
   parseCSV, detectBankProfile, autoDetectMapping, applyMapping,
   categorize, detectRecurring,
   accountIncludeInNetWorth, accountCountsAsIncome, accountCountsAsExpense,
-  detectInternalTransfers,
+  detectInternalTransfers, convertCurrency,
 } from './utils.js';
+import { useRates } from './hooks/useRates.js';
+import { useBaseCurrency } from './hooks/useBaseCurrency.js';
 import { Styles } from './Styles.jsx';
 import { Toast } from './components/Toast.jsx';
 import { AnimatedNumber } from './components/AnimatedNumber.jsx';
@@ -75,6 +77,11 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   const [hideAmounts, setHideAmounts] = useState(false);
   const [toast, setToast] = useState(null);
   const [sidebarMenuOpen, setSidebarMenuOpen] = useState(false);
+
+  // Multi-currency: user's display currency + live FX rates (Frankfurter, 1h cache).
+  // EUR base is implicit (rates table is { USD: 1.08, GBP: 0.85, CHF: 0.97 }).
+  const [baseCurrency, setBaseCurrency] = useBaseCurrency();
+  const { rates, date: ratesDate } = useRates();
 
   const [importFile, setImportFile] = useState(null);
   const [importStep, setImportStep] = useState('upload');
@@ -1023,9 +1030,18 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   // Stable across renders so memoized children aren't invalidated when only
   // an unrelated piece of state changes. Identity flips only when the user
   // toggles "masquer montants".
+  // Multi-currency: convert from the source currency (per-account/asset, default
+  // EUR) to the user's chosen base before formatting. Rates come from Frankfurter
+  // and are cached for 1h; when rates aren't loaded yet we no-op the conversion.
   const fmt = useCallback(
-    (v, opts) => hideAmounts ? '••••' : formatCurrency(v, opts),
-    [hideAmounts]
+    (v, opts = {}) => {
+      if (hideAmounts) return '••••';
+      const from = opts.from || opts.currency || 'EUR';
+      const converted = convertCurrency(v, from, baseCurrency, rates);
+      // Always display in the user's base currency, with the locale matching it.
+      return formatCurrency(converted, { ...opts, currency: baseCurrency });
+    },
+    [hideAmounts, baseCurrency, rates]
   );
 
   if (loading) return <div className="loading-screen"><Styles theme={theme}/><div className="spinner"/><span>Chargement…</span></div>;
@@ -1178,6 +1194,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             transferIds={transferIds} transferPairs={transferPairs}
             setView={setView}
             onAccountClick={(a) => setDrawerAccount(a)}
+            baseCurrency={baseCurrency} rates={rates}
           />
         )}
         {['monthly','cashflow','budgets'].includes(view) && (
@@ -1264,6 +1281,8 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             exportData={exportData} importData={importData} resetAllData={resetAllData}
             categories={categories}
             fmt={fmt}
+            baseCurrency={baseCurrency} setBaseCurrency={setBaseCurrency}
+            rates={rates} ratesDate={ratesDate}
           />
         )}
         {view === 'import' && (
