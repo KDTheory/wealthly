@@ -26,7 +26,12 @@ import { Analysis } from './views/Analysis.jsx';
 import { Monthly } from './views/Monthly.jsx';
 import { Cashflow } from './views/Cashflow.jsx';
 import { Budgets } from './views/Budgets.jsx';
-import { Dashboard } from './views/Dashboard.jsx';
+import { Dashboard as DashboardMeridien } from './views/Dashboard.jsx';
+import { Dashboard as DashboardLegacy } from './views/Dashboard.legacy.jsx';
+// Toggle entre les deux designs via ?legacy=1 dans l'URL (compare visuel temporaire)
+const Dashboard = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('legacy') === '1'
+  ? DashboardLegacy
+  : DashboardMeridien;
 import { Wealth } from './views/Wealth.jsx';
 import { SettingsView } from './views/Settings.jsx';
 import { ImportFlow } from './views/ImportFlow.jsx';
