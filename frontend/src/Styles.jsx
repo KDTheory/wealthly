@@ -103,7 +103,7 @@ export function Styles({ theme }) {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* HEADER */
-.app-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); background: ${dark ? 'rgba(10, 11, 14, 0.85)' : 'rgba(247, 245, 239, 0.82)'}; gap: 12px; flex-wrap: wrap; }
+.app-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); background: ${dark ? 'rgba(21, 25, 38, 0.75)' : 'rgba(255, 255, 255, 0.75)'}; gap: 12px; flex-wrap: wrap; }
 .brand { display: flex; align-items: center; gap: 12px; cursor: pointer; }
 .brand:hover { opacity: 0.85; }
 .brand-mark {
@@ -373,11 +373,9 @@ export function Styles({ theme }) {
   .sidebar-nav button.active::before { top: 5px; bottom: 5px; }
   .sidebar-nav button .nav-alert-dot { position: absolute; top: 6px; right: 6px; min-width: 12px; height: 12px; padding: 0 3px; font-size: 8px; }
   .sidebar-footer { width: 100%; align-items: center; padding-top: 10px; }
-  .sidebar-import { width: 44px; height: 44px; padding: 0; border-radius: 10px; }
-  .sidebar-import span { display: none; }
-  .sidebar-utilities { justify-content: center; flex-direction: column; gap: 4px; }
-  .sidebar-utilities .icon-btn { flex: none; }
-  .sidebar-user { display: none; }
+  .sidebar-member-switcher { padding: 8px; justify-content: center; gap: 0; }
+  .sidebar-member-switcher .sidebar-user-info,
+  .sidebar-member-switcher .sidebar-user-chevron { display: none; }
 }
 
 /* ── Mobile (<768px): hide sidebar, show top header + bottom nav ── */
@@ -386,7 +384,7 @@ export function Styles({ theme }) {
   .app-header-mobile {
     display: flex; align-items: center; justify-content: space-between;
     padding: 10px 14px; gap: 8px; flex-wrap: nowrap;
-    background: ${dark ? 'rgba(10, 11, 14, 0.85)' : 'rgba(247, 245, 239, 0.82)'};
+    background: ${dark ? 'rgba(21, 25, 38, 0.75)' : 'rgba(255, 255, 255, 0.75)'};
     backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
     border-bottom: 1px solid var(--border);
     position: sticky; top: 0; z-index: 100;
