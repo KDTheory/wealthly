@@ -1,37 +1,49 @@
 /**
- * API service: all HTTP calls to the Wealthly backend.
+ * API service: all HTTP calls to the Trove backend.
  *
- * Auth: stores JWT in localStorage under 'wealthly:token'.
+ * Auth: HttpOnly Secure SameSite=None cookie `trove_session` set by the
+ * backend on login/register/reset. The browser auto-attaches it on every
+ * request thanks to `credentials: 'include'`. JS cannot read it (XSS-safe).
+ *
+ * Legacy: a localStorage token (`wealthly:token`) is still cleared on logout
+ * so existing sessions migrate cleanly. New logins do NOT write to it.
+ *
  * Base URL: from VITE_API_URL env var, falls back to /api (proxied by Vite in dev).
  */
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
-const TOKEN_KEY = 'wealthly:token';
+const LEGACY_TOKEN_KEY = 'wealthly:token';
 
 // ============================================================================
-// TOKEN MANAGEMENT
+// TOKEN MANAGEMENT (legacy — cookie auth supersedes this)
 // ============================================================================
-export const getToken = () => localStorage.getItem(TOKEN_KEY);
-export const setToken = (token) => localStorage.setItem(TOKEN_KEY, token);
-export const clearToken = () => localStorage.removeItem(TOKEN_KEY);
+export const getToken = () => localStorage.getItem(LEGACY_TOKEN_KEY);
+export const setToken = (token) => localStorage.setItem(LEGACY_TOKEN_KEY, token);
+export const clearToken = () => localStorage.removeItem(LEGACY_TOKEN_KEY);
 
 // ============================================================================
 // CORE FETCH WRAPPER
 // ============================================================================
 async function request(method, path, body = null) {
   // In demo mode the UI is fed from demoData.js; never hit the backend.
-  // Reads return an empty result, writes throw so the caller can show a
-  // soft "mode démo" toast without triggering reload-on-401.
   if (typeof window !== 'undefined' && window.localStorage.getItem('wealthly:demo') === '1') {
     if (method === 'GET') return null;
     throw new Error('Mode démo : modifications non enregistrées');
   }
 
   const headers = { 'Content-Type': 'application/json' };
-  const token = getToken();
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  // Legacy Bearer header — only sent if the localStorage token still exists
+  // (users who logged in before the cookie migration). Cookie auth is the
+  // primary path; this exists purely so existing sessions don't get kicked
+  // out on the day of the upgrade.
+  const legacyToken = getToken();
+  if (legacyToken) headers['Authorization'] = `Bearer ${legacyToken}`;
 
-  const opts = { method, headers };
+  const opts = {
+    method,
+    headers,
+    credentials: 'include',  // critical: lets the browser send the auth cookie
+  };
   if (body !== null) opts.body = JSON.stringify(body);
 
   let response;
@@ -42,13 +54,14 @@ async function request(method, path, body = null) {
   }
 
   if (response.status === 401) {
-    if (getToken()) {
-      // Expired/invalid session token — clear and reload to go back to login.
+    // We're not authenticated. If we previously had a session, scrub the
+    // legacy token and reload so the user lands on the login screen cleanly.
+    if (legacyToken) {
       clearToken();
       window.location.reload();
     }
-    // No token: this is a credentials failure (wrong password etc.).
-    // Let the error bubble up so the form can display it.
+    // Otherwise this is a fresh credential failure (wrong password etc.) —
+    // let it bubble up so the form can show the error.
     let errMsg = 'Session expirée';
     try { const d = await response.clone().json(); errMsg = d?.detail || errMsg; } catch {}
     throw new Error(errMsg);
@@ -89,9 +102,19 @@ export const auth = {
       household_name: householdName,
     }),
   login: (email, password) => post('/auth/login', { email, password }),
+  logout: () => post('/auth/logout', {}),
   me: () => get('/auth/me'),
   forgotPassword: (email) => post('/auth/forgot-password', { email }),
   resetPassword: (token, newPassword) => post('/auth/reset-password', { token, new_password: newPassword }),
+};
+
+// ============================================================================
+// ADMIN
+// ============================================================================
+export const admin = {
+  stats: () => get('/admin/stats'),
+  authEvents: (limit = 100, kind = null) => get(`/admin/auth-events?limit=${limit}${kind ? `&kind=${encodeURIComponent(kind)}` : ''}`),
+  users: () => get('/admin/users'),
 };
 
 // ============================================================================

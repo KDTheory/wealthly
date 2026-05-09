@@ -38,20 +38,23 @@ export default function App() {
         return;
       }
 
-      const token = getToken();
-      if (!token) {
-        setAuthState('unauthed');
-        return;
+      // Cookie-based auth: we can't read the cookie from JS (HttpOnly), so the
+      // only way to know if the user is logged in is to ask /auth/me. We do
+      // a fast best-effort check; if it succeeds we're authed, otherwise
+      // we land on the landing/auth flow.
+      // The legacy localStorage token is only kept for users who logged in
+      // before the cookie migration — same /auth/me will succeed for them
+      // because api.js still attaches it as a Bearer header.
+      try {
+        const me = await auth.me();
+        if (me && me.id) {
+          setAuthState('authed');
+          return;
+        }
+      } catch (e) {
+        // 401 / network error → unauthed
       }
-      // Optimistic auth: assume the token is valid and let WealthlyApp render
-      // immediately. This avoids a full UI freeze while a cold Railway backend
-      // takes 10-30s to respond to /auth/me. If the token is actually stale,
-      // the first real API call (reloadAll inside WealthlyApp) will throw 401
-      // and we'll catch it below to redirect.
-      setAuthState('authed');
-      // Don't redirect on network errors (cold Railway backend on mobile).
-      // api.js already handles expired tokens: 401 → clearToken + reload.
-      auth.me().catch(() => {});
+      setAuthState('unauthed');
     })();
   }, [refreshKey]);
 

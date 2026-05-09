@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Mail, Lock, User, Home, Eye, EyeOff, AlertCircle, Lock as LockIcon, ArrowLeft, Check, Sparkles, ShieldCheck, MapPin, EyeOff as PrivacyIcon } from 'lucide-react';
-import { auth, setToken } from './api.js';
+import { auth } from './api.js';
 import { enableDemoMode } from './demoData.js';
 import { LegalModal } from './components/LegalModal.jsx';
 
@@ -50,22 +50,22 @@ export default function AuthScreen({ onAuth, onTryDemo, onBackToLanding, initial
     setInfo(null);
     setLoading(true);
     try {
+      // Auth is now cookie-based: login/register/reset return a Set-Cookie
+      // header that the browser stores automatically (HttpOnly, JS-invisible).
+      // We no longer touch localStorage for the session token.
       if (mode === 'login') {
-        const result = await auth.login(email, password);
-        setToken(result.access_token);
+        await auth.login(email, password);
         onAuth();
       } else if (mode === 'register') {
-        const result = await auth.register(email, password, fullName, householdName || 'Mon foyer');
-        setToken(result.access_token);
+        await auth.register(email, password, fullName, householdName || 'Mon foyer');
         onAuth();
       } else if (mode === 'forgot') {
         await auth.forgotPassword(email);
         setInfo("Si cet email existe, un lien de réinitialisation vient d'être envoyé. Vérifiez votre boîte (et vos spams).");
       } else if (mode === 'reset') {
-        if (password.length < 8) throw new Error("Le mot de passe doit faire au moins 8 caractères.");
+        if (password.length < 10) throw new Error("Le mot de passe doit faire au moins 10 caractères.");
         if (password !== confirmPassword) throw new Error("Les deux mots de passe ne correspondent pas.");
-        const result = await auth.resetPassword(resetToken, password);
-        setToken(result.access_token);
+        await auth.resetPassword(resetToken, password);
         onAuth();
       }
     } catch (err) {

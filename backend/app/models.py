@@ -100,6 +100,29 @@ class User(Base):
     member_id = Column(String, ForeignKey("members.id", ondelete="SET NULL"), nullable=True)
 
 
+class AuthEvent(Base):
+    """Append-only audit log of every authentication attempt.
+    Powers the /admin monitoring page + brute-force lockout logic.
+
+    `kind` enum:
+      - login_success / login_failure
+      - register_success / register_failure
+      - password_reset_request / password_reset_success
+      - logout
+    """
+    __tablename__ = "auth_events"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    user_id = Column(String, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    email = Column(String, nullable=True, index=True)  # captured even on register failure
+    kind = Column(String, nullable=False, index=True)
+    success = Column(Boolean, nullable=False, default=True, index=True)
+    ip = Column(String, nullable=True, index=True)
+    user_agent = Column(Text, nullable=True)
+    detail = Column(Text, nullable=True)  # free-form: failure reason, country, etc.
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+
 class Member(Base):
     """A person tracked in the household. Adults usually have a User login,
     children do not."""

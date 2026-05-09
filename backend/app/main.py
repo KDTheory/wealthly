@@ -14,7 +14,7 @@ from sqlalchemy import text
 from app.config import settings
 from app.database import engine, Base
 from app.rate_limit import limiter, rate_limit_handler
-from app.routers import auth, members, accounts, transactions, wealth, other, categorize, banks, fixed_charges, quotes
+from app.routers import auth, members, accounts, transactions, wealth, other, categorize, banks, fixed_charges, quotes, admin
 
 logger = logging.getLogger("wealthly")
 
@@ -187,7 +187,19 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-CSRF-Token"],
 )
+
+
+# Security headers — applied to every response
+from app.security import apply_security_headers
+
+
+@app.middleware("http")
+async def security_headers_mw(request, call_next):
+    response = await call_next(request)
+    apply_security_headers(response)
+    return response
 
 # Health check (used by Docker healthcheck)
 @app.get("/health", tags=["meta"])
@@ -205,3 +217,4 @@ app.include_router(categorize.router)
 app.include_router(banks.router)
 app.include_router(fixed_charges.router)
 app.include_router(quotes.router)
+app.include_router(admin.router)

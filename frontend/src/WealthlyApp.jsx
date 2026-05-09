@@ -32,6 +32,7 @@ import { Budgets } from './views/Budgets.jsx';
 import { Dashboard } from './views/Dashboard.jsx';
 import { Wealth } from './views/Wealth.jsx';
 import { SettingsView } from './views/Settings.jsx';
+import { Admin } from './views/Admin.jsx';
 import { ImportFlow } from './views/ImportFlow.jsx';
 import { AccountDrawer } from './components/AccountDrawer.jsx';
 
@@ -1056,8 +1057,12 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     } catch (err) { showToast('Erreur : ' + err.message, 'error'); }
   };
 
-  const logout = () => {
+  const logout = async () => {
     if (!confirm('Se déconnecter ?')) return;
+    // Tell the backend to clear the HttpOnly auth cookie. We also wipe the
+    // legacy localStorage token so users coming from before the cookie
+    // migration get a clean slate.
+    try { await api.auth.logout(); } catch { /* ignore — we still wipe locally */ }
     api.clearToken();
     window.location.reload();
   };
@@ -1141,6 +1146,9 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
 
             <div className="sidebar-section">Configuration</div>
             <button onClick={() => setView('settings')} className={view === 'settings' ? 'active' : ''}><Settings size={15}/> <span>{t('nav.settings')}</span></button>
+            {currentUser?.is_admin && (
+              <button onClick={() => setView('admin')} className={view === 'admin' ? 'active' : ''}><Lock size={15}/> <span>Admin</span></button>
+            )}
           </nav>
 
           <div className="sidebar-footer">
@@ -1322,6 +1330,9 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             baseCurrency={baseCurrency} setBaseCurrency={setBaseCurrency}
             rates={rates} ratesDate={ratesDate}
           />
+        )}
+        {view === 'admin' && currentUser?.is_admin && (
+          <Admin />
         )}
         {view === 'import' && (
           <ImportFlow
