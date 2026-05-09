@@ -522,6 +522,76 @@ export function Dashboard({
         </>
       )}
 
+      {/* MES POSITIONS — only when there's at least one live-priced asset */}
+      {(() => {
+        const livePositions = visibleAssets.filter(a => a.ticker && a.quantity);
+        if (livePositions.length === 0) return null;
+        return (
+          <>
+            <div className="flex items-baseline justify-between mb-3 mt-4">
+              <h2 className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[var(--color-w-muted)] flex items-center gap-2">
+                <span className="w-live-dot" style={{ width: 6, height: 6 }}/>
+                Mes positions <span className="text-[var(--color-w-faint)] font-medium normal-case tracking-normal text-[11.5px]">· {livePositions.length} ligne{livePositions.length > 1 ? 's' : ''}</span>
+              </h2>
+              <button onClick={() => setView('wealth')} className="text-[12px] text-[var(--color-w-muted)] hover:text-[var(--color-w-accent-2)] transition-colors">
+                Tout voir →
+              </button>
+            </div>
+            <div className="w-glass p-5 sm:p-6 mb-4">
+              <ul className="m-0 p-0 list-none flex flex-col">
+                {livePositions.map(p => {
+                  const change = p._liveChangePct;
+                  const isUp = change != null && change >= 0;
+                  const livePrice = p._livePrice;
+                  return (
+                    <li
+                      key={p.id}
+                      className="grid items-center gap-3 py-3 border-b border-[var(--color-w-border)] last:border-b-0"
+                      style={{ gridTemplateColumns: '40px 1.4fr auto auto' }}
+                    >
+                      <div
+                        className="w-10 h-10 rounded-[10px] grid place-items-center text-[13px] font-bold flex-shrink-0"
+                        style={{ background: 'var(--gradient-hero)', color: 'white', boxShadow: '0 2px 8px rgba(59,111,224,0.25)' }}
+                      >
+                        {p.ticker.slice(0, 2)}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-[13.5px] font-semibold truncate flex items-center gap-2">
+                          <span className="truncate">{p.name}</span>
+                          {change != null && (
+                            <span
+                              className="inline-flex items-center px-1.5 py-0.5 rounded text-[10.5px] font-semibold flex-shrink-0"
+                              style={{
+                                background: isUp ? 'var(--color-w-success-soft)' : 'var(--color-w-danger-soft)',
+                                color: isUp ? 'var(--color-w-success)' : 'var(--color-w-danger)',
+                              }}
+                            >
+                              {isUp ? '↑' : '↓'} {Math.abs(change).toFixed(2)} %
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11.5px] text-[var(--color-w-muted)] truncate font-mono" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                          {p.ticker} · {p.quantity} {p.quantity > 1 ? 'parts' : 'part'}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[13.5px] font-semibold w-num">{fmt(p.currentValue, { from: p.currency })}</div>
+                        {livePrice != null && (
+                          <div className="text-[11px] text-[var(--color-w-faint)] w-num mt-0.5">
+                            {fmt(livePrice, { from: p.currency })} / part
+                          </div>
+                        )}
+                      </div>
+                      <span className="w-live-dot ml-1" title="Cours live (5 min)"/>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </>
+        );
+      })()}
+
       {/* SPLIT — Allocation + Activité */}
       <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-3 mb-4">
 
