@@ -1070,14 +1070,22 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
           </div>
 
           <nav className="sidebar-nav">
+            <div className="sidebar-section">Vue d'ensemble</div>
             <button onClick={() => setView('dashboard')} className={view === 'dashboard' ? 'active' : ''}><Activity size={15}/> <span>{t('nav.dashboard')}</span></button>
             <button onClick={() => setView('wealth')} className={view === 'wealth' ? 'active' : ''}><Landmark size={15}/> <span>{t('nav.wealth')}</span></button>
-            <button onClick={() => setView('monthly')} className={['monthly','cashflow','budgets'].includes(view) ? 'active' : ''}>
+            <button onClick={() => setView('transactions')} className={view === 'transactions' ? 'active' : ''}><BarChart3 size={15}/> <span>{t('nav.transactions')}</span></button>
+            <button onClick={() => setView('analysis')} className={view === 'analysis' ? 'active' : ''}><TrendingUp size={15}/> <span>Analyse</span></button>
+
+            <div className="sidebar-section">Gestion</div>
+            <button onClick={() => setView('monthly')} className={view === 'monthly' ? 'active' : ''}>
               <Calendar size={15}/> <span>{t('nav.monthly')}</span>
               {budgetsOverCount > 0 && <span className="nav-alert-dot" title={`${budgetsOverCount} budget${budgetsOverCount > 1 ? 's' : ''} dépassé${budgetsOverCount > 1 ? 's' : ''}`}>{budgetsOverCount}</span>}
             </button>
-            <button onClick={() => setView('transactions')} className={view === 'transactions' ? 'active' : ''}><BarChart3 size={15}/> <span>{t('nav.transactions')}</span></button>
+            <button onClick={() => setView('budgets')} className={view === 'budgets' ? 'active' : ''}><Target size={15}/> <span>Budgets &amp; objectifs</span></button>
+            <button onClick={() => setView('cashflow')} className={view === 'cashflow' ? 'active' : ''}><ArrowUpDown size={15}/> <span>Cashflow</span></button>
             <button onClick={() => setView('tax')} className={view === 'tax' ? 'active' : ''}><Calculator size={15}/> <span>{t('nav.tax')}</span></button>
+
+            <div className="sidebar-section">Configuration</div>
             <button onClick={() => setView('settings')} className={view === 'settings' ? 'active' : ''}><Settings size={15}/> <span>{t('nav.settings')}</span></button>
           </nav>
 

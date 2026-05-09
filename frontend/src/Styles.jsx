@@ -166,8 +166,17 @@ export function Styles({ theme }) {
 .primary-btn-large:hover {
   box-shadow: 0 6px 20px rgba(59,111,224,0.40), inset 0 1px 0 rgba(255,255,255,0.18);
 }
-.secondary-btn { background: transparent; border: 1px solid var(--border-strong); color: var(--text-primary); height: 36px; padding: 0 16px; }
-.secondary-btn:hover { background: var(--bg-subtle); border-color: var(--text-tertiary); }
+.secondary-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  height: 36px; padding: 0 16px;
+  font-weight: 500;
+}
+.secondary-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-strong);
+}
 .danger-btn { background: var(--danger-soft); color: var(--danger-text); border: 1px solid transparent; height: 36px; padding: 0 14px; }
 .danger-btn:hover { background: var(--danger); color: white; }
 .danger-btn-sm { padding: 5px 9px; background: var(--danger-soft); color: var(--danger-text); font-size: 12px; border-radius: 6px; }
@@ -222,6 +231,16 @@ export function Styles({ theme }) {
 .sidebar-brand .brand-tagline { font-size: 10px; color: var(--text-tertiary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 1px; }
 
 .sidebar-nav { display: flex; flex-direction: column; gap: 1px; flex: 1; }
+.sidebar-section {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-muted);
+  padding: 14px 12px 6px;
+  margin-top: 4px;
+}
+.sidebar-section:first-child { margin-top: 0; padding-top: 8px; }
 .sidebar-nav button { position: relative; display: inline-flex; align-items: center; gap: 11px; width: 100%; padding: 9px 12px; border: none; background: transparent; color: var(--text-secondary); font-size: 13.5px; font-weight: 500; border-radius: 8px; cursor: pointer; transition: color .15s, background .15s; font-family: inherit; letter-spacing: -0.005em; text-align: left; overflow: hidden; }
 .sidebar-nav button svg { color: var(--text-tertiary); transition: color .15s; flex-shrink: 0; }
 .sidebar-nav button:hover { color: var(--text-primary); background: var(--bg-subtle); }
@@ -347,6 +366,7 @@ export function Styles({ theme }) {
   .sidebar-brand { padding: 4px 0 14px; justify-content: center; border-bottom: none; margin-bottom: 0; }
   .sidebar-brand .brand-text { display: none; }
   .sidebar-nav { width: 100%; align-items: center; gap: 2px; }
+  .sidebar-section { display: none; }
   .sidebar-nav button { padding: 10px; justify-content: center; gap: 0; border-radius: 10px; width: 44px; height: 44px; }
   .sidebar-nav button span:not(.nav-alert-dot) { display: none; }
   .sidebar-nav button svg { width: 18px; height: 18px; }
