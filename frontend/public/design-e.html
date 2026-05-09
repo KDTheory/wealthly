@@ -9,15 +9,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
   :root {
-    --bg:         #0e1119;
-    --bg-2:       #131722;
-    --card:       #181c28;
-    --card-2:     #1d2230;
-    --card-3:     #232838;
-    --hover:      #232838;
-    --border:     #262b3a;
-    --border-2:   #303547;
-    --border-strong: #3d4358;
+    --bg:         #151926;
+    --bg-2:       #1a1f2e;
+    --card:       #1f2434;
+    --card-2:     #252b3d;
+    --card-3:     #2d3447;
+    --hover:      #2a3145;
+    --border:     #2f3548;
+    --border-2:   #3a4159;
+    --border-strong: #495173;
 
     --text:       #f5f5f7;
     --text-2:     #c8c8d0;
@@ -46,9 +46,9 @@
   body {
     font-size: 14px; line-height: 1.5;
     background-image:
-      radial-gradient(1400px 600px at 90% -20%, rgba(59,111,224,0.18), transparent 55%),
-      radial-gradient(900px 500px at -10% 30%, rgba(120,90,220,0.10), transparent 55%),
-      radial-gradient(700px 400px at 50% 110%, rgba(52,211,153,0.06), transparent 55%);
+      radial-gradient(1500px 700px at 100% -10%, rgba(91,141,239,0.18), transparent 55%),
+      radial-gradient(1000px 600px at -10% 20%, rgba(167,139,250,0.10), transparent 55%),
+      radial-gradient(800px 500px at 60% 110%, rgba(52,211,153,0.07), transparent 55%);
     background-attachment: fixed;
     min-height: 100vh;
   }
@@ -59,11 +59,11 @@
 
   /* === SIDEBAR =========================================== */
   .sidebar {
-    background: rgba(14, 17, 25, 0.7);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: rgba(21, 25, 38, 0.65);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
     border-right: 1px solid var(--border);
-    padding: 20px 14px;
+    padding: 22px 14px;
     display: flex; flex-direction: column; gap: 4px;
     position: sticky; top: 0; height: 100vh;
   }
@@ -157,12 +157,13 @@
   .hero {
     position: relative; overflow: hidden;
     border-radius: var(--radius-lg);
-    padding: 32px 36px 28px;
+    padding: 34px 38px 30px;
     margin-bottom: 16px;
     background:
-      linear-gradient(135deg, rgba(59,111,224,0.10) 0%, rgba(120,90,220,0.06) 50%, rgba(52,211,153,0.04) 100%),
+      linear-gradient(135deg, rgba(91,141,239,0.13) 0%, rgba(167,139,250,0.08) 50%, rgba(52,211,153,0.05) 100%),
       var(--card);
     border: 1px solid var(--border);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 20px 60px -20px rgba(0,0,0,0.5);
   }
   .hero::before {
     content: ''; position: absolute;
@@ -254,14 +255,27 @@
     position: relative; overflow: hidden;
     border-radius: var(--radius);
     padding: 18px 20px 16px;
-    border: 1px solid var(--border);
+    border: 1px solid rgba(255,255,255,0.08);
     aspect-ratio: 1.65 / 1;
     display: flex; flex-direction: column; justify-content: space-between;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.07);
+    box-shadow:
+      0 8px 24px -6px rgba(0,0,0,0.4),
+      inset 0 1px 0 rgba(255,255,255,0.15),
+      inset 0 -1px 0 rgba(0,0,0,0.2);
     cursor: pointer;
-    transition: transform 200ms;
+    transition: transform 200ms, box-shadow 200ms;
   }
-  .acc-card:hover { transform: translateY(-2px); }
+  .acc-card:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 12px 32px -6px rgba(0,0,0,0.5),
+      inset 0 1px 0 rgba(255,255,255,0.18);
+  }
+  .acc-card::after {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(120% 80% at 0% 0%, rgba(255,255,255,0.12), transparent 50%);
+    pointer-events: none;
+  }
   .acc-card.bourso  { background: linear-gradient(135deg, #ec5a13 0%, #c14710 50%, #1a0a05 100%); }
   .acc-card.revolut { background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #000 100%); border-color: #333; }
   .acc-card.livret  { background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #0f172a 100%); }
@@ -291,6 +305,7 @@
   .panel {
     background: var(--card); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 22px 24px;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.03) inset, 0 8px 24px -10px rgba(0,0,0,0.4);
   }
   .panel-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
   .panel-h h3 { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
