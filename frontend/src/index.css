@@ -1,14 +1,18 @@
 /* ============================================================================
- * Wealthly — Design System (Tailwind v4 + custom tokens)
+ * Trove — Design System (Tailwind v4 + custom tokens)
  *
- * Visual direction: private banking. Warm dark surfaces, muted gold accent,
- * cream-tinted typography, desaturated semantics. Sober, mature, archival.
+ * Visual direction: modern fintech. Dark blue-tinted surfaces with a soft
+ * gradient mesh, a single electric-blue accent, Inter Tight typography,
+ * vivid semantic colors. Mercury × Stripe × Linear DNA — built for a
+ * commercial product, not a niche internal tool.
  *
  * Tokens are exposed as CSS variables AND as Tailwind theme colors,
  * so utilities like `bg-w-surface` / `text-w-muted` work out of the box.
  *
  * Preflight is intentionally NOT loaded — the existing CSS-in-JS in
  * WealthlyApp.jsx still owns global resets. We only add tokens + utilities.
+ * Variable names are kept (--color-w-*, --primary, --text-primary) so the
+ * existing CSS-in-JS in Styles.jsx auto-inherits the new palette.
  * ============================================================================ */
 
 @layer theme, base, components, utilities;
@@ -16,160 +20,208 @@
 @import "tailwindcss/utilities.css" layer(utilities);
 
 @theme {
-  /* Surfaces — deeper page contrast against cards */
-  --color-w-bg: #0a0b0e;
-  --color-w-surface: #13151a;
-  --color-w-surface-2: #1a1d24;
-  --color-w-surface-3: #1f2229;
+  /* Surfaces — dark with a slight blue tint, lifted off pure black so the
+     UI feels more product than terminal. */
+  --color-w-bg: #151926;
+  --color-w-surface: #1f2434;
+  --color-w-surface-2: #252b3d;
+  --color-w-surface-3: #2d3447;
 
-  /* Borders — translucent so they sit on any card depth */
-  --color-w-border: rgba(255, 255, 255, 0.07);
-  --color-w-border-strong: rgba(255, 255, 255, 0.12);
+  /* Borders */
+  --color-w-border: rgba(255, 255, 255, 0.08);
+  --color-w-border-strong: rgba(255, 255, 255, 0.15);
 
-  /* Text — cream-tinted off-white, warmer secondary tone */
-  --color-w-text: #edeae4;
-  --color-w-muted: #9b9691;
-  --color-w-faint: #5c5955;
+  /* Text */
+  --color-w-text: #f5f5f7;
+  --color-w-muted: #9ea3b3;
+  --color-w-faint: #6a6f80;
 
-  /* Accent — muted antique gold (private banking signature) */
-  --color-w-accent: #c5a572;
-  --color-w-accent-hover: #d4b483;
-  --color-w-accent-soft: rgba(197, 165, 114, 0.14);
-  --color-w-accent-dim: rgba(197, 165, 114, 0.12);
+  /* Accent — electric blue (deeper saturation, not too bright) */
+  --color-w-accent: #3b6fe0;
+  --color-w-accent-hover: #5285ee;
+  --color-w-accent-2: #7aa3ff;
+  --color-w-accent-soft: rgba(59, 111, 224, 0.16);
+  --color-w-accent-dim: rgba(59, 111, 224, 0.10);
 
-  /* Semantic — desaturated, never alarming */
-  --color-w-success: #7a9e6a;
-  --color-w-danger: #b8644a;
-  --color-w-warning: #c49a44;
-  --color-w-info: #7a8aa8;
+  /* Semantic — vivid, modern fintech (no more muted) */
+  --color-w-success: #34d399;
+  --color-w-success-soft: rgba(52, 211, 153, 0.16);
+  --color-w-danger: #f87171;
+  --color-w-danger-soft: rgba(248, 113, 113, 0.16);
+  --color-w-warning: #fbbf24;
+  --color-w-warning-soft: rgba(251, 191, 36, 0.16);
+  --color-w-info: #7aa3ff;
 
   /* Numerical semantic colours (positive / negative deltas in tables) */
-  --color-w-num-positive: #88b070;
-  --color-w-num-negative: #c47158;
+  --color-w-num-positive: #34d399;
+  --color-w-num-negative: #f87171;
 
-  /* Asset class palette — desaturated, all in the same temperature family */
-  --color-w-asset-realestate: #c8855a;
-  --color-w-asset-equity: #7a8aa8;
-  --color-w-asset-bond: #8c918f;
-  --color-w-asset-crypto: #d4a554;
-  --color-w-asset-cash: #c5a572;
-  --color-w-asset-pension: #9d8bb5;
-  --color-w-asset-other: #8a8a85;
+  /* Asset class palette — distinct hues, all desaturated to sit together */
+  --color-w-asset-realestate: #34d399;
+  --color-w-asset-equity: #a78bfa;
+  --color-w-asset-bond: #94a3b8;
+  --color-w-asset-crypto: #fbbf24;
+  --color-w-asset-cash: #3b6fe0;
+  --color-w-asset-pension: #c084fc;
+  --color-w-asset-other: #94a3b8;
 
-  /* Radii — slightly sharper than the previous spec, more architectural */
-  --radius-w-sm: 4px;
-  --radius-w-md: 8px;
-  --radius-w-lg: 12px;
-  --radius-w-xl: 16px;
+  /* Radii — slightly rounder for friendly product feel */
+  --radius-w-sm: 8px;
+  --radius-w-md: 10px;
+  --radius-w-lg: 14px;
+  --radius-w-xl: 20px;
 
-  /* Shadows — minimal, premium */
-  --shadow-w-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-w-md: 0 4px 12px rgba(0, 0, 0, 0.32);
-  --shadow-w-lg: 0 16px 40px rgba(0, 0, 0, 0.45);
-  --shadow-w-glow-accent: 0 0 0 1px rgba(197, 165, 114, 0.25);
+  /* Shadows */
+  --shadow-w-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-w-md: 0 8px 24px -10px rgba(0, 0, 0, 0.4);
+  --shadow-w-lg: 0 20px 60px -20px rgba(0, 0, 0, 0.5);
+  --shadow-w-glow-accent: 0 0 0 4px rgba(59, 111, 224, 0.18);
 
   /* Typography */
-  --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --font-mono: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  --font-serif: "Source Serif 4", "Source Serif Pro", "Times New Roman", Georgia, serif;
+  --font-sans: "Inter Tight", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-/* Light mode — sober paper, deep ink, refined gold.
-   Inspired by Pictet / Edmond de Rothschild printed reports.
+/* Light mode — soft neutral, blue accent stays.
    Activated by `data-theme="light"` on <html>. */
 :root[data-theme="light"] {
-  /* Surfaces — soft warm grey background, slightly tinted card to avoid the
-     cheap pure-white look. The hierarchy bg-page < bg-card stays inverted
-     compared to dark mode (cards are LIGHTER than the page). */
-  --color-w-bg: #efece4;
-  --color-w-surface: #f7f5ef;
-  --color-w-surface-2: #e8e3d4;
-  --color-w-surface-3: #ddd5bf;
+  --color-w-bg: #f7f8fc;
+  --color-w-surface: #ffffff;
+  --color-w-surface-2: #f1f3f9;
+  --color-w-surface-3: #e8ebf3;
 
-  /* Borders — visible without being heavy */
-  --color-w-border: #d8d1bd;
-  --color-w-border-strong: #b8ad92;
+  --color-w-border: #e3e6ee;
+  --color-w-border-strong: #cdd2dd;
 
-  /* Ink — near-black with a brown undertone, more contrast than before */
-  --color-w-text: #14110b;
-  --color-w-muted: #4a4538;
-  --color-w-faint: #837d6e;
+  --color-w-text: #0e1119;
+  --color-w-muted: #5b6275;
+  --color-w-faint: #8a92a3;
 
-  /* Accent — deeper antique gold for AAA legibility on the lighter bg */
-  --color-w-accent: #8a7042;
-  --color-w-accent-hover: #6f5832;
-  --color-w-accent-soft: rgba(138, 112, 66, 0.12);
+  --color-w-accent: #2855c8;
+  --color-w-accent-hover: #1f47b3;
+  --color-w-accent-2: #3b6fe0;
+  --color-w-accent-soft: rgba(40, 85, 200, 0.10);
+  --color-w-accent-dim: rgba(40, 85, 200, 0.06);
 
-  --color-w-success: #5d7a52;
-  --color-w-danger: #9a5340;
-  --color-w-warning: #a07728;
-  --color-w-info: #4d5a73;
+  --color-w-success: #10b981;
+  --color-w-success-soft: rgba(16, 185, 129, 0.10);
+  --color-w-danger: #dc2626;
+  --color-w-danger-soft: rgba(220, 38, 38, 0.10);
+  --color-w-warning: #d97706;
+  --color-w-warning-soft: rgba(217, 119, 6, 0.10);
+  --color-w-info: #2855c8;
 
-  --color-w-asset-realestate: #985733;
-  --color-w-asset-equity: #4d5a73;
-  --color-w-asset-bond: #5e6360;
-  --color-w-asset-crypto: #a07728;
-  --color-w-asset-cash: #8a7042;
-  --color-w-asset-pension: #6b5b82;
+  --color-w-num-positive: #10b981;
+  --color-w-num-negative: #dc2626;
 
-  --shadow-w-sm: 0 1px 2px rgba(20, 18, 12, 0.05);
-  --shadow-w-md: 0 4px 14px rgba(20, 18, 12, 0.07);
-  --shadow-w-lg: 0 18px 44px rgba(20, 18, 12, 0.10);
+  --shadow-w-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-w-md: 0 8px 24px -10px rgba(15, 23, 42, 0.10);
+  --shadow-w-lg: 0 20px 60px -20px rgba(15, 23, 42, 0.15);
 }
 
-/* Tabular numerals for any element marked with .w-num — used for KPIs,
-   amounts, and tables so digits align in columns. */
+/* Tabular numerals on monetary values for clean column alignment. */
 .w-num {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1, "cv11" 1;
 }
 
-/* Méridien — editorial serif typography used for hero numbers,
-   roman numerals, italic accents. Pairs with DM Sans for everything else. */
-.w-serif {
-  font-family: var(--font-serif);
-  letter-spacing: -0.005em;
+/* Mesh background — subtle gradient halos sitting behind the whole app
+   to give the dark surface its own personality (Mercury / Stripe vibe). */
+.w-mesh {
+  background-image:
+    radial-gradient(1500px 700px at 100% -10%, rgba(91, 141, 239, 0.18), transparent 55%),
+    radial-gradient(1000px 600px at -10% 20%, rgba(167, 139, 250, 0.10), transparent 55%),
+    radial-gradient(800px 500px at 60% 110%, rgba(52, 211, 153, 0.07), transparent 55%);
+  background-attachment: fixed;
 }
-.w-serif-italic {
-  font-family: var(--font-serif);
-  font-style: italic;
-  letter-spacing: -0.005em;
+:root[data-theme="light"] .w-mesh {
+  background-image:
+    radial-gradient(1500px 700px at 100% -10%, rgba(40, 85, 200, 0.06), transparent 55%),
+    radial-gradient(1000px 600px at -10% 20%, rgba(167, 139, 250, 0.05), transparent 55%);
 }
 
-/* Section header pattern — "I — Asset Allocation" style.
-   Wrap the roman numeral in <span class="w-roman"> followed by the title. */
+/* Glassy card with top inner highlight — used for hero, panels, account cards. */
+.w-glass {
+  background: var(--color-w-surface);
+  border: 1px solid var(--color-w-border);
+  border-radius: var(--radius-w-lg);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 8px 24px -10px rgba(0, 0, 0, 0.4);
+}
+
+/* Gain pill — green by default, danger-red variant. Robinhood-style. */
+.w-gain-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--color-w-success-soft);
+  color: var(--color-w-success);
+  font-weight: 600;
+  font-size: 13px;
+  border: 1px solid rgba(52, 211, 153, 0.25);
+}
+.w-gain-pill.danger {
+  background: var(--color-w-danger-soft);
+  color: var(--color-w-danger);
+  border-color: rgba(248, 113, 113, 0.25);
+}
+
+/* Live "synced" pulsing dot for the topbar. */
+.w-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-w-success);
+  box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6);
+  animation: w-pulse 2s infinite;
+}
+@keyframes w-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+  70%  { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   Legacy Méridien classes — kept as no-ops so any view that still uses
+   them (`.w-serif`, `.w-roman`, `.w-eyebrow`, `.w-section-h`) doesn't
+   crash. They fall back to plain Inter-Tight + tracking and the old
+   gold accent maps to the new electric blue automatically.
+   ──────────────────────────────────────────────────────────────────── */
+.w-serif        { font-family: var(--font-sans); letter-spacing: -0.025em; }
+.w-serif-italic { font-family: var(--font-sans); font-style: italic; letter-spacing: -0.01em; }
 .w-section-h {
-  font-size: 10.5px;
-  letter-spacing: 0.18em;
+  font-size: 11px;
+  letter-spacing: 0.10em;
   text-transform: uppercase;
-  color: var(--color-w-accent);
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
+  color: var(--color-w-muted);
+  display: flex; align-items: baseline; gap: 8px;
   font-weight: 600;
 }
 .w-roman {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-size: 16px;
+  font-family: var(--font-sans);
+  font-size: 13px;
   letter-spacing: 0;
   text-transform: none;
-  color: var(--color-w-accent);
-  font-weight: 400;
+  color: var(--color-w-accent-2);
+  font-weight: 600;
 }
-
-/* Statement eyebrow — "Quarterly Statement · Q2 2026" */
 .w-eyebrow {
-  font-size: 10.5px;
-  letter-spacing: 0.22em;
+  font-size: 11px;
+  letter-spacing: 0.10em;
   text-transform: uppercase;
-  color: var(--color-w-accent);
-  font-weight: 500;
+  color: var(--color-w-muted);
+  font-weight: 600;
   margin-bottom: 10px;
-  display: block;
+  display: inline-flex; align-items: center; gap: 8px;
 }
-
-/* Dotted divider used inside statement-style lists */
+.w-eyebrow::before {
+  content: '';
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--color-w-success);
+}
 .w-divider-dot {
-  border-bottom: 1px dotted var(--color-w-border-strong);
+  border-bottom: 1px solid var(--color-w-border);
 }

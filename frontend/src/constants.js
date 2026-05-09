@@ -12,7 +12,7 @@ import {
   CreditCard, Banknote,
 } from 'lucide-react';
 
-export const APP_NAME = 'Wealthly';
+export const APP_NAME = 'Trove';
 
 export const STORAGE_KEYS = {
   MEMBERS: 'w2:members',

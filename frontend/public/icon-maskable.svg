@@ -1,7 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Maskable icon: keep meaningful content within the central 80% safe zone (52..460).
-       Outer 10% margin can be cropped by Android into circle, squircle, etc. -->
-  <rect width="512" height="512" fill="#0c0d10"/>
-  <rect x="148" y="148" width="216" height="216" rx="24" fill="none" stroke="#c5a572" stroke-width="16"/>
-  <path d="M186 212 L226 308 L256 240 L286 308 L326 212" fill="none" stroke="#c5a572" stroke-width="16" stroke-linecap="square" stroke-linejoin="miter"/>
+  <!-- Maskable icon: full-bleed gradient with the T contained in the central
+       80% safe zone (52..460). Outer 10% margin can be cropped by Android
+       launchers into circle, squircle, etc. without losing the T. -->
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#5285ee"/>
+      <stop offset="50%" stop-color="#3b6fe0"/>
+      <stop offset="100%" stop-color="#7d5cf0"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#g)"/>
+  <rect x="160" y="200" width="192" height="44" rx="8" fill="#ffffff"/>
+  <rect x="234" y="200" width="44" height="172" rx="8" fill="#ffffff"/>
+  <circle cx="256" cy="402" r="11" fill="#ffffff" opacity="0.85"/>
 </svg>

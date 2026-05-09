@@ -6,19 +6,20 @@
     <link rel="apple-touch-icon" href="/icon.svg" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#0a0b0e" />
+    <meta name="theme-color" content="#151926" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Wealthly" />
+    <meta name="apple-mobile-web-app-title" content="Trove" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <title>Wealthly — Patrimoine privé</title>
+    <title>Trove — Le patrimoine de votre famille, enfin clair</title>
+    <meta name="description" content="Trove rassemble tous vos comptes, placements et biens dans un tableau de bord moderne. Pour particuliers et familles qui veulent piloter leur patrimoine sans complexité." />
     <style>
-      body { margin: 0; background: #0c0d10; }
+      body { margin: 0; background: #151926; }
       #root:empty::after {
         content: '';
         position: fixed;
         inset: 0;
-        background: #0c0d10;
+        background: #151926;
       }
       #root:empty::before {
         content: '';
@@ -28,8 +29,8 @@
         transform: translate(-50%, -50%);
         width: 28px;
         height: 28px;
-        border: 2px solid #232730;
-        border-top-color: #c5a572;
+        border: 2px solid #2f3548;
+        border-top-color: #5285ee;
         border-radius: 50%;
         animation: spin 0.7s linear infinite;
         z-index: 1;
@@ -38,13 +39,18 @@
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- DM Sans (UI body, headings) + DM Mono (numbers, currency, tabular data).
-         Source Serif 4 (editorial hero numbers, italic accents — Méridien direction).
-         Variable axes requested as ranges so a single woff2 covers each font. -->
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400..700&family=DM+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;1,8..60,300;1,8..60,400;1,8..60,500&display=swap" rel="stylesheet">
+    <!-- Trove typography: Inter Tight (UI + numbers, full tnum support).
+         JetBrains Mono kept for occasional code/technical labels. -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
       /* Prevents the white flash on first paint before React mounts */
-      html, body { background: #0a0b0e; color: #ebe8e3; color-scheme: dark; margin: 0; font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+      html, body {
+        background: #151926;
+        color: #f5f5f7;
+        color-scheme: dark;
+        margin: 0;
+        font-family: 'Inter Tight', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      }
     </style>
   </head>
   <body>

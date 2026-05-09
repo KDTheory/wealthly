@@ -1,13 +1,13 @@
 {
-  "name": "Wealthly — Patrimoine privé",
-  "short_name": "Wealthly",
-  "description": "Vue consolidée de votre patrimoine familial — comptes, placements, immobilier, dettes.",
+  "name": "Trove — Patrimoine familial",
+  "short_name": "Trove",
+  "description": "Tous vos comptes, placements et biens dans un tableau de bord moderne. Pilotez le patrimoine de votre famille sans complexité.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#0c0d10",
-  "theme_color": "#0c0d10",
+  "background_color": "#151926",
+  "theme_color": "#151926",
   "lang": "fr",
   "categories": ["finance", "productivity"],
   "icons": [
