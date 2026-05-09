@@ -139,6 +139,10 @@ class Account(Base):
     #   professionnel  — fully excluded from personal patrimoine and cashflow
     role = Column(String, nullable=False, default="principal", index=True)
     initial_balance = Column(Float, nullable=False, default=0.0)
+    # ISO 4217 currency the account is denominated in (EUR / USD / GBP / CHF / …).
+    # Lets us aggregate multi-currency holdings: the frontend converts to the
+    # user's display currency at render time using live ECB rates.
+    currency = Column(String, nullable=False, default="EUR")
     created_at = Column(DateTime, default=datetime.utcnow)
 
     household_id = Column(String, ForeignKey("households.id", ondelete="CASCADE"), nullable=False)
@@ -198,6 +202,8 @@ class Asset(Base):
     type = Column(String, nullable=False)  # real_estate | life_insurance | pea | per | savings_account | crypto | stocks | other_asset
     name = Column(String, nullable=False)
     current_value = Column(Float, nullable=False, default=0.0)
+    # ISO 4217 — see Account.currency comment.
+    currency = Column(String, nullable=False, default="EUR")
     notes = Column(Text, nullable=True, default="")
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -235,6 +241,8 @@ class Liability(Base):
     initial_capital = Column(Float, nullable=False, default=0.0)   # original principal
     remaining_capital = Column(Float, nullable=False, default=0.0) # current outstanding
     monthly_payment = Column(Float, nullable=False, default=0.0)   # full mensualité (P+I+A)
+    # ISO 4217 — see Account.currency comment.
+    currency = Column(String, nullable=False, default="EUR")
     interest_rate = Column(Float, nullable=False, default=0.0)     # annual rate %
     end_date = Column(Date, nullable=True)
     notes = Column(Text, nullable=True, default="")

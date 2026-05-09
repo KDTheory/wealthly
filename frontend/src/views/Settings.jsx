@@ -144,16 +144,28 @@ export function SettingsView({ members, accounts, accountBalances, saveMember, d
                   )}
                 </div>
                 {updateAccount && (
-                  <select
-                    value={role}
-                    onChange={(e) => updateAccount(a.id, { role: e.target.value })}
-                    title={roleMeta.desc}
-                    style={{ fontSize: 12, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-primary)', cursor: 'pointer', maxWidth: 200 }}
-                  >
-                    {ACCOUNT_ROLE_KEYS.map(k => (
-                      <option key={k} value={k}>{ACCOUNT_ROLES[k].label}</option>
-                    ))}
-                  </select>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <select
+                      value={role}
+                      onChange={(e) => updateAccount(a.id, { role: e.target.value })}
+                      title={roleMeta.desc}
+                      style={{ fontSize: 12, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-primary)', cursor: 'pointer', maxWidth: 200 }}
+                    >
+                      {ACCOUNT_ROLE_KEYS.map(k => (
+                        <option key={k} value={k}>{ACCOUNT_ROLES[k].label}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={a.currency || 'EUR'}
+                      onChange={(e) => updateAccount(a.id, { currency: e.target.value })}
+                      title="Devise du compte"
+                      style={{ fontSize: 11.5, padding: '5px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-secondary)', cursor: 'pointer', maxWidth: 200 }}
+                    >
+                      {SUPPORTED_CURRENCIES.map(c => (
+                        <option key={c} value={c}>{CURRENCY_FLAGS[c]} {c}</option>
+                      ))}
+                    </select>
+                  </div>
                 )}
                 <button className="icon-btn-sm" onClick={() => deleteAccount(a.id)}><Trash2 size={13}/></button>
               </div>

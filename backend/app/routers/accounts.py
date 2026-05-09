@@ -24,6 +24,7 @@ def _to_out(account: Account, db: Session) -> dict:
         "type": account.type,
         "role": account.role or "principal",
         "initial_balance": account.initial_balance,
+        "currency": account.currency or "EUR",
         "household_id": account.household_id,
         "member_ids": [m.id for m in account.members],
         "current_balance": current,

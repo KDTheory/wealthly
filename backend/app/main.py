@@ -86,6 +86,12 @@ def _run_lightweight_migrations() -> None:
             "CREATE INDEX IF NOT EXISTS ix_accounts_role ON accounts (role)",
             # Manual override on the auto-detected internal-transfer flag
             "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS is_transfer_override BOOLEAN",
+            # ISO 4217 currency on every monetary entity. Default EUR keeps
+            # existing rows behaving exactly as before; new records can pick
+            # USD / GBP / CHF and the frontend will live-convert via Frankfurter.
+            "ALTER TABLE accounts ADD COLUMN IF NOT EXISTS currency VARCHAR DEFAULT 'EUR' NOT NULL",
+            "ALTER TABLE assets ADD COLUMN IF NOT EXISTS currency VARCHAR DEFAULT 'EUR' NOT NULL",
+            "ALTER TABLE liabilities ADD COLUMN IF NOT EXISTS currency VARCHAR DEFAULT 'EUR' NOT NULL",
         ]
     with engine.begin() as conn:
         for stmt in statements:

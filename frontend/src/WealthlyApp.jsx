@@ -102,6 +102,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     type: a.type,
     role: a.role || 'principal',
     initialBalance: a.initial_balance,
+    currency: a.currency || 'EUR',
     memberIds: a.member_ids || [],
     currentBalance: a.current_balance,
   });
@@ -111,6 +112,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     type: a.type,
     role: a.role || 'principal',
     initial_balance: parseFloat(a.initialBalance) || 0,
+    currency: a.currency || 'EUR',
     member_ids: a.memberIds || [],
   });
   // Transactions
@@ -143,6 +145,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     type: a.type,
     name: a.name,
     currentValue: a.current_value,
+    currency: a.currency || 'EUR',
     notes: a.notes || '',
     memberIds: a.member_ids || [],
     updatedAt: a.updated_at,
@@ -165,6 +168,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
       type: a.type,
       name: a.name,
       current_value: parseFloat(a.currentValue) || 0,
+      currency: a.currency || 'EUR',
       notes: a.notes || '',
       member_ids: a.memberIds || [],
       subtype: a.subtype || null,
@@ -190,6 +194,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     monthlyPayment: l.monthly_payment,
     interestRate: l.interest_rate,
     endDate: l.end_date,
+    currency: l.currency || 'EUR',
     notes: l.notes || '',
     memberIds: l.member_ids || [],
     downPayment: l.down_payment ?? null,
@@ -208,6 +213,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     monthly_payment: parseFloat(l.monthlyPayment) || 0,
     interest_rate: parseFloat(l.interestRate) || 0,
     end_date: l.endDate || null,
+    currency: l.currency || 'EUR',
     notes: l.notes || '',
     member_ids: l.memberIds || [],
     down_payment: l.downPayment !== '' && l.downPayment != null ? parseFloat(l.downPayment) : null,

@@ -77,6 +77,7 @@ class AccountBase(BaseModel):
     type: str = "checking"
     role: str = "principal"  # principal | depenses | epargne | investissement | professionnel
     initial_balance: float = 0.0
+    currency: str = "EUR"  # ISO 4217 (EUR / USD / GBP / CHF / …)
 
 
 class AccountCreate(AccountBase):
@@ -89,6 +90,7 @@ class AccountUpdate(BaseModel):
     type: Optional[str] = None
     role: Optional[str] = None
     initial_balance: Optional[float] = None
+    currency: Optional[str] = None
     member_ids: Optional[List[str]] = None
 
 
@@ -154,6 +156,7 @@ class AssetBase(BaseModel):
     type: str
     name: str
     current_value: float = 0.0
+    currency: str = "EUR"  # ISO 4217
     notes: Optional[str] = ""
     # Real estate enrichment — all optional, used by the immo wizard
     subtype: Optional[str] = None
@@ -177,6 +180,7 @@ class AssetUpdate(BaseModel):
     type: Optional[str] = None
     name: Optional[str] = None
     current_value: Optional[float] = None
+    currency: Optional[str] = None
     notes: Optional[str] = None
     member_ids: Optional[List[str]] = None
     subtype: Optional[str] = None
@@ -212,6 +216,7 @@ class LiabilityBase(BaseModel):
     monthly_payment: float = 0.0
     interest_rate: float = 0.0
     end_date: Optional[date] = None
+    currency: str = "EUR"  # ISO 4217
     notes: Optional[str] = ""
     # Enriched fields — all optional, legacy loans still load fine
     down_payment: Optional[float] = None
@@ -235,6 +240,7 @@ class LiabilityUpdate(BaseModel):
     monthly_payment: Optional[float] = None
     interest_rate: Optional[float] = None
     end_date: Optional[date] = None
+    currency: Optional[str] = None
     notes: Optional[str] = None
     member_ids: Optional[List[str]] = None
     down_payment: Optional[float] = None
