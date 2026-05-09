@@ -1,811 +1,1015 @@
 // ============================================================================
-// Landing — public marketing page, Finary-style.
+// Landing — public marketing page (Trove rebrand)
 //
-// Layout: sticky nav → hero with screenshot → "pilote auto" 2-col →
-// bento 3-up features (each card has a real screenshot) → security badges →
-// 3-step CTA → FAQ → footer.
-//
-// Inline CSS-in-JS for portability (matches AuthScreen.jsx pattern).
-// All screenshots live in /public/landing/ — keep filenames in sync.
+// Modern fintech landing: sticky nav → hero with gradient mesh → "comment
+// ça marche" 3-step → features bento → security → pricing tiers → FAQ →
+// footer. Inline CSS-in-JS for portability (matches AuthScreen pattern).
 // ============================================================================
 import React, { useState } from 'react';
 import {
   ArrowRight, ShieldCheck, MapPin, EyeOff, Users, Building2, Calculator,
   Activity, Github, Mail, ChevronDown, Lock, Sparkles, BarChart3, Calendar,
+  Check, Zap, Wallet, TrendingUp, ArrowUpRight,
 } from 'lucide-react';
 import { LegalModal } from '../components/LegalModal.jsx';
 
-const Wmark = ({ size = 22 }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" strokeLinejoin="miter" width={size} height={size}>
-    <rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/>
-    <path d="M7 9 L9.5 15.5 L12 10.5 L14.5 15.5 L17 9"/>
-  </svg>
+const Tmark = ({ size = 22 }) => (
+  <span
+    style={{
+      width: size + 14, height: size + 14,
+      display: 'inline-grid', placeItems: 'center',
+      background: 'linear-gradient(135deg, #5285ee 0%, #3b6fe0 50%, #7d5cf0 100%)',
+      borderRadius: 9,
+      color: 'white',
+      fontWeight: 800,
+      fontSize: size - 2,
+      letterSpacing: '-0.04em',
+      boxShadow: '0 4px 14px rgba(59,111,224,0.35), inset 0 1px 0 rgba(255,255,255,0.20)',
+      border: '1px solid rgba(255,255,255,0.10)',
+    }}
+  >
+    T
+  </span>
 );
 
 export default function Landing({ onSignIn, onSignUp, onTryDemo }) {
-  const [legal, setLegal] = useState(null); // null | 'cgu' | 'privacy'
+  const [legal, setLegal] = useState(null);
+  const [billing, setBilling] = useState('monthly'); // 'monthly' | 'yearly'
+
   return (
     <div className="lp">
       {/* === NAV === */}
       <header className="lp-nav">
         <div className="lp-nav-inner">
           <div className="lp-brand">
-            <span className="lp-brand-mark"><Wmark size={18}/></span>
-            <span className="lp-brand-name">Wealthly</span>
+            <Tmark size={18}/>
+            <span className="lp-brand-name">Trove</span>
           </div>
           <nav className="lp-nav-links">
-            <a href="#pilot">Suivi</a>
+            <a href="#how">Fonctionnement</a>
             <a href="#features">Fonctionnalités</a>
+            <a href="#pricing">Tarifs</a>
             <a href="#security">Sécurité</a>
             <a href="#faq">FAQ</a>
           </nav>
           <div className="lp-nav-actions">
             <button onClick={onSignIn} className="lp-nav-login">Connexion</button>
-            <button onClick={onSignUp} className="lp-nav-cta">S'inscrire</button>
+            <button onClick={onSignUp} className="lp-nav-cta">Commencer</button>
           </div>
         </div>
       </header>
 
       {/* === HERO === */}
       <section className="lp-hero">
-        <div className="lp-eyebrow-pill">PATRIMOINE FAMILIAL · DSP2 · UE</div>
+        <div className="lp-hero-mesh" aria-hidden="true"/>
+        <div className="lp-eyebrow-pill">
+          <span className="lp-eyebrow-dot"/> Nouveau · pilotez votre patrimoine en équipe
+        </div>
         <h1 className="lp-h1">
-          Suivre. Comprendre.<br/><em>Décider.</em>
+          Le patrimoine de votre famille,<br/>
+          <span className="lp-h1-grad">enfin clair.</span>
         </h1>
         <p className="lp-sub">
-          Wealthly agrège vos comptes, actifs, dettes et charges fixes — par
-          membre du foyer, sur un seul écran. Sans démarchage, sans revente
-          de données.
+          Trove rassemble vos comptes, placements, biens et dettes dans un
+          tableau de bord moderne. Compris en 30 secondes, partagé entre membres
+          du foyer, sécurisé en Europe.
         </p>
         <div className="lp-cta-row">
           <button onClick={onSignUp} className="lp-cta-primary">
             Démarrer gratuitement <ArrowRight size={16}/>
           </button>
           <button onClick={onTryDemo} className="lp-cta-ghost">
-            <Sparkles size={14}/> Voir avec un jeu de démo
+            <Sparkles size={14}/> Voir la démo
           </button>
         </div>
         <div className="lp-trust">
-          <div className="lp-trust-item"><strong>17</strong><span>tables<br/>relationnelles</span></div>
+          <div className="lp-trust-item">
+            <strong>1 900<sup>+</sup></strong>
+            <span>banques connectées<br/>via DSP2</span>
+          </div>
           <div className="lp-trust-sep"/>
-          <div className="lp-trust-item"><strong>1 900<sup>+</sup></strong><span>banques UE<br/>via DSP2</span></div>
+          <div className="lp-trust-item">
+            <strong>0</strong>
+            <span>tracker tiers<br/>aucune revente</span>
+          </div>
           <div className="lp-trust-sep"/>
-          <div className="lp-trust-item"><strong>FR · EN</strong><span>interface<br/>bilingue</span></div>
+          <div className="lp-trust-item">
+            <strong>UE</strong>
+            <span>hébergement<br/>chiffré at-rest</span>
+          </div>
           <div className="lp-trust-sep"/>
-          <div className="lp-trust-item"><strong>0</strong><span>tracker<br/>tiers</span></div>
+          <div className="lp-trust-item">
+            <strong>4,8/5</strong>
+            <span>premiers retours<br/>utilisateurs</span>
+          </div>
         </div>
 
-        {/* Hero screenshot */}
         <div className="lp-hero-shot">
           <div className="lp-shot-frame">
-            <div className="lp-shot-chrome">
-              <span className="dot"/><span className="dot"/><span className="dot"/>
-              <span className="lp-shot-url">wealthly.app / résumé</span>
-            </div>
-            <img src="/landing/hero-dashboard.png" alt="Tableau de bord Wealthly"/>
+            <img src="/landing/hero-dashboard.png" alt="Tableau de bord Trove"/>
           </div>
         </div>
       </section>
 
-      {/* === PILOT — 2 col text+image === */}
-      <section className="lp-pilot" id="pilot">
-        <div className="lp-pilot-text">
-          <div className="lp-eyebrow gold">SUIVI AUTOMATIQUE</div>
-          <h2 className="lp-h2">Votre patrimoine,<br/><em>en pilote auto.</em></h2>
-          <p className="lp-p">
-            On ne peut pas améliorer ce qu'on ne suit pas. Wealthly synchronise
-            vos comptes via la DSP2 et calcule en temps réel votre patrimoine net,
-            décliné par membre du foyer.
-          </p>
-          <ul className="lp-bullets">
-            <li>
-              <span className="lp-bullet-icon"><Users size={15}/></span>
-              <div>
-                <strong>Multi-membres natif</strong>
-                <span>Une vue par personne, une vue famille. Comptes joints, comptes perso, enfants — tout reste lisible.</span>
-              </div>
-            </li>
-            <li>
-              <span className="lp-bullet-icon"><Building2 size={15}/></span>
-              <div>
-                <strong>Synchro DSP2 agréée</strong>
-                <span>Connectable à 1 900+ banques européennes via GoCardless, en lecture seule.</span>
-              </div>
-            </li>
-            <li>
-              <span className="lp-bullet-icon"><Activity size={15}/></span>
-              <div>
-                <strong>Snapshot mensuel auto</strong>
-                <span>Voyez l'évolution mois après mois sans saisie manuelle.</span>
-              </div>
-            </li>
-          </ul>
-          <button onClick={onSignUp} className="lp-cta-primary">
-            Créer mon compte <ArrowRight size={16}/>
-          </button>
-        </div>
-        <div className="lp-pilot-shot">
-          <div className="lp-shot-frame tall">
-            <img src="/landing/feature-sidebar.png" alt="Navigation Wealthly"/>
-          </div>
-        </div>
-      </section>
-
-      {/* === BENTO — 3 features each with a real screenshot === */}
-      <section className="lp-bento" id="features">
+      {/* === HOW IT WORKS === */}
+      <section id="how" className="lp-section">
         <div className="lp-section-head">
-          <div className="lp-eyebrow gold">OPTIMISEZ VOTRE PATRIMOINE</div>
-          <h2 className="lp-h2">Trois outils pour <em>décider mieux.</em></h2>
-          <p className="lp-p">
-            Score santé, cashflow, simulateur fiscal — tout est calculé localement,
-            sans envoyer vos données ailleurs.
+          <div className="lp-section-eyebrow">Fonctionnement</div>
+          <h2 className="lp-h2">Trois étapes, dix minutes.</h2>
+          <p className="lp-section-sub">
+            Importez ce que vous avez déjà, laissez Trove faire le reste.
           </p>
         </div>
+        <div className="lp-steps">
+          <div className="lp-step">
+            <div className="lp-step-num">1</div>
+            <h3>Connectez vos comptes</h3>
+            <p>Synchro DSP2 en lecture seule via GoCardless, ou import CSV de vos relevés. Aucun identifiant bancaire ne transite par Trove.</p>
+          </div>
+          <div className="lp-step">
+            <div className="lp-step-num">2</div>
+            <h3>Ajoutez vos actifs et dettes</h3>
+            <p>Immobilier, PEA, livrets, crypto, prêts. Saisie guidée pour chaque type, ou import depuis votre courtier.</p>
+          </div>
+          <div className="lp-step">
+            <div className="lp-step-num">3</div>
+            <h3>Pilotez en famille</h3>
+            <p>Invitez votre conjoint, attribuez les biens par membre, suivez votre patrimoine net consolidé en temps réel.</p>
+          </div>
+        </div>
+      </section>
 
-        <div className="lp-bento-grid">
-          <article className="lp-bento-card">
-            <div className="lp-bento-text">
-              <div className="lp-bento-icon"><Activity size={18}/></div>
-              <h3>Score santé financière</h3>
-              <p>Note 0–100 sur 5 critères pondérés : taux d'épargne, fonds d'urgence, ratio d'endettement, diversification, respect des budgets.</p>
+      {/* === FEATURES === */}
+      <section id="features" className="lp-section lp-section-alt">
+        <div className="lp-section-head">
+          <div className="lp-section-eyebrow">Fonctionnalités</div>
+          <h2 className="lp-h2">Toute la finance familiale, sans la complexité.</h2>
+        </div>
+        <div className="lp-bento">
+          <div className="lp-bento-card lp-bento-large">
+            <div className="lp-bento-icon" style={{ background: 'rgba(59,111,224,0.16)', color: '#7aa3ff' }}>
+              <BarChart3 size={20}/>
             </div>
-            <div className="lp-bento-shot">
-              <img src="/landing/feature-health.png" alt="Score santé financière"/>
+            <h3>Patrimoine net consolidé</h3>
+            <p>Comptes courants, placements, immobilier, dettes — tout dans une vue unique avec performance 30j/3M/YTD.</p>
+            <img src="/landing/hero-dashboard.png" alt="Patrimoine net consolidé Trove"/>
+          </div>
+          <div className="lp-bento-card">
+            <div className="lp-bento-icon" style={{ background: 'rgba(52,211,153,0.16)', color: '#34d399' }}>
+              <Activity size={18}/>
             </div>
-          </article>
-
-          <article className="lp-bento-card">
-            <div className="lp-bento-text">
-              <div className="lp-bento-icon"><BarChart3 size={18}/></div>
-              <h3>Cashflow visuel</h3>
-              <p>Sankey et donut pour comprendre où va chaque euro. Détection automatique des charges fixes récurrentes.</p>
+            <h3>Suivi mensuel</h3>
+            <p>Charges fixes, taux d'épargne, budgets par catégorie avec alertes.</p>
+            <img src="/landing/feature-cashflow.png" alt="Suivi mensuel"/>
+          </div>
+          <div className="lp-bento-card">
+            <div className="lp-bento-icon" style={{ background: 'rgba(251,191,36,0.16)', color: '#fbbf24' }}>
+              <Calculator size={18}/>
             </div>
-            <div className="lp-bento-shot">
-              <img src="/landing/feature-cashflow.png" alt="Cashflow Sankey"/>
+            <h3>Simulateur d'impôts FR</h3>
+            <p>Barème 2025, parts fiscales, crédits d'impôt, optimisation des plafonds.</p>
+            <img src="/landing/feature-tax.png" alt="Simulateur d'impôts"/>
+          </div>
+          <div className="lp-bento-card">
+            <div className="lp-bento-icon" style={{ background: 'rgba(167,139,250,0.16)', color: '#a78bfa' }}>
+              <Users size={18}/>
             </div>
-          </article>
-
-          <article className="lp-bento-card">
-            <div className="lp-bento-text">
-              <div className="lp-bento-icon"><Calculator size={18}/></div>
-              <h3>Simulateur d'impôt FR</h3>
-              <p>Barème 2025, parts, plafond quotient, décote, crédits garde et CESU, plafond niches 10 000 €.</p>
+            <h3>Multi-membres</h3>
+            <p>Conjoint, enfants, parents — chacun avec sa part dans les biens partagés.</p>
+            <img src="/landing/feature-sidebar.png" alt="Multi-membres"/>
+          </div>
+          <div className="lp-bento-card">
+            <div className="lp-bento-icon" style={{ background: 'rgba(91,141,239,0.16)', color: '#7aa3ff' }}>
+              <TrendingUp size={18}/>
             </div>
-            <div className="lp-bento-shot">
-              <img src="/landing/feature-tax.png" alt="Simulateur d'impôt"/>
-            </div>
-          </article>
+            <h3>Score patrimoine</h3>
+            <p>Note 0–100 sur 5 critères : épargne, diversification, dette, performance, liquidité.</p>
+            <img src="/landing/feature-health.png" alt="Score patrimoine"/>
+          </div>
         </div>
       </section>
 
       {/* === SECURITY === */}
-      <section className="lp-security" id="security">
+      <section id="security" className="lp-section lp-security">
         <div className="lp-section-head">
-          <div className="lp-eyebrow gold">SÉCURITÉ</div>
-          <h2 className="lp-h2">La confidentialité est<br/><em>la valeur par défaut.</em></h2>
+          <div className="lp-section-eyebrow">Sécurité</div>
+          <h2 className="lp-h2">Vos données restent les vôtres.</h2>
+          <p className="lp-section-sub">
+            Trove ne revend rien, ne profile pas, ne pose aucun tracker tiers.
+          </p>
         </div>
-        <div className="lp-sec-grid">
-          <div className="lp-sec-item">
-            <span className="lp-sec-icon"><ShieldCheck size={20}/></span>
-            <strong>Synchro DSP2 agréée</strong>
-            <span>via GoCardless Bank Account Data, en lecture seule. Wealthly n'a jamais vos identifiants bancaires.</span>
+        <div className="lp-security-grid">
+          <div className="lp-security-item">
+            <Lock size={18}/>
+            <div>
+              <h4>Lecture seule</h4>
+              <p>Synchro DSP2 via GoCardless, prestataire agréé. Trove n'a jamais vos identifiants bancaires.</p>
+            </div>
           </div>
-          <div className="lp-sec-item">
-            <span className="lp-sec-icon"><MapPin size={20}/></span>
-            <strong>Hébergé en UE</strong>
-            <span>Infra Vercel + Railway, base Postgres Supabase Europe, chiffrement at-rest.</span>
+          <div className="lp-security-item">
+            <MapPin size={18}/>
+            <div>
+              <h4>Hébergé en UE</h4>
+              <p>Base Postgres chez Supabase Europe, chiffrement at-rest, sauvegardes automatiques.</p>
+            </div>
           </div>
-          <div className="lp-sec-item">
-            <span className="lp-sec-icon"><EyeOff size={20}/></span>
-            <strong>Zéro tracker tiers</strong>
-            <span>Pas d'analytics, pas de revente, pas de publicité. Le modèle économique n'est pas vos données.</span>
+          <div className="lp-security-item">
+            <EyeOff size={18}/>
+            <div>
+              <h4>Aucun tracker</h4>
+              <p>Pas de Google Analytics, pas de Meta Pixel, pas de cookie publicitaire. Un JWT en localStorage, c'est tout.</p>
+            </div>
           </div>
-          <div className="lp-sec-item">
-            <span className="lp-sec-icon"><Lock size={20}/></span>
-            <strong>Bcrypt + JWT 7 jours</strong>
-            <span>HTTPS partout, rate-limiting sur l'auth, mot de passe oublié à usage unique.</span>
+          <div className="lp-security-item">
+            <Github size={18}/>
+            <div>
+              <h4>Open source</h4>
+              <p>Le code est public sur GitHub. Vous pouvez auditer, contribuer, ou auto-héberger.</p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* === 3 STEPS === */}
-      <section className="lp-steps">
+      {/* === PRICING === */}
+      <section id="pricing" className="lp-section lp-section-alt">
         <div className="lp-section-head">
-          <div className="lp-eyebrow gold">EN 3 ÉTAPES</div>
-          <h2 className="lp-h2">Démarrez en moins<br/><em>d'une minute.</em></h2>
+          <div className="lp-section-eyebrow">Tarifs</div>
+          <h2 className="lp-h2">Un prix juste, un essai sans carte.</h2>
+          <p className="lp-section-sub">
+            Commencez gratuitement, passez Pro quand vous en avez besoin. Aucun engagement.
+          </p>
+          <div className="lp-billing-toggle">
+            <button
+              onClick={() => setBilling('monthly')}
+              className={billing === 'monthly' ? 'active' : ''}
+            >
+              Mensuel
+            </button>
+            <button
+              onClick={() => setBilling('yearly')}
+              className={billing === 'yearly' ? 'active' : ''}
+            >
+              Annuel <span className="lp-badge-save">−20 %</span>
+            </button>
+          </div>
         </div>
-        <div className="lp-steps-grid">
-          <div className="lp-step">
-            <div className="lp-step-num">01</div>
-            <h3>Créez votre compte</h3>
-            <p>Email + mot de passe. Pas de carte bleue, pas d'engagement.</p>
+
+        <div className="lp-pricing-grid">
+
+          {/* FREE */}
+          <div className="lp-price-card">
+            <div className="lp-price-name">Solo</div>
+            <div className="lp-price-tagline">Pour démarrer en douceur</div>
+            <div className="lp-price-amount">
+              <span className="lp-price-num">0</span>
+              <span className="lp-price-currency">€</span>
+              <span className="lp-price-period">/ pour toujours</span>
+            </div>
+            <button onClick={onSignUp} className="lp-price-cta lp-price-cta-ghost">Démarrer gratuitement</button>
+            <ul className="lp-price-features">
+              <li><Check size={14}/> 1 utilisateur</li>
+              <li><Check size={14}/> 3 comptes bancaires</li>
+              <li><Check size={14}/> Import CSV illimité</li>
+              <li><Check size={14}/> Score patrimoine</li>
+              <li><Check size={14}/> Suivi mensuel</li>
+            </ul>
           </div>
-          <div className="lp-step">
-            <div className="lp-step-num">02</div>
-            <h3>Connectez vos comptes</h3>
-            <p>DSP2 en 1 clic ou import CSV en 4 étapes guidées.</p>
+
+          {/* PRO — featured */}
+          <div className="lp-price-card lp-price-card-featured">
+            <div className="lp-price-badge">Le plus choisi</div>
+            <div className="lp-price-name">Pro</div>
+            <div className="lp-price-tagline">Pour aller au bout du suivi</div>
+            <div className="lp-price-amount">
+              <span className="lp-price-num">{billing === 'monthly' ? '7,99' : '6,49'}</span>
+              <span className="lp-price-currency">€</span>
+              <span className="lp-price-period">/ {billing === 'monthly' ? 'mois' : 'mois, facturé annuellement'}</span>
+            </div>
+            <button onClick={onSignUp} className="lp-price-cta lp-price-cta-primary">
+              Essayer 14 jours gratuits <ArrowRight size={14}/>
+            </button>
+            <ul className="lp-price-features">
+              <li><Check size={14}/> <strong>Tout du plan Solo</strong></li>
+              <li><Check size={14}/> Comptes &amp; placements illimités</li>
+              <li><Check size={14}/> Synchro bancaire DSP2 automatique</li>
+              <li><Check size={14}/> Simulateur d'impôts FR</li>
+              <li><Check size={14}/> Catégorisation IA</li>
+              <li><Check size={14}/> Bilan PDF mensuel</li>
+              <li><Check size={14}/> Support email prioritaire</li>
+            </ul>
           </div>
-          <div className="lp-step">
-            <div className="lp-step-num">03</div>
-            <h3>Pilotez votre foyer</h3>
-            <p>Score santé, cashflow, simulateur d'impôt — tout dans un écran.</p>
+
+          {/* FAMILY */}
+          <div className="lp-price-card">
+            <div className="lp-price-name">Famille</div>
+            <div className="lp-price-tagline">Patrimoine partagé à plusieurs</div>
+            <div className="lp-price-amount">
+              <span className="lp-price-num">{billing === 'monthly' ? '14,99' : '11,99'}</span>
+              <span className="lp-price-currency">€</span>
+              <span className="lp-price-period">/ {billing === 'monthly' ? 'mois' : 'mois, facturé annuellement'}</span>
+            </div>
+            <button onClick={onSignUp} className="lp-price-cta lp-price-cta-ghost">Choisir Famille</button>
+            <ul className="lp-price-features">
+              <li><Check size={14}/> <strong>Tout du plan Pro</strong></li>
+              <li><Check size={14}/> Jusqu'à 6 membres du foyer</li>
+              <li><Check size={14}/> Quote-parts personnalisables</li>
+              <li><Check size={14}/> Permissions par membre</li>
+              <li><Check size={14}/> Mode invité (comptable, notaire)</li>
+              <li><Check size={14}/> Conseil patrimonial trimestriel</li>
+            </ul>
           </div>
+
         </div>
-        <div className="lp-steps-cta">
-          <button onClick={onSignUp} className="lp-cta-primary lp-cta-large">
-            Créer mon compte <ArrowRight size={16}/>
-          </button>
+
+        <div className="lp-pricing-foot">
+          Tous les plans sans engagement, résiliables à tout moment.
+          <a href="#faq">Voir les questions fréquentes →</a>
         </div>
       </section>
 
       {/* === FAQ === */}
-      <section className="lp-faq" id="faq">
+      <section id="faq" className="lp-section">
         <div className="lp-section-head">
-          <div className="lp-eyebrow gold">QUESTIONS FRÉQUENTES</div>
-          <h2 className="lp-h2"><em>Une question ?</em></h2>
+          <div className="lp-section-eyebrow">Questions fréquentes</div>
+          <h2 className="lp-h2">Ce qu'on nous demande le plus.</h2>
         </div>
-        <div className="lp-faq-list">
-          <details className="lp-faq-q">
-            <summary>Wealthly est-il gratuit ? <ChevronDown size={16}/></summary>
-            <p>Oui. Le code est open source (MIT) sur GitHub, l'instance hébergée est gratuite pendant la bêta. Aucun paywall sur les features patrimoniales, fiscales ou bancaires.</p>
+        <div className="lp-faq">
+          <details>
+            <summary>Trove est-il gratuit&nbsp;? <ChevronDown size={16}/></summary>
+            <p>Oui, le plan Solo est entièrement gratuit, à vie. Vous pouvez l'utiliser sans carte de crédit pour gérer jusqu'à 3 comptes bancaires. Les plans Pro et Famille débloquent les comptes illimités, la synchro automatique et les fonctions avancées.</p>
           </details>
-          <details className="lp-faq-q">
-            <summary>Mes données bancaires sont-elles en sécurité ? <ChevronDown size={16}/></summary>
-            <p>Wealthly n'a <strong>jamais</strong> vos identifiants bancaires. La connexion DSP2 passe par GoCardless Bank Account Data, prestataire agréé, en lecture seule. La base est hébergée chez Supabase en Union européenne, chiffrée at-rest.</p>
+          <details>
+            <summary>Comment Trove protège-t-il mes données bancaires&nbsp;? <ChevronDown size={16}/></summary>
+            <p>Trove n'a <strong>jamais</strong> vos identifiants bancaires. La connexion DSP2 passe par GoCardless Bank Account Data, prestataire agréé par l'ACPR, en lecture seule. La base est hébergée chez Supabase en Union européenne, chiffrée at-rest. Aucune donnée n'est partagée avec des tiers.</p>
           </details>
-          <details className="lp-faq-q">
-            <summary>Puis-je auto-héberger ? <ChevronDown size={16}/></summary>
-            <p>Oui — le code est public. Backend FastAPI + Postgres, frontend Vite. Déploiement Railway + Vercel documenté dans le repo. Comptez 30 minutes pour une instance perso.</p>
+          <details>
+            <summary>Puis-je auto-héberger Trove&nbsp;? <ChevronDown size={16}/></summary>
+            <p>Oui. Le code source est entièrement disponible sur GitHub sous licence permissive. Vous pouvez déployer Trove sur votre propre infrastructure (VPS, Raspberry Pi, etc.). La documentation détaille les étapes pour Vercel + Railway + Supabase, ou pour Docker self-hosted.</p>
           </details>
-          <details className="lp-faq-q">
-            <summary>Quelles banques sont supportées ? <ChevronDown size={16}/></summary>
-            <p>1 900+ banques européennes via la DSP2 (Boursorama, BNP, Crédit Agricole, Société Générale, Revolut, N26, Lydia, Trade Republic…). Pour les comptes hors-DSP2 (compte titres niche, courtier US), import CSV en 4 étapes guidées.</p>
+          <details>
+            <summary>Mes données sont-elles vendues&nbsp;? <ChevronDown size={16}/></summary>
+            <p>Jamais. Trove ne revend, ne loue, ne partage aucune donnée. Pas de Google Analytics, pas de Meta Pixel, pas de tracker publicitaire. Notre seul revenu vient des abonnements payants.</p>
           </details>
+          <details>
+            <summary>Qui peut voir le patrimoine de mon foyer&nbsp;? <ChevronDown size={16}/></summary>
+            <p>Vous seul, et les membres que vous invitez explicitement. Chaque membre dispose de son propre compte, et vous décidez ce qu'il peut consulter ou modifier. Aucune donnée n'est jamais visible par d'autres utilisateurs ou par Trove.</p>
+          </details>
+          <details>
+            <summary>Quelles banques sont supportées&nbsp;? <ChevronDown size={16}/></summary>
+            <p>Plus de 1 900 banques européennes via la norme DSP2 et GoCardless. Toutes les banques françaises majeures (BNP Paribas, Société Générale, Crédit Agricole, Boursorama, Revolut, etc.) sont supportées. Pour les comptes hors UE, vous pouvez importer un relevé CSV.</p>
+          </details>
+        </div>
+      </section>
+
+      {/* === FINAL CTA === */}
+      <section className="lp-cta-section">
+        <div className="lp-cta-card">
+          <h2>Prenez la main sur votre patrimoine.</h2>
+          <p>Inscription en 30 secondes, sans carte de crédit. Plan Solo gratuit à vie.</p>
+          <div className="lp-cta-row">
+            <button onClick={onSignUp} className="lp-cta-primary">
+              Démarrer maintenant <ArrowRight size={16}/>
+            </button>
+            <button onClick={onTryDemo} className="lp-cta-ghost">
+              <Sparkles size={14}/> Voir la démo
+            </button>
+          </div>
         </div>
       </section>
 
       {/* === FOOTER === */}
       <footer className="lp-foot">
-        <div className="lp-foot-grid">
-          <div className="lp-foot-col lp-foot-brand">
+        <div className="lp-foot-inner">
+          <div className="lp-foot-brand">
             <div className="lp-brand">
-              <span className="lp-brand-mark"><Wmark size={16}/></span>
-              <span className="lp-brand-name">Wealthly</span>
+              <Tmark size={18}/>
+              <span className="lp-brand-name">Trove</span>
             </div>
-            <p className="lp-foot-tag">Patrimoine familial,<br/>sans démarchage.</p>
+            <p>Le patrimoine de votre famille, enfin clair.</p>
           </div>
-          <div className="lp-foot-col">
-            <h4>Produit</h4>
-            <button onClick={onSignUp}>S'inscrire</button>
-            <button onClick={onSignIn}>Connexion</button>
-            <button onClick={onTryDemo}>Voir une démo</button>
-          </div>
-          <div className="lp-foot-col">
-            <h4>Sections</h4>
-            <a href="#pilot">Suivi</a>
-            <a href="#features">Fonctionnalités</a>
-            <a href="#security">Sécurité</a>
-            <a href="#faq">FAQ</a>
-          </div>
-          <div className="lp-foot-col">
-            <h4>Ressources</h4>
-            <a href="https://github.com/Raphyy31/wealthly" target="_blank" rel="noopener noreferrer">
-              <Github size={13}/> GitHub
-            </a>
-            <a href="mailto:contact@wealthly.app">
-              <Mail size={13}/> Contact
-            </a>
+          <div className="lp-foot-cols">
+            <div className="lp-foot-col">
+              <h5>Produit</h5>
+              <a href="#features">Fonctionnalités</a>
+              <a href="#pricing">Tarifs</a>
+              <a href="#security">Sécurité</a>
+              <a href="#faq">FAQ</a>
+            </div>
+            <div className="lp-foot-col">
+              <h5>Entreprise</h5>
+              <button type="button" onClick={() => setLegal('cgu')}>Mentions légales</button>
+              <button type="button" onClick={() => setLegal('privacy')}>Confidentialité</button>
+              <a href="mailto:contact@trove.app">Contact</a>
+            </div>
+            <div className="lp-foot-col">
+              <h5>Communauté</h5>
+              <a href="https://github.com/Raphyy31/wealthly" target="_blank" rel="noopener noreferrer">
+                <Github size={13}/> GitHub
+              </a>
+              <a href="mailto:contact@trove.app">
+                <Mail size={13}/> Email
+              </a>
+            </div>
           </div>
         </div>
         <div className="lp-foot-bottom">
-          <span>
-            © 2026 Wealthly —{' '}
-            <button className="lp-legal-link" onClick={() => setLegal('cgu')}>CGU</button>
-            {' · '}
-            <button className="lp-legal-link" onClick={() => setLegal('privacy')}>Confidentialité</button>
-          </span>
-          <span className="lp-foot-disclaim">Wealthly ne fournit aucun conseil en investissement. Les outils proposés sont à but informatif.</span>
+          <span>© 2026 Trove — Tous droits réservés.</span>
+          <span className="lp-foot-disclaim">Trove ne fournit aucun conseil en investissement. Les outils proposés sont à but informatif.</span>
         </div>
       </footer>
 
-      {legal && <LegalModal section={legal} onClose={() => setLegal(null)} />}
+      {legal && <LegalModal kind={legal} onClose={() => setLegal(null)}/>}
 
-      <style>{styles}</style>
+      <style>{landingStyles}</style>
     </div>
   );
 }
 
-const styles = `
+const landingStyles = `
 .lp {
-  background: #0a0b0e;
-  color: #ebe8e3;
-  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  background: #151926;
+  color: #f5f5f7;
+  font-family: 'Inter Tight', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   letter-spacing: -0.01em;
-  min-height: 100vh;
   overflow-x: hidden;
-  scroll-behavior: smooth;
 }
 .lp * { box-sizing: border-box; }
+.lp a { color: inherit; text-decoration: none; }
+.lp button { font-family: inherit; cursor: pointer; }
 
-/* ---------- shared ---------- */
-.lp-eyebrow, .lp-eyebrow-pill {
-  font-size: 11px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 0.22em;
-  color: #c5a572;
-}
-.lp-eyebrow.gold { color: #c5a572; }
-.lp-eyebrow-pill {
-  display: inline-block;
-  padding: 7px 16px;
-  border: 1px solid rgba(197, 165, 114, 0.3);
-  border-radius: 999px;
-  background: rgba(197, 165, 114, 0.05);
-  margin-bottom: 22px;
-}
-.lp-h1 {
-  font-family: 'Source Serif 4', Georgia, serif;
-  font-size: clamp(44px, 7.4vw, 92px);
-  font-weight: 400;
-  letter-spacing: -0.022em; line-height: 1.02;
-  color: #ebe8e3; margin: 0 0 22px;
-}
-.lp-h1 em { font-style: italic; color: #c5a572; font-weight: 400; }
-.lp-h2 {
-  font-family: 'Source Serif 4', Georgia, serif;
-  font-size: clamp(32px, 4.8vw, 54px);
-  font-weight: 400;
-  letter-spacing: -0.018em; line-height: 1.08;
-  color: #ebe8e3; margin: 14px 0 18px;
-}
-.lp-h2 em { font-style: italic; color: #c5a572; font-weight: 400; }
-.lp-p, .lp-sub {
-  font-size: 16px; line-height: 1.65;
-  color: #b5b2ab;
-  letter-spacing: -0.005em;
-}
-.lp-sub { font-size: clamp(15px, 1.5vw, 18px); max-width: 600px; margin: 0 auto 32px; }
-.lp-section-head { text-align: center; max-width: 720px; margin: 0 auto 56px; }
-.lp-section-head .lp-p { margin-top: 8px; }
-
-/* ---------- CTAs ---------- */
-.lp-cta-row {
-  display: inline-flex; flex-wrap: wrap; gap: 14px; justify-content: center;
-  margin-bottom: 56px;
-}
-.lp-cta-primary {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 14px 24px;
-  background: #c5a572;
-  color: #0a0b0e;
-  border: none;
-  border-radius: 8px;
-  font-family: inherit; font-size: 14px; font-weight: 600;
-  letter-spacing: 0.005em;
-  cursor: pointer;
-  transition: background .15s, box-shadow .15s, transform .05s;
-  box-shadow: 0 8px 24px -8px rgba(197, 165, 114, 0.5);
-}
-.lp-cta-primary:hover { background: #d4b687; box-shadow: 0 10px 28px -8px rgba(197, 165, 114, 0.7); }
-.lp-cta-primary:active { transform: translateY(1px); }
-.lp-cta-large { padding: 16px 28px; font-size: 15px; }
-.lp-cta-ghost {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 14px 22px;
-  background: transparent;
-  color: #ebe8e3;
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 8px;
-  font-family: inherit; font-size: 14px; font-weight: 500;
-  cursor: pointer;
-  transition: background .15s, border-color .15s;
-}
-.lp-cta-ghost:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.22); }
-.lp-cta-ghost svg { color: #c5a572; }
-
-/* ---------- NAV ---------- */
+/* === NAV === */
 .lp-nav {
   position: sticky; top: 0; z-index: 50;
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  background: rgba(10, 11, 14, 0.82);
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  background: rgba(21, 25, 38, 0.7);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
 }
 .lp-nav-inner {
   max-width: 1200px; margin: 0 auto;
+  padding: 14px 24px;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 32px;
+  gap: 24px;
 }
-.lp-brand {
-  display: inline-flex; align-items: center; gap: 10px;
-  font-size: 16px; font-weight: 600; color: #ebe8e3;
-  letter-spacing: -0.01em;
-}
-.lp-brand-mark {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 30px; height: 30px;
-  border-radius: 7px;
-  background: rgba(197, 165, 114, 0.1);
-  border: 1px solid rgba(197, 165, 114, 0.32);
-  color: #c5a572;
-}
-.lp-nav-links {
-  display: flex; gap: 28px;
-}
+.lp-brand { display: inline-flex; align-items: center; gap: 10px; }
+.lp-brand-name { font-size: 18px; font-weight: 700; letter-spacing: -0.025em; color: #f5f5f7; }
+.lp-nav-links { display: flex; gap: 28px; flex: 1; justify-content: center; }
 .lp-nav-links a {
-  font-size: 13.5px; font-weight: 500;
-  color: #a8a59f; text-decoration: none;
+  font-size: 13.5px; font-weight: 500; color: #9ea3b3;
   transition: color .15s;
 }
-.lp-nav-links a:hover { color: #ebe8e3; }
-.lp-nav-actions { display: inline-flex; gap: 10px; align-items: center; }
+.lp-nav-links a:hover { color: #f5f5f7; }
+.lp-nav-actions { display: flex; gap: 8px; align-items: center; }
 .lp-nav-login {
-  background: transparent; border: none;
-  color: #c5a572; font-family: inherit;
-  font-size: 13.5px; font-weight: 500; cursor: pointer;
-  padding: 8px 12px;
-  transition: color .15s;
+  background: transparent; border: 0;
+  font-size: 13.5px; font-weight: 500; color: #9ea3b3;
+  padding: 8px 14px;
 }
-.lp-nav-login:hover { color: #d4b687; }
+.lp-nav-login:hover { color: #f5f5f7; }
 .lp-nav-cta {
-  background: #c5a572; color: #0a0b0e;
-  border: none; border-radius: 7px;
-  padding: 9px 16px;
-  font-family: inherit; font-size: 13.5px; font-weight: 600;
-  cursor: pointer;
-  transition: background .15s;
+  background: linear-gradient(135deg, #5285ee, #3b6fe0);
+  color: white; border: 0;
+  padding: 9px 18px; border-radius: 9px;
+  font-size: 13.5px; font-weight: 600;
+  box-shadow: 0 4px 14px rgba(59,111,224,0.30), inset 0 1px 0 rgba(255,255,255,0.15);
+  transition: box-shadow .15s, transform .15s;
 }
-.lp-nav-cta:hover { background: #d4b687; }
+.lp-nav-cta:hover { box-shadow: 0 6px 20px rgba(59,111,224,0.40), inset 0 1px 0 rgba(255,255,255,0.18); transform: translateY(-1px); }
 
-/* ---------- HERO ---------- */
+@media (max-width: 768px) {
+  .lp-nav-links { display: none; }
+}
+
+/* === HERO === */
 .lp-hero {
   position: relative;
   max-width: 1200px; margin: 0 auto;
-  padding: 80px 32px 100px;
+  padding: 80px 24px 40px;
   text-align: center;
 }
-.lp-hero::before {
-  content: '';
-  position: absolute; inset: -120px 0 auto 0;
-  height: 600px;
+.lp-hero-mesh {
+  position: absolute; inset: 0; pointer-events: none;
   background:
-    radial-gradient(ellipse 60% 60% at 50% 30%, rgba(197, 165, 114, 0.16), transparent 70%),
-    radial-gradient(ellipse 40% 30% at 30% 60%, rgba(197, 165, 114, 0.05), transparent 65%);
-  pointer-events: none; z-index: 0;
+    radial-gradient(ellipse 60% 50% at 50% 0%, rgba(91,141,239,0.20), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 20% 30%, rgba(167,139,250,0.12), transparent 60%),
+    radial-gradient(ellipse 40% 30% at 80% 40%, rgba(52,211,153,0.08), transparent 60%);
+  z-index: 0;
 }
 .lp-hero > * { position: relative; z-index: 1; }
+.lp-eyebrow-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 600;
+  color: #c8c8d0;
+  padding: 7px 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(8px);
+  margin-bottom: 28px;
+}
+.lp-eyebrow-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 0 3px rgba(52,211,153,0.25);
+}
+.lp-h1 {
+  font-size: clamp(40px, 6.5vw, 76px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.04;
+  margin: 0;
+}
+.lp-h1-grad {
+  background: linear-gradient(135deg, #5285ee 0%, #7aa3ff 50%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.lp-sub {
+  font-size: clamp(15px, 1.5vw, 18px);
+  line-height: 1.6;
+  color: #9ea3b3;
+  max-width: 640px;
+  margin: 22px auto 32px;
+}
+.lp-cta-row {
+  display: inline-flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+}
+.lp-cta-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, #5285ee, #3b6fe0);
+  color: white; border: 0;
+  padding: 13px 22px; border-radius: 11px;
+  font-size: 14.5px; font-weight: 600;
+  box-shadow: 0 8px 24px rgba(59,111,224,0.40), inset 0 1px 0 rgba(255,255,255,0.18);
+  transition: transform .15s, box-shadow .15s;
+}
+.lp-cta-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 32px rgba(59,111,224,0.50), inset 0 1px 0 rgba(255,255,255,0.20); }
+.lp-cta-ghost {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: rgba(255,255,255,0.04);
+  color: #f5f5f7;
+  border: 1px solid rgba(255,255,255,0.10);
+  padding: 12px 20px; border-radius: 11px;
+  font-size: 14px; font-weight: 500;
+  transition: background .15s, border-color .15s;
+}
+.lp-cta-ghost:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.18); }
+
 .lp-trust {
-  display: inline-flex; align-items: center; gap: 0;
-  margin: 0 auto 64px;
-  padding: 16px 0;
+  display: flex; justify-content: center; align-items: center;
+  gap: 28px; flex-wrap: wrap;
+  margin-top: 52px;
 }
-.lp-trust-item {
-  display: flex; flex-direction: column; align-items: center;
-  padding: 0 28px;
-  text-align: center;
-}
+.lp-trust-item { display: flex; flex-direction: column; gap: 6px; min-width: 130px; }
 .lp-trust-item strong {
-  font-size: 26px; font-weight: 700; color: #c5a572;
-  letter-spacing: -0.02em; line-height: 1;
-  font-variant-numeric: tabular-nums;
+  font-size: 24px; font-weight: 700; color: #f5f5f7;
+  letter-spacing: -0.025em;
 }
-.lp-trust-item strong sup { font-size: 16px; opacity: 0.7; }
-.lp-trust-item span {
-  font-size: 11px; color: #8c8a85; line-height: 1.35;
-  margin-top: 8px;
-  text-transform: uppercase; letter-spacing: 0.14em;
-}
+.lp-trust-item sup { font-size: 14px; }
+.lp-trust-item span { font-size: 11.5px; color: #9ea3b3; line-height: 1.4; }
 .lp-trust-sep {
   width: 1px; height: 32px;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.10);
 }
-.lp-hero-shot {
-  margin: 0 auto;
-  max-width: 1100px;
-  position: relative;
-}
-.lp-hero-shot::before {
-  content: '';
-  position: absolute; inset: -60px;
-  background: radial-gradient(ellipse 70% 50% at 50% 50%, rgba(197, 165, 114, 0.18), transparent 70%);
-  pointer-events: none;
+@media (max-width: 640px) {
+  .lp-trust-sep { display: none; }
+  .lp-trust { gap: 20px; }
 }
 
-/* ---------- shared shot frame ---------- */
+.lp-hero-shot {
+  margin-top: 60px;
+  perspective: 1200px;
+}
 .lp-shot-frame {
   position: relative;
-  background: #11131a;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 16px;
   overflow: hidden;
   box-shadow:
-    0 50px 120px -40px rgba(0,0,0,0.8),
-    0 0 0 1px rgba(197, 165, 114, 0.06) inset;
+    0 24px 80px -20px rgba(0,0,0,0.6),
+    0 0 0 1px rgba(91,141,239,0.10);
+  background: #1a1f2e;
 }
-.lp-shot-chrome {
-  display: flex; align-items: center; gap: 6px;
-  padding: 11px 14px;
-  background: #0d0f14;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-.lp-shot-chrome .dot {
-  width: 10px; height: 10px; border-radius: 50%;
-  background: #2a2d36;
-}
-.lp-shot-chrome .dot:nth-child(1) { background: #c47158; }
-.lp-shot-chrome .dot:nth-child(2) { background: #d4a554; }
-.lp-shot-chrome .dot:nth-child(3) { background: #88a978; }
-.lp-shot-url {
-  margin-left: 14px;
-  font-family: 'DM Mono', ui-monospace, monospace;
-  font-size: 11px; color: #6e6a64;
-  letter-spacing: 0.02em;
+.lp-shot-frame::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(91,141,239,0.05), transparent 30%);
+  pointer-events: none;
+  z-index: 1;
 }
 .lp-shot-frame img {
-  display: block; width: 100%; height: auto;
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 15px;
 }
-.lp-shot-frame.tall img { object-fit: cover; }
 
-/* ---------- PILOT (2 col) ---------- */
-.lp-pilot {
+/* === SECTIONS === */
+.lp-section {
   max-width: 1200px; margin: 0 auto;
-  padding: 100px 32px;
-  display: grid; grid-template-columns: 1.1fr 0.9fr;
-  gap: 80px; align-items: center;
+  padding: 100px 24px;
+  position: relative;
 }
-.lp-pilot-text .lp-h2 { margin-top: 14px; }
-.lp-pilot-text .lp-p { margin-bottom: 28px; max-width: 480px; }
-.lp-bullets { list-style: none; padding: 0; margin: 0 0 32px; display: flex; flex-direction: column; gap: 18px; }
-.lp-bullets li { display: flex; gap: 14px; align-items: flex-start; }
-.lp-bullet-icon {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px;
-  background: rgba(197, 165, 114, 0.1);
-  border: 1px solid rgba(197, 165, 114, 0.28);
-  border-radius: 8px;
-  color: #c5a572;
-  flex-shrink: 0;
+.lp-section-alt {
+  background: rgba(31, 36, 52, 0.4);
+  max-width: none;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
 }
-.lp-bullets li > div { display: flex; flex-direction: column; gap: 3px; }
-.lp-bullets li strong {
-  font-size: 14px; color: #ebe8e3; font-weight: 600;
-  letter-spacing: -0.01em;
+.lp-section-alt > * {
+  max-width: 1200px; margin-left: auto; margin-right: auto;
 }
-.lp-bullets li span {
-  font-size: 13.5px; color: #a8a59f; line-height: 1.55;
+.lp-section-head { text-align: center; margin-bottom: 56px; }
+.lp-section-eyebrow {
+  display: inline-block;
+  font-size: 11.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  color: #7aa3ff;
+  margin-bottom: 14px;
 }
-.lp-pilot-shot { display: flex; justify-content: center; }
-.lp-pilot-shot .lp-shot-frame { max-width: 360px; }
+.lp-h2 {
+  font-size: clamp(30px, 4vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 0;
+  color: #f5f5f7;
+}
+.lp-section-sub {
+  font-size: 16px; line-height: 1.6;
+  color: #9ea3b3;
+  max-width: 580px;
+  margin: 14px auto 0;
+}
 
-/* ---------- BENTO ---------- */
-.lp-bento {
-  max-width: 1200px; margin: 0 auto;
-  padding: 100px 32px;
-}
-.lp-bento-grid {
+/* === STEPS === */
+.lp-steps {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  gap: 16px;
+}
+.lp-step {
+  background: #1f2434;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 28px;
+  transition: border-color .15s, transform .15s;
+}
+.lp-step:hover { border-color: rgba(91,141,239,0.30); transform: translateY(-2px); }
+.lp-step-num {
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  background: linear-gradient(135deg, #5285ee, #3b6fe0);
+  border-radius: 10px;
+  color: white; font-weight: 800; font-size: 16px;
+  margin-bottom: 18px;
+  box-shadow: 0 4px 14px rgba(59,111,224,0.30);
+}
+.lp-step h3 {
+  font-size: 18px; font-weight: 700; letter-spacing: -0.02em;
+  margin: 0 0 8px;
+}
+.lp-step p { font-size: 14px; color: #9ea3b3; line-height: 1.6; margin: 0; }
+
+@media (max-width: 768px) {
+  .lp-steps { grid-template-columns: 1fr; }
+}
+
+/* === BENTO === */
+.lp-bento {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
 }
 .lp-bento-card {
-  background: #13151a;
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 14px;
-  overflow: hidden;
+  background: #1f2434;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 28px;
   display: flex; flex-direction: column;
-  transition: border-color .2s, transform .2s;
+  overflow: hidden;
+  transition: border-color .15s, transform .15s;
 }
-.lp-bento-card:hover {
-  border-color: rgba(197, 165, 114, 0.3);
-}
-.lp-bento-text { padding: 28px 26px 20px; }
+.lp-bento-card:hover { border-color: rgba(91,141,239,0.30); transform: translateY(-2px); }
+.lp-bento-large { grid-column: span 2; }
 .lp-bento-icon {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 38px; height: 38px;
-  background: rgba(197, 165, 114, 0.1);
-  border: 1px solid rgba(197, 165, 114, 0.28);
-  border-radius: 9px;
-  color: #c5a572;
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  border-radius: 10px;
   margin-bottom: 16px;
 }
 .lp-bento-card h3 {
-  font-size: 17px; font-weight: 600;
-  letter-spacing: -0.015em; color: #ebe8e3;
+  font-size: 18px; font-weight: 700; letter-spacing: -0.02em;
   margin: 0 0 8px;
 }
-.lp-bento-card p {
-  font-size: 13.5px; color: #a8a59f; line-height: 1.55;
-  margin: 0;
-}
-.lp-bento-shot {
-  margin: 8px 14px 14px;
-  background: #0a0b0e;
-  border: 1px solid rgba(255,255,255,0.05);
+.lp-bento-card p { font-size: 13.5px; color: #9ea3b3; line-height: 1.55; margin: 0 0 18px; }
+.lp-bento-card img {
+  margin-top: auto;
+  width: 100%;
   border-radius: 10px;
-  overflow: hidden;
-  height: 220px;
-  display: flex; align-items: stretch;
-}
-.lp-bento-shot img {
-  width: 100%; height: 100%;
-  object-fit: cover; object-position: center top;
+  border: 1px solid rgba(255,255,255,0.08);
   display: block;
 }
 
-/* ---------- SECURITY ---------- */
-.lp-security {
-  max-width: 1200px; margin: 0 auto;
-  padding: 100px 32px;
+@media (max-width: 900px) {
+  .lp-bento { grid-template-columns: repeat(2, 1fr); }
+  .lp-bento-large { grid-column: span 2; }
 }
-.lp-sec-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr);
+@media (max-width: 600px) {
+  .lp-bento { grid-template-columns: 1fr; }
+  .lp-bento-large { grid-column: span 1; }
+}
+
+/* === SECURITY === */
+.lp-security-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
+  max-width: 920px;
+  margin: 0 auto;
 }
-.lp-sec-item {
-  display: flex; flex-direction: column; gap: 10px;
-  padding: 24px 22px;
-  background: #13151a;
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 12px;
-  transition: border-color .15s;
+.lp-security-item {
+  display: flex; gap: 16px; align-items: flex-start;
+  padding: 22px;
+  background: #1f2434;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
 }
-.lp-sec-item:hover { border-color: rgba(197, 165, 114, 0.25); }
-.lp-sec-icon {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 40px; height: 40px;
-  background: rgba(197, 165, 114, 0.08);
+.lp-security-item > svg {
+  width: 36px; height: 36px;
+  padding: 9px;
+  background: rgba(91,141,239,0.16);
+  color: #7aa3ff;
   border-radius: 10px;
-  color: #c5a572;
+  flex-shrink: 0;
+}
+.lp-security-item h4 { font-size: 14.5px; font-weight: 700; margin: 0 0 4px; }
+.lp-security-item p { font-size: 13px; color: #9ea3b3; line-height: 1.55; margin: 0; }
+
+@media (max-width: 700px) {
+  .lp-security-grid { grid-template-columns: 1fr; }
+}
+
+/* === PRICING === */
+.lp-billing-toggle {
+  display: inline-flex;
+  background: rgba(0,0,0,0.30);
+  border: 1px solid rgba(255,255,255,0.10);
+  padding: 4px;
+  border-radius: 12px;
+  margin-top: 24px;
+}
+.lp-billing-toggle button {
+  background: transparent; border: 0;
+  color: #9ea3b3;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 13px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: background .15s, color .15s;
+}
+.lp-billing-toggle button.active {
+  background: #1f2434;
+  color: #f5f5f7;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.lp-badge-save {
+  font-size: 10px; font-weight: 700;
+  padding: 2px 7px;
+  background: rgba(52,211,153,0.16);
+  color: #34d399;
+  border-radius: 999px;
+}
+
+.lp-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+.lp-price-card {
+  position: relative;
+  background: #1f2434;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 32px 28px;
+  display: flex; flex-direction: column;
+}
+.lp-price-card-featured {
+  background: linear-gradient(180deg, rgba(91,141,239,0.10), rgba(31,36,52,1));
+  border-color: rgba(91,141,239,0.40);
+  box-shadow: 0 20px 60px -20px rgba(59,111,224,0.40);
+  transform: scale(1.02);
+}
+.lp-price-badge {
+  position: absolute; top: -12px; left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #5285ee, #3b6fe0);
+  color: white;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.04em;
+  box-shadow: 0 4px 14px rgba(59,111,224,0.40);
+}
+.lp-price-name {
+  font-size: 14px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: #7aa3ff;
   margin-bottom: 6px;
 }
-.lp-sec-item strong {
-  font-size: 14.5px; font-weight: 600;
-  color: #ebe8e3; letter-spacing: -0.01em;
+.lp-price-tagline {
+  font-size: 13.5px; color: #9ea3b3;
+  margin-bottom: 24px;
 }
-.lp-sec-item span {
-  font-size: 12.5px; color: #a8a59f; line-height: 1.55;
+.lp-price-amount {
+  display: flex; align-items: baseline; gap: 4px;
+  margin-bottom: 20px;
+  font-variant-numeric: tabular-nums;
 }
+.lp-price-num {
+  font-size: 52px; font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: #f5f5f7;
+}
+.lp-price-currency { font-size: 24px; font-weight: 600; color: #f5f5f7; }
+.lp-price-period { font-size: 13px; color: #9ea3b3; margin-left: 8px; }
+.lp-price-cta {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  width: 100%;
+  padding: 12px 18px;
+  border-radius: 11px;
+  font-size: 14px; font-weight: 600;
+  border: 0; cursor: pointer;
+  transition: transform .15s, box-shadow .15s, background .15s;
+  margin-bottom: 26px;
+}
+.lp-price-cta-primary {
+  background: linear-gradient(135deg, #5285ee, #3b6fe0);
+  color: white;
+  box-shadow: 0 4px 14px rgba(59,111,224,0.30), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.lp-price-cta-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(59,111,224,0.40), inset 0 1px 0 rgba(255,255,255,0.18); }
+.lp-price-cta-ghost {
+  background: rgba(255,255,255,0.04);
+  color: #f5f5f7;
+  border: 1px solid rgba(255,255,255,0.10);
+}
+.lp-price-cta-ghost:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.18); }
 
-/* ---------- STEPS ---------- */
-.lp-steps {
-  max-width: 1100px; margin: 0 auto;
-  padding: 100px 32px;
+.lp-price-features { list-style: none; padding: 0; margin: 0; }
+.lp-price-features li {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 0;
+  font-size: 13.5px; color: #c8c8d0;
+  line-height: 1.5;
+}
+.lp-price-features li svg { color: #34d399; flex-shrink: 0; margin-top: 3px; }
+.lp-price-features li strong { color: #f5f5f7; font-weight: 600; }
+
+.lp-pricing-foot {
   text-align: center;
+  margin-top: 40px;
+  font-size: 13px; color: #9ea3b3;
 }
-.lp-steps-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 28px;
-  margin-bottom: 56px;
-  text-align: left;
-}
-.lp-step {
-  padding: 28px;
-  background: #13151a;
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 14px;
-  position: relative;
-}
-.lp-step-num {
-  font-family: 'DM Mono', ui-monospace, monospace;
-  font-size: 13px; font-weight: 700;
-  color: #c5a572;
-  letter-spacing: 0.06em;
-  margin-bottom: 18px;
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px;
-  background: rgba(197, 165, 114, 0.08);
-  border: 1px solid rgba(197, 165, 114, 0.28);
-  border-radius: 8px;
-}
-.lp-step h3 {
-  font-size: 16px; font-weight: 600;
-  color: #ebe8e3; letter-spacing: -0.01em;
-  margin: 0 0 8px;
-}
-.lp-step p {
-  font-size: 13.5px; color: #a8a59f; line-height: 1.55;
-  margin: 0;
-}
-.lp-steps-cta { margin-top: 20px; }
+.lp-pricing-foot a { color: #7aa3ff; margin-left: 8px; }
+.lp-pricing-foot a:hover { text-decoration: underline; }
 
-/* ---------- FAQ ---------- */
+@media (max-width: 900px) {
+  .lp-pricing-grid { grid-template-columns: 1fr; max-width: 480px; }
+  .lp-price-card-featured { transform: none; }
+}
+
+/* === FAQ === */
 .lp-faq {
-  max-width: 800px; margin: 0 auto;
-  padding: 100px 32px;
+  max-width: 760px; margin: 0 auto;
+  display: flex; flex-direction: column; gap: 8px;
 }
-.lp-faq-list { display: flex; flex-direction: column; gap: 12px; }
-.lp-faq-q {
-  background: #13151a;
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 10px;
-  padding: 0 22px;
-  transition: border-color .15s;
+.lp-faq details {
+  background: #1f2434;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 0;
+  overflow: hidden;
 }
-.lp-faq-q:hover { border-color: rgba(197, 165, 114, 0.18); }
-.lp-faq-q[open] { border-color: rgba(197, 165, 114, 0.28); }
-.lp-faq-q summary {
+.lp-faq summary {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 18px 0;
-  font-size: 14.5px; font-weight: 500;
-  color: #ebe8e3; cursor: pointer;
+  padding: 18px 22px;
+  font-size: 14.5px; font-weight: 600;
+  cursor: pointer;
   list-style: none;
-  letter-spacing: -0.005em;
+  color: #f5f5f7;
 }
-.lp-faq-q summary::-webkit-details-marker { display: none; }
-.lp-faq-q summary svg { color: #6e6a64; transition: transform .2s; }
-.lp-faq-q[open] summary svg { transform: rotate(180deg); color: #c5a572; }
-.lp-faq-q p {
-  font-size: 13.5px; color: #a8a59f; line-height: 1.65;
-  margin: 0 0 18px; max-width: 680px;
+.lp-faq summary::-webkit-details-marker { display: none; }
+.lp-faq summary svg { color: #9ea3b3; transition: transform .2s; flex-shrink: 0; margin-left: 12px; }
+.lp-faq details[open] summary svg { transform: rotate(180deg); }
+.lp-faq details p {
+  padding: 0 22px 20px;
+  margin: 0;
+  font-size: 13.5px;
+  color: #9ea3b3;
+  line-height: 1.65;
 }
-.lp-faq-q p strong { color: #ebe8e3; font-weight: 600; }
+.lp-faq details p strong { color: #f5f5f7; font-weight: 600; }
 
-/* ---------- FOOTER ---------- */
-.lp-foot {
-  border-top: 1px solid rgba(255,255,255,0.06);
-  padding: 64px 32px 28px;
-  background: #08090c;
-}
-.lp-foot-grid {
+/* === FINAL CTA === */
+.lp-cta-section {
   max-width: 1200px; margin: 0 auto;
-  display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr;
-  gap: 48px;
-  margin-bottom: 48px;
+  padding: 60px 24px 100px;
 }
-.lp-foot-col { display: flex; flex-direction: column; gap: 10px; }
-.lp-foot-col h4 {
-  font-size: 11px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 0.18em;
-  color: #6e6a64;
-  margin: 0 0 6px;
+.lp-cta-card {
+  text-align: center;
+  background: linear-gradient(135deg, rgba(91,141,239,0.16), rgba(167,139,250,0.10));
+  border: 1px solid rgba(91,141,239,0.30);
+  border-radius: 24px;
+  padding: 56px 40px;
+  position: relative; overflow: hidden;
+}
+.lp-cta-card::before {
+  content: '';
+  position: absolute; top: -100px; right: -100px;
+  width: 380px; height: 380px;
+  background: radial-gradient(circle, rgba(91,141,239,0.30), transparent 70%);
+  pointer-events: none;
+}
+.lp-cta-card > * { position: relative; }
+.lp-cta-card h2 {
+  font-size: clamp(28px, 3.5vw, 40px);
+  font-weight: 700; letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 0 0 14px;
+}
+.lp-cta-card p {
+  font-size: 16px; color: #c8c8d0;
+  margin: 0 0 28px;
+}
+
+/* === FOOTER === */
+.lp-foot {
+  border-top: 1px solid rgba(255,255,255,0.07);
+  background: #131722;
+}
+.lp-foot-inner {
+  max-width: 1200px; margin: 0 auto;
+  padding: 60px 24px 30px;
+  display: grid;
+  grid-template-columns: 1.5fr 2fr;
+  gap: 48px;
+}
+.lp-foot-brand p {
+  font-size: 13.5px; color: #9ea3b3;
+  margin: 16px 0 0;
+  line-height: 1.5;
+  max-width: 280px;
+}
+.lp-foot-cols {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+.lp-foot-col h5 {
+  font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: #f5f5f7;
+  margin: 0 0 14px;
 }
 .lp-foot-col a, .lp-foot-col button {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 13px; font-weight: 500;
-  color: #a8a59f; text-decoration: none;
-  background: none; border: none; padding: 0; cursor: pointer;
-  font-family: inherit;
-  text-align: left;
+  display: flex; align-items: center; gap: 7px;
+  background: transparent; border: 0; padding: 0;
+  font: inherit; text-align: left;
+  font-size: 13.5px; color: #9ea3b3;
+  margin-bottom: 10px;
+  text-decoration: none;
+  cursor: pointer;
   transition: color .15s;
 }
-.lp-foot-col a:hover, .lp-foot-col button:hover { color: #c5a572; }
-.lp-foot-tag { font-size: 13px; color: #8c8a85; line-height: 1.55; margin: 8px 0 0; }
+.lp-foot-col a:hover, .lp-foot-col button:hover { color: #f5f5f7; }
 .lp-foot-bottom {
   max-width: 1200px; margin: 0 auto;
-  padding-top: 24px;
-  border-top: 1px solid rgba(255,255,255,0.05);
-  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 14px;
-  font-size: 11.5px; color: #5a5a55;
+  padding: 18px 24px 30px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  font-size: 12px; color: #6a6f80;
 }
-.lp-foot-disclaim { max-width: 580px; text-align: right; line-height: 1.5; }
-.lp-legal-link {
-  background: none; border: none; padding: 0; cursor: pointer;
-  color: #5a5a55; font-size: inherit; font-family: inherit;
-  transition: color .15s;
-}
-.lp-legal-link:hover { color: #c5a572; }
+.lp-foot-disclaim { max-width: 580px; line-height: 1.5; }
 
-/* ---------- responsive ---------- */
-@media (max-width: 980px) {
-  .lp-pilot { grid-template-columns: 1fr; gap: 48px; padding: 64px 24px; }
-  .lp-pilot-shot .lp-shot-frame { max-width: 280px; }
-  .lp-bento-grid { grid-template-columns: 1fr; }
-  .lp-sec-grid { grid-template-columns: repeat(2, 1fr); }
-  .lp-steps-grid { grid-template-columns: 1fr; gap: 16px; }
-  .lp-foot-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+@media (max-width: 768px) {
+  .lp-foot-inner { grid-template-columns: 1fr; gap: 32px; }
+  .lp-foot-cols { grid-template-columns: repeat(2, 1fr); gap: 24px; }
 }
-@media (max-width: 700px) {
-  .lp-nav-links { display: none; }
-  .lp-hero { padding: 56px 20px 64px; }
-  .lp-trust { flex-wrap: wrap; gap: 16px; }
-  .lp-trust-sep { display: none; }
-  .lp-trust-item { padding: 0 14px; }
-  .lp-bento, .lp-security, .lp-steps, .lp-faq { padding: 64px 20px; }
-  .lp-section-head { margin-bottom: 36px; }
-  .lp-sec-grid { grid-template-columns: 1fr; }
-  .lp-foot-grid { grid-template-columns: 1fr; }
-  .lp-foot-bottom { flex-direction: column; }
-  .lp-foot-disclaim { text-align: left; }
-  .lp-cta-row { flex-direction: column; align-items: stretch; }
+@media (max-width: 480px) {
+  .lp-foot-cols { grid-template-columns: 1fr; }
+}
+
+/* === Hide mobile-specific anchors politely on scroll === */
+@media (max-width: 768px) {
+  .lp-section { padding: 64px 20px; }
+  .lp-cta-section { padding: 40px 20px 64px; }
+  .lp-cta-card { padding: 40px 24px; }
 }
 `;
