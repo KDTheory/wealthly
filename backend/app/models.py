@@ -204,6 +204,12 @@ class Asset(Base):
     current_value = Column(Float, nullable=False, default=0.0)
     # ISO 4217 — see Account.currency comment.
     currency = Column(String, nullable=False, default="EUR")
+    # Live-pricing — when set, the frontend overrides current_value with
+    # quantity × live_price coming from /quotes (Yahoo Finance). Empty
+    # ticker means the asset stays manually-valued (real estate, livret, …).
+    # Examples: AAPL, MSFT, CW8.PA (Amundi MSCI World on Euronext), BTC-EUR.
+    ticker = Column(String, nullable=True, index=True)
+    quantity = Column(Float, nullable=True)
     notes = Column(Text, nullable=True, default="")
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

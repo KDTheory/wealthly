@@ -14,7 +14,7 @@ from sqlalchemy import text
 from app.config import settings
 from app.database import engine, Base
 from app.rate_limit import limiter, rate_limit_handler
-from app.routers import auth, members, accounts, transactions, wealth, other, categorize, banks, fixed_charges
+from app.routers import auth, members, accounts, transactions, wealth, other, categorize, banks, fixed_charges, quotes
 
 logger = logging.getLogger("wealthly")
 
@@ -92,6 +92,12 @@ def _run_lightweight_migrations() -> None:
             "ALTER TABLE accounts ADD COLUMN IF NOT EXISTS currency VARCHAR DEFAULT 'EUR' NOT NULL",
             "ALTER TABLE assets ADD COLUMN IF NOT EXISTS currency VARCHAR DEFAULT 'EUR' NOT NULL",
             "ALTER TABLE liabilities ADD COLUMN IF NOT EXISTS currency VARCHAR DEFAULT 'EUR' NOT NULL",
+            # Live-priced assets: ticker symbol + quantity. When both are set,
+            # the frontend will display quantity × live_price (Yahoo Finance)
+            # instead of the manually-entered current_value.
+            "ALTER TABLE assets ADD COLUMN IF NOT EXISTS ticker VARCHAR",
+            "ALTER TABLE assets ADD COLUMN IF NOT EXISTS quantity DOUBLE PRECISION",
+            "CREATE INDEX IF NOT EXISTS ix_assets_ticker ON assets (ticker)",
         ]
     with engine.begin() as conn:
         for stmt in statements:
@@ -198,3 +204,4 @@ app.include_router(other.router)
 app.include_router(categorize.router)
 app.include_router(banks.router)
 app.include_router(fixed_charges.router)
+app.include_router(quotes.router)

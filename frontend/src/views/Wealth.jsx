@@ -477,11 +477,55 @@ function SimpleAssetEditor({ asset, members, onSave, onCancel }) {
           <label><span>Nom</span>
             <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="ex: Appartement Paris 11e, AV Linxea Spirit"/>
           </label>
-          <label><span>Valeur actuelle (€)</span>
-            <input type="number" value={draft.currentValue} onChange={(e) => setDraft({ ...draft, currentValue: e.target.value })} step="any"/>
+          <label><span>Valeur actuelle ({draft.currency || 'EUR'})</span>
+            <input
+              type="number"
+              value={draft.currentValue}
+              onChange={(e) => setDraft({ ...draft, currentValue: e.target.value })}
+              step="any"
+              disabled={!!(draft.ticker && draft.quantity)}
+              title={draft.ticker && draft.quantity ? 'Valeur calculée automatiquement à partir du cours live' : ''}
+            />
+            {draft.ticker && draft.quantity ? (
+              <div className="field-help" style={{ color: 'var(--success)', fontWeight: 500 }}>
+                ⚡ Valeur calculée en live : {draft.quantity} × cours actuel
+              </div>
+            ) : null}
           </label>
+
+          {/* Live-pricing block — visible for market-traded asset types */}
+          {['stocks', 'pea', 'crypto', 'life_insurance'].includes(draft.type) && (
+            <div style={{ padding: 12, background: 'var(--bg-subtle)', border: '1px solid var(--border)', borderRadius: 10, marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
+                ⚡ Suivi en temps réel <span style={{ fontWeight: 400, color: 'var(--text-tertiary)', fontSize: 11 }}>(optionnel)</span>
+              </div>
+              <div className="field-row">
+                <label><span>Ticker / symbole</span>
+                  <input
+                    value={draft.ticker || ''}
+                    onChange={(e) => setDraft({ ...draft, ticker: e.target.value.toUpperCase() })}
+                    placeholder="ex: AAPL, CW8.PA, BTC-EUR"
+                    style={{ fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.02em' }}
+                  />
+                </label>
+                <label><span>Quantité (parts/actions)</span>
+                  <input
+                    type="number"
+                    value={draft.quantity ?? ''}
+                    onChange={(e) => setDraft({ ...draft, quantity: e.target.value })}
+                    placeholder="ex: 124"
+                    step="any"
+                  />
+                </label>
+              </div>
+              <div className="field-help" style={{ marginTop: 6 }}>
+                Si renseignés, la valeur actuelle sera <strong>recalculée automatiquement</strong> à partir du cours en direct (Yahoo Finance). Format : ticker US (AAPL), Euronext Paris (CW8.PA), crypto (BTC-EUR).
+              </div>
+            </div>
+          )}
+
           <div className="field-row">
-            <label><span>Prix de revient (€) <span className="hint">optionnel</span></span>
+            <label><span>Prix de revient ({draft.currency || 'EUR'}) <span className="hint">optionnel</span></span>
               <input type="number" value={draft.purchasePrice ?? ''} onChange={(e) => setDraft({ ...draft, purchasePrice: e.target.value })} step="any" placeholder="ex: 12 500"/>
             </label>
             <label><span>Date d'acquisition <span className="hint">optionnel</span></span>

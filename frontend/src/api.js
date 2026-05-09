@@ -190,6 +190,14 @@ export const categorizeAI = {
 };
 
 // ============================================================================
+// LIVE QUOTES (Yahoo Finance — stocks, ETFs, crypto)
+// ============================================================================
+export const quotes = {
+  // tickers: ["AAPL", "CW8.PA", "BTC-EUR"] -> { AAPL: {price, changePct, ...}, ... }
+  get: (tickers) => get(`/quotes?tickers=${encodeURIComponent(tickers.join(','))}`),
+};
+
+// ============================================================================
 // FIXED CHARGES (charges fixes stables — loyer, abonnements…)
 // ============================================================================
 export const fixedCharges = {

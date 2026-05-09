@@ -19,6 +19,7 @@ import {
 } from './utils.js';
 import { useRates } from './hooks/useRates.js';
 import { useBaseCurrency } from './hooks/useBaseCurrency.js';
+import { useQuotes } from './hooks/useQuotes.js';
 import { Styles } from './Styles.jsx';
 import { Toast } from './components/Toast.jsx';
 import { AnimatedNumber } from './components/AnimatedNumber.jsx';
@@ -83,6 +84,14 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   const [baseCurrency, setBaseCurrency] = useBaseCurrency();
   const { rates, date: ratesDate } = useRates();
 
+  // Live investment quotes — derive the unique ticker list from assets and
+  // hand it to useQuotes. Yahoo Finance via /quotes endpoint (5-min cache).
+  const tickerList = useMemo(
+    () => assets.map(a => a.ticker).filter(Boolean),
+    [assets]
+  );
+  const { quotes: liveQuotes } = useQuotes(tickerList);
+
   const [importFile, setImportFile] = useState(null);
   const [importStep, setImportStep] = useState('upload');
   const [parsedData, setParsedData] = useState(null);
@@ -146,6 +155,8 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     name: a.name,
     currentValue: a.current_value,
     currency: a.currency || 'EUR',
+    ticker: a.ticker || '',
+    quantity: a.quantity ?? null,
     notes: a.notes || '',
     memberIds: a.member_ids || [],
     updatedAt: a.updated_at,
@@ -169,6 +180,8 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
       name: a.name,
       current_value: parseFloat(a.currentValue) || 0,
       currency: a.currency || 'EUR',
+      ticker: (a.ticker || '').trim().toUpperCase() || null,
+      quantity: numOrNull(a.quantity),
       notes: a.notes || '',
       member_ids: a.memberIds || [],
       subtype: a.subtype || null,
@@ -404,7 +417,26 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
 
   const visibleAccounts = useMemo(() => accounts.filter(a => visibleAccountIds.has(a.id)), [accounts, visibleAccountIds]);
   const visibleTransactions = useMemo(() => transactions.filter(t => visibleAccountIds.has(t.accountId)), [transactions, visibleAccountIds]);
-  const visibleAssets = useMemo(() => activeMemberId === 'all' ? assets : assets.filter(a => (a.memberIds || []).includes(activeMemberId)), [assets, activeMemberId]);
+  // Live-pricing pass: when an asset has a ticker + quantity AND we have a
+  // quote for it, override its currentValue with quantity × livePrice.
+  // We also surface livePrice / changePct / liveCurrency on the asset object
+  // so views can render the "Live" badge and daily change badge.
+  const livePricedAssets = useMemo(() => assets.map(a => {
+    const t = (a.ticker || '').trim().toUpperCase();
+    const qty = parseFloat(a.quantity);
+    if (!t || !qty || !liveQuotes || !liveQuotes[t]) return a;
+    const q = liveQuotes[t];
+    return {
+      ...a,
+      currentValue: q.price * qty,
+      currency: q.currency || a.currency || 'EUR',
+      _livePrice: q.price,
+      _liveChangePct: q.changePct,
+      _liveAt: q.fetchedAt,
+    };
+  }), [assets, liveQuotes]);
+
+  const visibleAssets = useMemo(() => activeMemberId === 'all' ? livePricedAssets : livePricedAssets.filter(a => (a.memberIds || []).includes(activeMemberId)), [livePricedAssets, activeMemberId]);
   const visibleLiabilities = useMemo(() => activeMemberId === 'all' ? liabilities : liabilities.filter(l => (l.memberIds || []).includes(activeMemberId)), [liabilities, activeMemberId]);
 
   const memberShare = useCallback((item) => {
