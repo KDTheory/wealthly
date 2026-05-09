@@ -190,23 +190,30 @@
    crash. They fall back to plain Inter-Tight + tracking and the old
    gold accent maps to the new electric blue automatically.
    ──────────────────────────────────────────────────────────────────── */
-.w-serif        { font-family: var(--font-sans); letter-spacing: -0.025em; }
-.w-serif-italic { font-family: var(--font-sans); font-style: italic; letter-spacing: -0.01em; }
+.w-serif {
+  font-family: var(--font-sans);
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+.w-serif-italic {
+  font-family: var(--font-sans);
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  /* Map the old "italic accent" to a subtle electric-blue accent. */
+  color: var(--color-w-accent-2);
+}
 .w-section-h {
-  font-size: 11px;
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-  color: var(--color-w-muted);
-  display: flex; align-items: baseline; gap: 8px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--color-w-text);
+  display: flex; align-items: baseline; gap: 6px;
   font-weight: 600;
 }
 .w-roman {
-  font-family: var(--font-sans);
-  font-size: 13px;
-  letter-spacing: 0;
-  text-transform: none;
-  color: var(--color-w-accent-2);
-  font-weight: 600;
+  display: none;  /* roman-numeral preface no longer fits the new direction */
 }
 .w-eyebrow {
   font-size: 11px;
@@ -224,4 +231,33 @@
 }
 .w-divider-dot {
   border-bottom: 1px solid var(--color-w-border);
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   Modern fintech page-header pattern — used by all sub-views.
+   Title left-aligned, optional supporting paragraph, optional CTA on
+   the right. Replaces the editorial "Relevé · X / Votre Y." pattern.
+   ──────────────────────────────────────────────────────────────────── */
+.subview-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.subview-header h1 {
+  font-size: clamp(24px, 3vw, 30px);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--color-w-text);
+  line-height: 1.15;
+  margin: 0 0 6px;
+}
+.subview-header p {
+  font-size: 14px;
+  color: var(--color-w-muted);
+  line-height: 1.55;
+  margin: 0;
+  max-width: 640px;
 }
