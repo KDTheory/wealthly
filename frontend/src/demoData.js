@@ -25,16 +25,16 @@ const A = {
 };
 
 const members = [
-  { id: M.alice, name: 'Alice', role: 'adult', color: '#c5a572' },
-  { id: M.bob, name: 'Bob', role: 'adult', color: '#7a8aa8' },
-  { id: M.lea, name: 'Léa', role: 'child', color: '#88a978' },
+  { id: M.alice, name: 'Alice', role: 'adult', color: '#3b6fe0' },
+  { id: M.bob, name: 'Bob', role: 'adult', color: '#a78bfa' },
+  { id: M.lea, name: 'Léa', role: 'child', color: '#34d399' },
 ];
 
 const accounts = [
-  { id: A.bnpAlice, name: 'Compte courant', bank: 'BNP Paribas', type: 'checking', initialBalance: 1500, memberIds: [M.alice], currentBalance: 3450 },
-  { id: A.liva,     name: 'Livret A',       bank: 'Boursorama',  type: 'savings',  initialBalance: 11200, memberIds: [M.alice], currentBalance: 12300 },
-  { id: A.caBob,    name: 'Compte courant', bank: 'Crédit Agricole', type: 'checking', initialBalance: 1800, memberIds: [M.bob], currentBalance: 2860 },
-  { id: A.jointLcl, name: 'Compte joint',   bank: 'LCL',         type: 'checking', initialBalance: 4200, memberIds: [M.alice, M.bob], currentBalance: 5180 },
+  { id: A.bnpAlice, name: 'Compte courant', bank: 'BNP Paribas',     type: 'checking', currency: 'EUR', initialBalance: 1500,  memberIds: [M.alice], currentBalance: 3450 },
+  { id: A.liva,     name: 'Livret A',       bank: 'Boursorama',      type: 'savings',  currency: 'EUR', initialBalance: 11200, memberIds: [M.alice], currentBalance: 12300 },
+  { id: A.caBob,    name: 'Compte courant', bank: 'Crédit Agricole', type: 'checking', currency: 'EUR', initialBalance: 1800,  memberIds: [M.bob],   currentBalance: 2860 },
+  { id: A.jointLcl, name: 'Compte joint',   bank: 'LCL',             type: 'checking', currency: 'EUR', initialBalance: 4200,  memberIds: [M.alice, M.bob], currentBalance: 5180 },
 ];
 
 // Helper: ISO date for a day relative to today.
