@@ -12,17 +12,10 @@
 export function Styles({ theme }) {
   const dark = theme === 'dark';
   const css = `
-/* Wealthly v3 — Claude Design handoff tokens.
-   Le :root canonique vit dans index.css. Ici on (re)mappe juste les noms
-   d'alias hérités utilisés par les ~1500 lignes de CSS-in-JS qui suivent,
-   pour qu'ils résolvent en variables du nouveau système.
-
-   Source des couleurs : tokens.css du handoff (light = défaut, dark via
-   [data-theme="dark"] sur <html>). On les laisse hériter directement
-   plutôt que de les redéclarer ici. La prop `theme` est conservée pour
-   compatibilité mais ne pilote plus le branchement (le nouveau switch
-   est sur data-theme côté <html>).
-   theme=${dark ? 'dark' : 'light'} (informatif) */
+/* Wealthly v3 - Claude Design handoff tokens.
+   Le :root canonique vit dans index.css. Ici on remappe les alias herites
+   utilises par les ~1500 lignes de CSS-in-JS qui suivent.
+   Theme: ${dark ? 'dark' : 'light'} (informatif). */
 .app {
   --num-positive: var(--positive);
   --num-negative: var(--negative);

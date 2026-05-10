@@ -17,6 +17,47 @@
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
 
+/* Tailwind v4 theme tokens — required for `bg-w-*` / `text-w-*` utilities
+   used elsewhere in the codebase to compile. Maps to the v3 design tokens. */
+@theme {
+  --color-w-bg: #F7F6F2;
+  --color-w-surface: #FFFFFF;
+  --color-w-surface-2: #EFEDE6;
+  --color-w-surface-3: #F1EFE8;
+  --color-w-border: #E4E1D8;
+  --color-w-border-strong: #D2CEC0;
+  --color-w-text: #16150F;
+  --color-w-muted: #56544A;
+  --color-w-faint: #8C8979;
+  --color-w-accent: #2540D9;
+  --color-w-accent-hover: #1A2FA8;
+  --color-w-accent-2: #1A2FA8;
+  --color-w-accent-soft: #E7EBFF;
+  --color-w-accent-dim: #E7EBFF;
+  --color-w-success: #136D3E;
+  --color-w-success-soft: #DBEDE2;
+  --color-w-danger: #B0392B;
+  --color-w-danger-soft: #F4E2DE;
+  --color-w-warning: #8E641A;
+  --color-w-warning-soft: #F2E7CE;
+  --color-w-info: #2540D9;
+  --color-w-num-positive: #136D3E;
+  --color-w-num-negative: #B0392B;
+  --color-w-asset-realestate: #1F8E6E;
+  --color-w-asset-equity: #C2733B;
+  --color-w-asset-bond: #4D4D4D;
+  --color-w-asset-crypto: #7B57C6;
+  --color-w-asset-cash: #2540D9;
+  --color-w-asset-pension: #B85D7A;
+  --color-w-asset-other: #E0B23E;
+  --radius-w-sm: 6px;
+  --radius-w-md: 8px;
+  --radius-w-lg: 12px;
+  --radius-w-xl: 16px;
+  --font-sans: 'Geist', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', monospace;
+}
+
 /* ─────────────────────────────────────────────────────────────────────────
    1. Tokens — Light mode (par défaut)
    ───────────────────────────────────────────────────────────────────────── */
