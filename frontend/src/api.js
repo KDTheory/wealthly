@@ -115,6 +115,8 @@ export const admin = {
   stats: () => get('/admin/stats'),
   authEvents: (limit = 100, kind = null) => get(`/admin/auth-events?limit=${limit}${kind ? `&kind=${encodeURIComponent(kind)}` : ''}`),
   users: () => get('/admin/users'),
+  toggleUser: (userId) => request('PUT', `/admin/users/${userId}/toggle`),
+  deleteUser: (userId) => request('DELETE', `/admin/users/${userId}`),
 };
 
 // ============================================================================

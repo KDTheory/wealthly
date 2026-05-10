@@ -52,6 +52,34 @@ export function Admin() {
   const [filter, setFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [actionLoading, setActionLoading] = useState(null);
+
+  const handleToggle = async (userId, email) => {
+    if (!window.confirm(`Suspendre / réactiver le compte ${email} ?`)) return;
+    setActionLoading(userId);
+    try {
+      const updated = await api.admin.toggleUser(userId);
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_active: updated.is_active } : u));
+    } catch (err) {
+      alert(`Erreur : ${err.message}`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDelete = async (userId, email) => {
+    if (!window.confirm(`⚠️ Supprimer définitivement le compte ${email} ? Cette action est IRRÉVERSIBLE.`)) return;
+    if (!window.confirm(`Confirmer la suppression de ${email} ?`)) return;
+    setActionLoading(userId);
+    try {
+      await api.admin.deleteUser(userId);
+      setUsers(prev => prev.filter(u => u.id !== userId));
+    } catch (err) {
+      alert(`Erreur : ${err.message}`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const reload = async () => {
     setLoading(true);
@@ -209,13 +237,14 @@ export function Admin() {
                 <th style={thStyle}>Inscrit</th>
                 <th style={thStyle}>Dernier login</th>
                 <th style={thStyle}>IP dernier login</th>
-                <th style={thStyle}>Total connexions</th>
+                <th style={thStyle}>Connexions</th>
                 <th style={thStyle}>Statut</th>
+                <th style={thStyle}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {users.map(u => (
-                <tr key={u.id} style={{ borderTop: '1px solid var(--border-light)' }}>
+                <tr key={u.id} style={{ borderTop: '1px solid var(--border-light)', opacity: u.is_active ? 1 : 0.6 }}>
                   <td style={tdStyle}>{u.email}</td>
                   <td style={tdStyle}>{u.full_name || '—'}</td>
                   <td style={tdStyle} title={u.created_at}>{timeAgo(u.created_at)}</td>
@@ -230,6 +259,26 @@ export function Admin() {
                       <span style={{ marginLeft: 6, display: 'inline-block', padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 600, background: 'var(--primary-soft)', color: 'var(--primary-text)' }}>
                         Admin
                       </span>
+                    )}
+                  </td>
+                  <td style={{ ...tdStyle, whiteSpace: 'nowrap' }}>
+                    {!u.is_admin && (
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button
+                          onClick={() => handleToggle(u.id, u.email)}
+                          disabled={actionLoading === u.id}
+                          style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-secondary)', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', opacity: actionLoading === u.id ? 0.5 : 1 }}
+                        >
+                          {u.is_active ? 'Suspendre' : 'Réactiver'}
+                        </button>
+                        <button
+                          onClick={() => handleDelete(u.id, u.email)}
+                          disabled={actionLoading === u.id}
+                          style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid var(--danger-soft)', background: 'transparent', color: 'var(--danger)', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', opacity: actionLoading === u.id ? 0.5 : 1 }}
+                        >
+                          Supprimer
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>

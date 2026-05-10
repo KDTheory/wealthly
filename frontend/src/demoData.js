@@ -70,8 +70,14 @@ function buildTransactions() {
     push(A.bnpAlice,  monthStart + 2,  'Salaire ACME SAS',         3850, 'salary');
     push(A.caBob,     monthStart + 3,  'Salaire CONSULT FR',       3220, 'salary');
 
-    // Loyer (joint)
-    push(A.jointLcl,  monthStart + 5,  'Virement loyer 14 rue de Vaugirard', -1400, 'housing');
+    // Charges copropriété (ils sont propriétaires — pas de loyer)
+    push(A.jointLcl,  monthStart + 5,  'Charges copropriété SYNDIC', -260, 'housing');
+
+    // Contributions mensuelles au compte joint (chaque adulte alimente les dépenses communes)
+    push(A.bnpAlice,  monthStart + 1,  'Virement compte joint',  -1800, 'savings');
+    push(A.jointLcl,  monthStart + 1,  'Virement Alice → commun', 1800, 'savings');
+    push(A.caBob,     monthStart + 1,  'Virement compte joint',  -1600, 'savings');
+    push(A.jointLcl,  monthStart + 1,  'Virement Bob → commun',  1600, 'savings');
 
     // Charges
     push(A.jointLcl,  monthStart + 6,  'EDF Énergie',              -88,  'utilities');

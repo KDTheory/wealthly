@@ -7,6 +7,49 @@ Notes for Claude (and any future AI tooling) picking the project back up.
 
 ---
 
+## Session 2026-05-10 — kdtheory + Claude (Sonnet 4.6) — round 2 : implémentation
+
+**Livré dans cette session** :
+
+| Fichier | Changement |
+|---------|-----------|
+| `backend/alembic/versions/0002_security_phase1.py` | Migration Alembic défensive (IF NOT EXISTS) pour `auth_events` table + `users.full_name/is_active/is_admin` |
+| `backend/scripts/seed_admins.py` | Script one-shot pour créer/promouvoir 2 admins via env vars `ADMIN_1_EMAIL/PASSWORD/NAME` + `ADMIN_2_*` |
+| `backend/app/routers/admin.py` | + `PUT /admin/users/{id}/toggle` (suspend/réactiver) + `DELETE /admin/users/{id}` (suppression avec guards) |
+| `frontend/src/api.js` | + `admin.toggleUser(id)` + `admin.deleteUser(id)` |
+| `frontend/src/views/Admin.jsx` | + colonne Actions dans la table users (boutons Suspendre/Réactiver/Supprimer avec double-confirm) |
+| `frontend/src/demoData.js` | - "Virement loyer" 1400€ → "Charges copropriété SYNDIC" 260€ ; + virements mensuels Alice→joint 1800€ + Bob→joint 1600€ (joint account ne va plus en négatif) |
+| `frontend/src/views/Dashboard.jsx` | Fix `tx.description→tx.label`, `tx.account_id→tx.accountId`, `tx.category_id→tx.categoryId` dans widget Activité récente ; label donut "Net"→"Actifs" |
+
+**Vérifications JWT httpOnly** :
+- ✅ `set_auth_cookie` dans auth.py : httpOnly=True, Secure=True, SameSite=None (cross-site car API et frontend sont sur des domaines différents)
+- ✅ `credentials: 'include'` dans api.js
+- ✅ fallback Bearer header pour les sessions existantes
+- ✅ `/auth/logout` efface le cookie
+
+**Pour lancer la migration Alembic en prod** :
+```bash
+# Sur Railway (depuis le root du repo)
+alembic -c backend/alembic.ini upgrade head
+```
+Ou Railway peut le faire automatiquement si `alembic upgrade head` est dans la startup command.
+
+**Pour créer les 2 admins** :
+```bash
+# Définir en Railway Variables :
+ADMIN_1_EMAIL=ton@email.com  ADMIN_1_PASSWORD=xxx  ADMIN_1_NAME="Kevin"
+ADMIN_2_EMAIL=raphael@email.com  ADMIN_2_PASSWORD=xxx  ADMIN_2_NAME="Raphaël"
+# Puis :
+railway run python backend/scripts/seed_admins.py
+```
+
+**Ce qui reste à faire** :
+- 2FA TOTP (backend pyotp + frontend écran code)
+- Tests pytest pour les nouveaux endpoints admin (toggle + delete)
+- YTD % toujours calculé sur bank accounts vs full patrimoine (architectural — nécessite wealthSnapshots en démo)
+
+---
+
 ## Session 2026-05-10 — kdtheory + Claude (Sonnet 4.6)
 
 **Contexte** : analyse live du site + planification backend sécurité + admin.

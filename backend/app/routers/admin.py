@@ -2,21 +2,23 @@
 Admin endpoints — protected by `require_admin`.
 Powers the /admin frontend page.
 
-  GET /admin/stats          → KPIs (users total, active 7d, failures 24h, lockouts)
-  GET /admin/auth-events    → recent auth events (default 100)
-  GET /admin/users          → list users w/ last_login + auth_events count
+  GET  /admin/stats                    → KPIs (users total, active 7d, failures 24h, lockouts)
+  GET  /admin/auth-events              → recent auth events (default 100)
+  GET  /admin/users                    → list users w/ last_login + auth_events count
+  PUT  /admin/users/{user_id}/toggle   → suspend / reactivate a user (toggle is_active)
+  DELETE /admin/users/{user_id}        → hard-delete a user (irreversible)
 """
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
 
-from app.auth import require_admin
+from app.auth import require_admin, get_current_user
 from app.database import get_db
 from app.models import AuthEvent, User
-from app.security import LOCKOUT_DURATION, LOCKOUT_THRESHOLD, LOCKOUT_WINDOW
+from app.security import LOCKOUT_DURATION, LOCKOUT_THRESHOLD, LOCKOUT_WINDOW, record_auth_event
 
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(require_admin)])
 
@@ -139,3 +141,54 @@ def users(db: Session = Depends(get_db)):
             "login_count": int(login_count),
         })
     return out
+
+
+@router.put("/users/{user_id}/toggle")
+def toggle_user_active(
+    user_id: str,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """Suspend or reactivate a user (toggle is_active). Cannot act on self or other admins."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable.")
+    if user.id == admin.id:
+        raise HTTPException(status_code=400, detail="Impossible de modifier son propre compte.")
+    if user.is_admin:
+        raise HTTPException(status_code=403, detail="Impossible de suspendre un autre administrateur.")
+
+    user.is_active = not user.is_active
+    db.commit()
+
+    action = "user_suspended" if not user.is_active else "user_reactivated"
+    record_auth_event(db, kind=action, success=True, user_id=admin.id, email=user.email,
+                      detail=f"by_admin:{admin.email}")
+
+    return {
+        "id": user.id,
+        "email": user.email,
+        "is_active": bool(user.is_active),
+        "message": f"Utilisateur {'suspendu' if not user.is_active else 'réactivé'}.",
+    }
+
+
+@router.delete("/users/{user_id}", status_code=204)
+def delete_user(
+    user_id: str,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """Hard-delete a user. Irreversible. Cannot delete self or other admins."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable.")
+    if user.id == admin.id:
+        raise HTTPException(status_code=400, detail="Impossible de supprimer son propre compte.")
+    if user.is_admin:
+        raise HTTPException(status_code=403, detail="Impossible de supprimer un autre administrateur.")
+
+    record_auth_event(db, kind="user_deleted", success=True, user_id=admin.id, email=user.email,
+                      detail=f"by_admin:{admin.email}")
+    db.delete(user)
+    db.commit()

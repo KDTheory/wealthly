@@ -631,7 +631,7 @@ export function Dashboard({
                 </svg>
                 <div className="absolute inset-0 grid place-items-center text-center">
                   <div>
-                    <div className="text-[10.5px] uppercase tracking-[0.08em] text-[var(--color-w-muted)] font-semibold">Net</div>
+                    <div className="text-[10.5px] uppercase tracking-[0.08em] text-[var(--color-w-muted)] font-semibold">Actifs</div>
                     <div className="text-[18px] font-bold tracking-[-0.02em] mt-1 w-num">
                       {fmt(allocationTotal).replace(/\s?€$/, '')} €
                     </div>
@@ -673,8 +673,8 @@ export function Dashboard({
           {recentTx.length > 0 ? (
             <ul className="m-0 p-0 list-none flex flex-col">
               {recentTx.map(tx => {
-                const cat = categories.find(c => c.id === tx.category_id);
-                const acc = visibleAccounts.find(a => a.id === tx.account_id);
+                const cat = categories.find(c => c.id === tx.categoryId);
+                const acc = visibleAccounts.find(a => a.id === tx.accountId);
                 const isTransfer = transferIds.has(tx.id);
                 const isIn = parseFloat(tx.amount) > 0;
                 return (
@@ -686,11 +686,11 @@ export function Dashboard({
                         color: isTransfer ? 'var(--color-w-accent-2)' : 'var(--color-w-text)',
                       }}
                     >
-                      {isTransfer ? <ArrowRightLeft size={15}/> : (tx.description || '?').charAt(0).toUpperCase()}
+                      {isTransfer ? <ArrowRightLeft size={15}/> : (tx.label || '?').charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0">
                       <div className="text-[13px] font-medium truncate flex items-center gap-2">
-                        <span className="truncate">{tx.description || '—'}</span>
+                        <span className="truncate">{tx.label || '—'}</span>
                         {isTransfer && (
                           <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold flex-shrink-0"
                                 style={{ background: 'var(--primary-soft)', color: 'var(--color-w-accent-2)' }}>
