@@ -1282,16 +1282,8 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
         )}
         {['monthly','cashflow','budgets'].includes(view) && (
           <div className="monthly-hub">
-            <nav className="hub-tabs">
-              <button onClick={() => setView('monthly')}   className={view === 'monthly'   ? 'active' : ''}><Calendar  size={13}/> <span>{t('hub.monthlyTab')}</span></button>
-              <button onClick={() => setView('cashflow')}  className={view === 'cashflow'  ? 'active' : ''}><Activity  size={13}/> <span>{t('hub.cashflowTab')}</span></button>
-              <button onClick={() => setView('budgets')}   className={view === 'budgets'   ? 'active' : ''}>
-                <Target size={13}/> <span>{t('hub.budgetsTab')}</span>
-                {budgetsOverCount > 0 && (
-                  <span className="nav-alert-dot" style={{ marginLeft: 6 }}>{budgetsOverCount}</span>
-                )}
-              </button>
-            </nav>
+            {/* Hub tabs supprimées : la navigation Monthly / Cashflow / Budgets
+                vit déjà dans la sidebar (groupe Gestion), pas de doublon. */}
             {view === 'monthly' && (
               <Monthly
                 transactions={visibleTransactions} accounts={accounts} categories={categories} members={members}
