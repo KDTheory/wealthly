@@ -80,7 +80,7 @@ def register(request: Request, response: Response, payload: UserCreate, db: Sess
         email=payload.email,
         hashed_password=hash_password(payload.password),
         full_name=payload.full_name,
-        is_admin=True,
+        is_admin=False,  # platform admin must be set manually via seed_admins script
         household_id=household.id,
     )
     db.add(user)
