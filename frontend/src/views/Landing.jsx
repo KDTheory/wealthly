@@ -14,10 +14,11 @@ import { useEffect } from 'react';
 
 export default function Landing({ onSignIn, onSignUp, onTryDemo }) {
   useEffect(() => {
-    // Le data-theme est appliqué par le script no-flash dans index.html.
-    // La cover magazine est conçue pour fond papier — on force light ici.
+    // Cover magazine en mode sombre — force dark même si l'utilisateur a
+    // light en préférence système, pour cohérence avec la direction
+    // éditoriale "encre profonde".
     const prev = document.documentElement.getAttribute('data-theme');
-    document.documentElement.setAttribute('data-theme', 'light');
+    document.documentElement.setAttribute('data-theme', 'dark');
     return () => {
       if (prev) document.documentElement.setAttribute('data-theme', prev);
     };
@@ -105,18 +106,18 @@ export default function Landing({ onSignIn, onSignUp, onTryDemo }) {
               <svg viewBox="0 0 600 160" preserveAspectRatio="none">
                 <defs>
                   <linearGradient id="lp-grad" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor="#2540D9" stopOpacity="0.18"/>
-                    <stop offset="100%" stopColor="#2540D9" stopOpacity="0"/>
+                    <stop offset="0%" stopColor="#7E92FF" stopOpacity="0.18"/>
+                    <stop offset="100%" stopColor="#7E92FF" stopOpacity="0"/>
                   </linearGradient>
                 </defs>
-                <line x1="0" y1="40"  x2="600" y2="40"  stroke="#E4E1D8" strokeDasharray="2 4"/>
-                <line x1="0" y1="80"  x2="600" y2="80"  stroke="#E4E1D8" strokeDasharray="2 4"/>
-                <line x1="0" y1="120" x2="600" y2="120" stroke="#E4E1D8" strokeDasharray="2 4"/>
+                <line x1="0" y1="40"  x2="600" y2="40"  stroke="#2A2823" strokeDasharray="2 4"/>
+                <line x1="0" y1="80"  x2="600" y2="80"  stroke="#2A2823" strokeDasharray="2 4"/>
+                <line x1="0" y1="120" x2="600" y2="120" stroke="#2A2823" strokeDasharray="2 4"/>
                 <path d="M0,120 C40,115 80,100 130,95 C190,90 230,110 290,80 C340,55 380,72 430,55 C470,42 510,48 600,30 L600,160 L0,160 Z"
                       fill="url(#lp-grad)"/>
                 <path d="M0,120 C40,115 80,100 130,95 C190,90 230,110 290,80 C340,55 380,72 430,55 C470,42 510,48 600,30"
-                      fill="none" stroke="#2540D9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <circle cx="600" cy="30" r="4" fill="#FFFFFF" stroke="#2540D9" strokeWidth="2"/>
+                      fill="none" stroke="#7E92FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="600" cy="30" r="4" fill="#181714" stroke="#7E92FF" strokeWidth="2"/>
               </svg>
             </div>
             <span className="lp-read">Découvrir le dashboard</span>
@@ -128,24 +129,24 @@ export default function Landing({ onSignIn, onSignUp, onTryDemo }) {
             <div className="lp-ttl">Six classes, un coup d'œil.</div>
             <div className="lp-alloc-row">
               <svg className="lp-donut" viewBox="0 0 120 120">
-                <circle cx="60" cy="60" r="48" fill="none" stroke="#EFEDE6" strokeWidth="14"/>
-                <circle cx="60" cy="60" r="48" fill="none" stroke="#1F8E6E" strokeWidth="14"
+                <circle cx="60" cy="60" r="48" fill="none" stroke="#0A0908" strokeWidth="14"/>
+                <circle cx="60" cy="60" r="48" fill="none" stroke="#4FB57A" strokeWidth="14"
                         strokeDasharray="113 301.6" transform="rotate(-90 60 60)"/>
-                <circle cx="60" cy="60" r="48" fill="none" stroke="#2540D9" strokeWidth="14"
+                <circle cx="60" cy="60" r="48" fill="none" stroke="#7E92FF" strokeWidth="14"
                         strokeDasharray="75 301.6" strokeDashoffset="-113" transform="rotate(-90 60 60)"/>
-                <circle cx="60" cy="60" r="48" fill="none" stroke="#C2733B" strokeWidth="14"
+                <circle cx="60" cy="60" r="48" fill="none" stroke="#E0975A" strokeWidth="14"
                         strokeDasharray="48 301.6" strokeDashoffset="-188" transform="rotate(-90 60 60)"/>
-                <circle cx="60" cy="60" r="48" fill="none" stroke="#B85D7A" strokeWidth="14"
+                <circle cx="60" cy="60" r="48" fill="none" stroke="#DA8AA1" strokeWidth="14"
                         strokeDasharray="35 301.6" strokeDashoffset="-236" transform="rotate(-90 60 60)"/>
-                <circle cx="60" cy="60" r="48" fill="none" stroke="#7B57C6" strokeWidth="14"
+                <circle cx="60" cy="60" r="48" fill="none" stroke="#B69BF2" strokeWidth="14"
                         strokeDasharray="20 301.6" strokeDashoffset="-271" transform="rotate(-90 60 60)"/>
               </svg>
               <div className="lp-legend">
-                <div><span className="lp-sw" style={{ background: '#1F8E6E' }}/>Immobilier</div>
-                <div><span className="lp-sw" style={{ background: '#2540D9' }}/>PEA &amp; CTO</div>
-                <div><span className="lp-sw" style={{ background: '#C2733B' }}/>Ass.-vie</div>
-                <div><span className="lp-sw" style={{ background: '#B85D7A' }}/>Livrets</div>
-                <div><span className="lp-sw" style={{ background: '#7B57C6' }}/>Crypto</div>
+                <div><span className="lp-sw" style={{ background: '#4FB57A' }}/>Immobilier</div>
+                <div><span className="lp-sw" style={{ background: '#7E92FF' }}/>PEA &amp; CTO</div>
+                <div><span className="lp-sw" style={{ background: '#E0975A' }}/>Ass.-vie</div>
+                <div><span className="lp-sw" style={{ background: '#DA8AA1' }}/>Livrets</div>
+                <div><span className="lp-sw" style={{ background: '#B69BF2' }}/>Crypto</div>
               </div>
             </div>
             <span className="lp-read">Voir le détail</span>
@@ -261,8 +262,8 @@ const css = `
   margin: 0 auto;
   padding: 56px 56px 80px;
   min-height: 100vh;
-  background: #F7F6F2;
-  color: #16150F;
+  background: #0F0E0C;
+  color: #F1EEE4;
   font-family: 'Geist', system-ui, sans-serif;
   font-feature-settings: 'ss01', 'cv11';
   -webkit-font-smoothing: antialiased;
@@ -274,28 +275,28 @@ const css = `
 .lp-strip {
   display: flex; align-items: center; justify-content: space-between;
   padding-bottom: 18px;
-  border-bottom: 1px solid #E4E1D8;
+  border-bottom: 1px solid #2A2823;
   font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em;
-  color: #8C8979; font-weight: 500;
+  color: #75716A; font-weight: 500;
 }
-.lp-mark { display: flex; align-items: center; gap: 10px; color: #16150F; }
+.lp-mark { display: flex; align-items: center; gap: 10px; color: #F1EEE4; }
 .lp-logo {
   width: 22px; height: 22px;
-  background: #16150F; border-radius: 5px;
+  background: #F1EEE4; border-radius: 5px;
   display: grid; place-items: center;
-  color: #F7F6F2;
+  color: #0F0E0C;
   font-weight: 700; font-size: 11px; letter-spacing: 0;
 }
 .lp-strip-actions { display: flex; align-items: center; gap: 18px; }
 .lp-strip-link {
   background: transparent; border: none;
   font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em;
-  font-weight: 500; color: #56544A;
+  font-weight: 500; color: #A29E91;
   transition: color 120ms;
 }
-.lp-strip-link:hover { color: #16150F; }
+.lp-strip-link:hover { color: #F1EEE4; }
 .lp-strip-cta {
-  background: #16150F; color: #F7F6F2;
+  background: #F1EEE4; color: #0F0E0C;
   border: none;
   font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em;
   font-weight: 500;
@@ -303,7 +304,7 @@ const css = `
   border-radius: 6px;
   transition: background 120ms;
 }
-.lp-strip-cta:hover { background: #56544A; }
+.lp-strip-cta:hover { background: #E5E2D8; }
 
 /* MASTHEAD */
 .lp-masthead {
@@ -316,25 +317,25 @@ const css = `
 .lp-num-issue {
   font-family: 'Newsreader', Georgia, serif;
   font-style: italic;
-  font-size: 16px; color: #8C8979;
+  font-size: 16px; color: #75716A;
   font-weight: 400; margin-bottom: 12px; letter-spacing: -0.01em;
 }
-.lp-num-issue::before { content: "№ "; color: #B5B2A4; }
+.lp-num-issue::before { content: "№ "; color: #4D4A45; }
 .lp-title {
   font-family: 'Newsreader', Georgia, serif;
   font-weight: 400;
   font-size: clamp(64px, 9vw, 128px);
   line-height: 0.92;
   letter-spacing: -0.045em;
-  color: #16150F;
+  color: #F1EEE4;
 }
-.lp-title em { font-style: italic; color: #56544A; }
+.lp-title em { font-style: italic; color: #A29E91; }
 .lp-deck {
   font-size: 17px; line-height: 1.5;
-  color: #56544A; max-width: 38ch;
+  color: #A29E91; max-width: 38ch;
   letter-spacing: -0.005em; padding-bottom: 8px;
 }
-.lp-deck strong { color: #16150F; font-weight: 500; }
+.lp-deck strong { color: #F1EEE4; font-weight: 500; }
 
 /* CTA row */
 .lp-cta-row {
@@ -344,26 +345,26 @@ const css = `
   margin-bottom: 8px;
 }
 .lp-btn-primary {
-  background: #16150F; color: #F7F6F2;
+  background: #F1EEE4; color: #0F0E0C;
   border: none;
   font-size: 14px; font-weight: 500; letter-spacing: -0.005em;
   padding: 12px 22px;
   border-radius: 8px;
   transition: background 120ms;
 }
-.lp-btn-primary:hover { background: #56544A; }
+.lp-btn-primary:hover { background: #E5E2D8; }
 .lp-btn-ghost {
   background: transparent;
-  border: 1px solid #D2CEC0;
-  color: #16150F;
+  border: 1px solid #3A382F;
+  color: #F1EEE4;
   font-size: 14px; font-weight: 500; letter-spacing: -0.005em;
   padding: 12px 22px;
   border-radius: 8px;
   transition: background 120ms, border-color 120ms;
 }
-.lp-btn-ghost:hover { background: #F1EFE8; border-color: #56544A; }
+.lp-btn-ghost:hover { background: #1F1D19; border-color: #A29E91; }
 .lp-cta-note {
-  font-size: 12px; color: #8C8979;
+  font-size: 12px; color: #75716A;
   letter-spacing: -0.005em;
 }
 
@@ -371,16 +372,16 @@ const css = `
 .lp-byline {
   margin-top: 32px;
   padding-top: 24px;
-  border-top: 1px solid #E4E1D8;
+  border-top: 1px solid #2A2823;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 32px;
 }
 .lp-byline-label {
   font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em;
-  color: #8C8979; margin-bottom: 8px;
+  color: #75716A; margin-bottom: 8px;
 }
-.lp-byline-v { font-size: 14px; color: #16150F; letter-spacing: -0.005em; }
+.lp-byline-v { font-size: 14px; color: #F1EEE4; letter-spacing: -0.005em; }
 .lp-byline-v em {
   font-family: 'Newsreader', Georgia, serif;
   font-style: italic; font-weight: 400;
@@ -398,8 +399,8 @@ const css = `
     "hero range insights";
 }
 .lp-tile {
-  background: #FFFFFF;
-  border: 1px solid #E4E1D8;
+  background: #181714;
+  border: 1px solid #2A2823;
   border-radius: 16px;
   padding: 22px 22px 18px;
   overflow: hidden;
@@ -410,20 +411,20 @@ const css = `
   font-family: inherit;
   color: inherit;
 }
-.lp-tile:hover { border-color: #D2CEC0; }
+.lp-tile:hover { border-color: #3A382F; }
 .lp-tag {
   font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em;
-  color: #8C8979; font-weight: 500; margin-bottom: 10px;
+  color: #75716A; font-weight: 500; margin-bottom: 10px;
 }
 .lp-ttl {
   font-size: 14px; font-weight: 500; letter-spacing: -0.005em;
-  color: #16150F; margin-bottom: 14px;
+  color: #F1EEE4; margin-bottom: 14px;
 }
 .lp-read {
   position: absolute; bottom: 14px; right: 18px;
   font-family: 'Newsreader', Georgia, serif;
   font-style: italic; font-size: 13px;
-  color: #8C8979;
+  color: #75716A;
 }
 .lp-read::after {
   content: " →";
@@ -441,39 +442,39 @@ const css = `
   margin-bottom: 8px;
 }
 .lp-range {
-  display: flex; background: #EFEDE6; border-radius: 8px;
+  display: flex; background: #0A0908; border-radius: 8px;
   padding: 3px; font-size: 11px;
 }
 .lp-range span {
-  padding: 4px 10px; border-radius: 6px; color: #8C8979;
+  padding: 4px 10px; border-radius: 6px; color: #75716A;
 }
 .lp-range .on {
-  background: #FFFFFF; color: #16150F;
+  background: #181714; color: #F1EEE4;
   box-shadow: 0 1px 0 rgba(20,20,15,.04), 0 1px 2px rgba(20,20,15,.04);
   font-weight: 500;
 }
 .lp-big {
   font-family: 'Newsreader', Georgia, serif;
   font-weight: 400; font-size: 78px; line-height: 1;
-  letter-spacing: -0.04em; margin-top: 18px; color: #16150F;
+  letter-spacing: -0.04em; margin-top: 18px; color: #F1EEE4;
 }
-.lp-cents { color: #8C8979; font-size: 40px; }
+.lp-cents { color: #75716A; font-size: 40px; }
 .lp-delta {
   margin-top: 14px;
   display: flex; align-items: center; gap: 12px;
 }
 .lp-pill {
   display: inline-flex; align-items: center; gap: 6px;
-  background: #DBEDE2; color: #136D3E;
+  background: #15301F; color: #4FB57A;
   padding: 4px 10px; border-radius: 999px;
   font-size: 12px; font-weight: 500;
 }
-.lp-vs { font-size: 13px; color: #56544A; }
+.lp-vs { font-size: 13px; color: #A29E91; }
 .lp-chart { margin-top: auto; height: 140px; position: relative; }
 .lp-chart svg { width: 100%; height: 100%; }
 .lp-chart::after {
   content: ""; position: absolute; inset: 0 -26px 0 60%;
-  background: linear-gradient(90deg, transparent, #FFFFFF 70%);
+  background: linear-gradient(90deg, transparent, #181714 70%);
   pointer-events: none;
 }
 
@@ -481,7 +482,7 @@ const css = `
 .lp-donut { width: 100px; height: 100px; margin: 8px 0; }
 .lp-legend {
   display: flex; flex-direction: column; gap: 4px;
-  font-size: 11.5px; color: #56544A;
+  font-size: 11.5px; color: #A29E91;
 }
 .lp-legend div { display: flex; align-items: center; gap: 8px; }
 .lp-sw { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
@@ -491,24 +492,24 @@ const css = `
 .lp-tx-row {
   display: grid; grid-template-columns: 26px 1fr auto;
   gap: 10px; padding: 7px 0; align-items: center;
-  border-top: 1px solid #E4E1D8;
+  border-top: 1px solid #2A2823;
 }
 .lp-tx-row:first-of-type { border-top: 0; }
 .lp-tx-ic {
   width: 26px; height: 26px; border-radius: 6px;
   display: grid; place-items: center;
   font-size: 10px; font-weight: 600;
-  background: #E7EBFF; color: #2540D9;
+  background: #1B214A; color: #7E92FF;
 }
-.lp-tx-ic.lp-tx-r { background: #F4E2DE; color: #B0392B; }
-.lp-tx-ic.lp-tx-p { background: #DBEDE2; color: #136D3E; }
+.lp-tx-ic.lp-tx-r { background: #341B17; color: #E07A6E; }
+.lp-tx-ic.lp-tx-p { background: #15301F; color: #4FB57A; }
 .lp-tx-nm { font-size: 12.5px; font-weight: 500; }
-.lp-tx-mt { font-size: 11px; color: #8C8979; margin-top: 1px; }
+.lp-tx-mt { font-size: 11px; color: #75716A; margin-top: 1px; }
 .lp-tx-amt { font-size: 12.5px; font-weight: 500; }
-.lp-tx-amt.lp-tx-in { color: #136D3E; }
+.lp-tx-amt.lp-tx-in { color: #4FB57A; }
 .lp-tx-fade {
   height: 30px; margin-top: 6px;
-  background: linear-gradient(180deg, transparent, #FFFFFF);
+  background: linear-gradient(180deg, transparent, #181714);
   margin-left: -22px; margin-right: -22px;
   pointer-events: none;
 }
@@ -520,46 +521,47 @@ const css = `
 }
 .lp-kpi-lbl {
   font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
-  color: #8C8979; margin-bottom: 4px;
+  color: #75716A; margin-bottom: 4px;
 }
 .lp-kpi-val { font-size: 17px; font-weight: 500; letter-spacing: -0.01em; }
-.lp-kpi-dt { font-size: 11px; margin-top: 2px; color: #136D3E; }
-.lp-kpi-dt-n { color: #B0392B; }
+.lp-kpi-dt { font-size: 11px; margin-top: 2px; color: #4FB57A; }
+.lp-kpi-dt-n { color: #E07A6E; }
 
+/* Insights tile — inversion cream sur la page sombre (effet "carton") */
 .lp-t-insights {
   grid-area: insights; min-height: 180px;
-  background: #16150F; color: #F1EEE4;
-  border-color: #16150F;
+  background: #F1EEE4; color: #0F0E0C;
+  border-color: #F1EEE4;
   cursor: pointer;
   text-align: left;
 }
-.lp-t-insights .lp-tag { color: rgba(241,238,228,.5); }
-.lp-t-insights .lp-ttl { color: #F1EEE4; }
+.lp-t-insights .lp-tag { color: rgba(15,14,12,.55); }
+.lp-t-insights .lp-ttl { color: #0F0E0C; }
 .lp-quote {
   font-family: 'Newsreader', Georgia, serif;
   font-style: italic; font-size: 19px; line-height: 1.35;
-  letter-spacing: -0.015em; color: #F1EEE4; margin-top: 4px;
+  letter-spacing: -0.015em; color: #0F0E0C; margin-top: 4px;
 }
 .lp-quote-src {
   margin-top: 12px;
   font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em;
-  color: rgba(241,238,228,.5);
+  color: rgba(15,14,12,.55);
 }
-.lp-t-insights .lp-read { color: rgba(241,238,228,.6); }
-.lp-t-insights:hover { border-color: #1F1D19; background: #1F1D19; }
+.lp-t-insights .lp-read { color: rgba(15,14,12,.6); }
+.lp-t-insights:hover { background: #E5E2D8; border-color: #E5E2D8; }
 
 /* TOC */
 .lp-toc {
   margin-top: 80px;
   padding-top: 28px;
-  border-top: 1px solid #E4E1D8;
+  border-top: 1px solid #2A2823;
   display: grid;
   grid-template-columns: 1fr 3fr;
   gap: 56px;
 }
 .lp-toc-lbl {
   font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em;
-  color: #8C8979; font-weight: 500;
+  color: #75716A; font-weight: 500;
 }
 .lp-toc ol {
   list-style: none;
@@ -573,38 +575,38 @@ const css = `
   gap: 12px; align-items: baseline;
   font-size: 15px; letter-spacing: -0.005em;
   padding-bottom: 6px;
-  border-bottom: 1px dashed #E4E1D8;
+  border-bottom: 1px dashed #2A2823;
 }
 .lp-toc li::before {
   content: counter(section, decimal-leading-zero);
   font-family: 'Geist Mono', monospace;
-  font-size: 11px; color: #8C8979;
+  font-size: 11px; color: #75716A;
 }
 .lp-toc-nm em {
   font-family: 'Newsreader', Georgia, serif;
-  font-style: italic; color: #56544A; font-weight: 400;
+  font-style: italic; color: #A29E91; font-weight: 400;
 }
 .lp-toc-pg {
   font-family: 'Geist Mono', monospace;
-  font-size: 11px; color: #8C8979;
+  font-size: 11px; color: #75716A;
 }
 
 /* COLOPHON */
 .lp-colophon {
   margin-top: 64px;
   padding-top: 18px;
-  border-top: 1px solid #E4E1D8;
+  border-top: 1px solid #2A2823;
   display: flex; justify-content: space-between; align-items: center;
-  font-size: 11px; letter-spacing: 0.06em; color: #8C8979;
+  font-size: 11px; letter-spacing: 0.06em; color: #75716A;
 }
-.lp-star { font-size: 16px; color: #B5B2A4; letter-spacing: 0.8em; }
+.lp-star { font-size: 16px; color: #4D4A45; letter-spacing: 0.8em; }
 .lp-link {
   background: transparent; border: none;
-  font-size: 11px; letter-spacing: 0.06em; color: #8C8979;
+  font-size: 11px; letter-spacing: 0.06em; color: #75716A;
   text-decoration: underline; text-underline-offset: 3px;
   transition: color 120ms;
 }
-.lp-link:hover { color: #16150F; }
+.lp-link:hover { color: #F1EEE4; }
 
 /* Responsive */
 @media (max-width: 1080px) {
