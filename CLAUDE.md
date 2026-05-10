@@ -3,6 +3,42 @@
 Notes for Claude (and any future AI tooling) picking the project back up.
 **Read this first** before making non-trivial changes.
 
+> 📋 **Voir ROADMAP.md** pour la TODO list complète priorisée P0/P1/P2/P3.
+
+---
+
+## Session 2026-05-10 — kdtheory + Claude (Sonnet 4.6)
+
+**Contexte** : analyse live du site + planification backend sécurité + admin.
+
+**Bugs identifiés sur la démo (à corriger en P0)** :
+1. `demoData.js` — double comptage logement : "Virement loyer" −1 400 € + "Échéance prêt immo" −1 150 €. Un propriétaire ne paie pas de loyer. Remplacer par "Charges copropriété" −250 €.
+2. Dashboard — widget "Activité récente" : libellés "—" et catégories "Non catégorisé" (fonctionne sur /transactions → régression post-refonte Dashboard.jsx).
+3. Dashboard — donut allocation : label "NET" faux, affiche ~515 000 € (actifs bruts) au lieu du patrimoine net ~284 000 €.
+4. Hero Dashboard — YTD +1257 % absurde. Probable : `getDemoData()` ne retourne pas de `wealthSnapshots` → calcul compare à zéro.
+
+**Ce que Raphyy31 a livré (2026-05-09/10)** :
+- Rebrand Wealthly → Trove (logo, landing v2, tarifs 3 plans, FAQ)
+- `security.py` : audit log AuthEvent, brute-force lockout (5 échecs → blocage 30 min), HIBP check, CSP/HSTS headers
+- `admin.py` router + `Admin.jsx` vue (lecture seule : stats + auth events + users)
+- Hooks multi-devise : `useBaseCurrency`, `useQuotes`, `useRates`
+- `demoData.js` réécrit (LCL compte joint corrigé, transactions réalistes Paris cadre)
+
+**Ce qui reste côté sécurité (notre focus)** :
+- Migration Alembic pour AuthEvent + is_admin + full_name (tables créées via create_all mais pas de revision → cassé en prod sur DB existante)
+- Script `seed_admins.py` pour créer kdtheory + Raphyy31 en is_admin=True
+- JWT → httpOnly cookies (encore en localStorage → XSS)
+- 2FA TOTP (obligatoire pour is_admin)
+- Admin actions : suspend/delete user (panel actuel = read-only)
+
+**Décisions** :
+- kdtheory se focus sur backend sécurité + admin (pas le design)
+- Raphyy31 revoit le design/landing avec Claude Design cette semaine
+- Nom "Trove" : on ne vérifie pas encore le trademark — ça attend la fin du dev
+- Repo reste public (Raphyy31 owner) + CLAUDE.md reste dans le repo pour sync des sessions
+
+**Persona démo cible** : couple Paris, Alice 3 850 €/mois + Bob 3 220 €/mois, propriétaires (prêt 1 150 €/mois à 1.65%), 1 enfant (crèche 680 €/mois), épargne Livret A 600 €/mois. Reste à vivre réaliste ~3 335 €/mois après charges.
+
 ---
 
 ## Stack & deployment

@@ -1,128 +1,194 @@
-# Wealthly — Roadmap
+# Trove — Roadmap
 
-État au **2026-05-06 (soir)** — sortie de session "investor-ready" (refonte UI + sécu + features signature + i18n + PDF dark + Finary loan view).
-
----
-
-## ✅ Fait
-
-### Architecture & code
-- [x] **Découpe du monolithe** `WealthlyApp.jsx` : 6 386 → 1 139 lignes (-82 %), répartis en :
-  - `src/constants.js`, `src/storage.js`, `src/utils.js`
-  - `src/Styles.jsx` (CSS-in-JS isolé)
-  - `src/components/` : `Toast`, `AnimatedNumber`, `NetWorthChart`, `HealthScore`
-  - `src/hooks/` : `useIsNarrow`
-  - `src/views/` : `Dashboard`, `Wealth`, `Monthly`, `Cashflow`, `Budgets`, `Transactions`, `Analysis`, `Settings`, `ImportFlow`, `Onboarding`
-- [x] **Code-splitting** : recharts / lucide / jspdf en chunks séparés via Vite `manualChunks`. `TaxSimulator`, `BankCallback` et `pdfReport` chargés en `lazy` / `import()` dynamiques.
-- [x] **Memoization** : `AnimatedNumber`, `NetWorthChart`, `SankeyNode` en `React.memo`, `fmt` stabilisé via `useCallback`.
-
-### Visuel & design system
-- [x] Direction "encre profonde + or sobre + sage / terracotta sourds" stabilisée (Pictet / Edmond de Rothschild mood).
-- [x] **Sidebar gauche persistante** sur desktop (≥ 1024 px), bottom-nav 6 items sur mobile.
-- [x] Refonte hero Dashboard : net worth en `clamp(46→84px)` sur sparkline gold, perf pill 1M inline, secondary KPI strip sobre.
-- [x] **Polices DM Sans + DM Mono** (variable, single woff2 chacune), tabular-nums sur tous les chiffres.
-- [x] Palette refinée : `--bg-page` → `#0a0b0e`, borders en `rgba(255,255,255,0.07/0.12)`, success/danger/warning ré-saturés, nouveaux tokens `--num-positive` / `--num-negative` / `--bg-hover` / `--primary-dim`.
-- [x] **Hero card** : strip or 2 px en haut comme signature visuelle exclusive.
-- [x] Card titles en eyebrow Linear-style (small caps, 0.14em letter-spacing).
-- [x] Empty states refaits en typo statement gauche-aligné.
-- [x] Modales : backdrop blur 8 px + slide-in 180 ms cubic-bezier, header sober, footer sur surface secondaire.
-- [x] Boutons CTA hauteur fixe (36 / 44 px), radius 8 px.
-- [x] Mode dark forcé partout (mode clair retiré, plus de toggle, anti-flash inline dans `<head>`).
-- [x] Suppression du parc d'emojis dans le chrome (toasts, status pills, KPI metas) — émojis restent dans le contenu utilisateur (catégories).
-- [x] Suppression du composant Confetti (dead code).
-
-### Mobile & PWA
-- [x] Bottom-nav 6 items, blur(16px) saturate(180%), safe-area-inset-bottom, label visible.
-- [x] Sankey responsive (marges et nodes adaptés < 760 px).
-- [x] Anti-jank Recharts : `isAnimationActive: false` global (gros gain iOS Safari).
-- [x] Optimistic auth : `auth.me()` ne bloque plus le boot, l'app rentre direct.
-- [x] PWA installable (manifest, SW network-first, iOS metas, viewport-fit=cover).
-
-### Features fonctionnelles
-- [x] **Score santé financière** (Dashboard) : jauge SVG 270° + 5 critères pondérés (taux épargne 25 / fonds urgence 20 / dette/actif 20 / diversification 20 / budgets 15), couleur rouge → ambre → sage selon le seuil 40 / 70.
-- [x] **Filtres transactions avancés** : panel collapsible avec multi-cat (revenus / dépenses groupés, compteurs), multi-comptes, multi-membres (chips colorées), plage de dates, montant min/max, type (revenus / dépenses / tout). Badge or sur le bouton Filtres avec compte de filtres actifs.
-- [x] **Hub Mensuel** : Vue mensuelle / Cashflow / Budgets regroupés sous un seul item de nav avec segmented control interne.
-- [x] **Export PDF bilan** mensuel (3 pages, jsPDF dynamiquement importé).
-- [x] **Simulateur d'impôt FR 2025** : barème, parts, plafond quotient, décote, crédits garde enfants + CESU, plafond niches 10 000 €.
-- [x] **Règles de catégorisation custom** (UI dans Réglages, validation regex client-side).
-- [x] **Historique patrimoine** : `wealth_snapshots` mensuel auto, courbe avec toggle brut / net / financier + sélecteur de période.
-- [x] **Alerte budget** : badge rouge sur la nav avec nombre de budgets dépassés.
-- [x] **Mot de passe oublié** : table dédiée (SHA-256, single-use, 60 min), email Resend, écran reset auto-déclenché par `?reset_token=`.
-- [x] **Mode démo** : seed client-side (Alice + Bob + Léa, 6 mois de données réalistes).
-- [x] **Synchro bancaire DSP2** : intégration GoCardless Bank Account Data, dédup sur `external_id`.
-- [x] **Plus-values latentes** sur actifs (`purchase_price` + `purchase_date` via Alembic) : affichage PV € + % dans Patrimoine.
-- [x] **Plafonds régulés** : barres de progression PEA / PEA-PME / Livret A / LDDS / LEP avec détection par regex sur le nom + warn à 90 % / over à 99 %.
-- [x] **Comparaison N vs N-1** sur Suivi mensuel : sub-label "+12 % vs mai 2025" sous chaque KPI.
-- [x] **Drawer compte** : panneau latéral droit au clic sur un compte (sparkline 3 mois + 10 dernières tx + CTA "voir toutes" qui pré-applique le filtre dans Transactions).
-- [x] **Vue prêt façon Finary** : refonte complète de `LiabilityDetail` (top bar, KPI strip remboursé/taux/mensualité/restant, onglets Synthèse/Mensualités, BarChart amortissement avec ReferenceLine mensualité, panneau hiérarchique).
-- [x] **PDF bilan rebuild** : 5+ pages (cover hero net worth + score santé, Synthèse KPIs + allocation bar, Évolution sparkline + table, Trésorerie, Détail avec PV latente, 1 page d'amortissement par dette avec graphe). **Thème dark** mirror du site (encre profonde + or sobre).
-- [x] **i18n FR / EN** : `react-i18next` setup, locales `fr/` `en/`, persistance localStorage, bouton FR · EN inline dans la sidebar utilities + header mobile (sortie de Réglages).
-- [x] **AuthScreen polish** : page sortie du noir absolu (radial vignette + glows or), copy honnête (suppression du "Auto-hébergé" trompeur), card surface lifted avec border-top or 2 px.
-
-### Sécurité
-- [x] **Rate limiting** sur `/auth/login` (10 req/min IP), `/auth/register` (5 req/min), `/auth/forgot-password` (5 req/min) via slowapi.
-- [x] CORS regex pour matcher tous les déploiements Vercel.
-- [x] HTTPS partout, mots de passe bcrypt, JWT signé 7 jours.
-
-### Backend & infra
-- [x] **Alembic** : infrastructure posée (alembic.ini, env.py, baseline marker), auto-stamp au boot pour la DB existante. Future modifs schémas via revisions.
-- [x] Tests pytest (25+ tests : auth, password reset, snapshots, rules, banks).
-- [x] CI GitHub Actions sur chaque push + PR.
-- [x] Logging structuré email service (Railway logs).
+État au **2026-05-10** — refonte complète Wealthly → Trove (design, landing, rebrand, admin panel v1, security toolbox).
 
 ---
 
-## 🔜 À faire
+## ✅ Livré
 
-### Sécurité (prio 1)
-- [ ] **JWT → httpOnly cookies** : migrer le token hors du `localStorage` (XSS-vulnerable). Setter cookie httpOnly+Secure+SameSite=Lax, middleware lit Bearer header OU cookie pendant la migration, endpoint `/auth/logout` pour clear server-side.
-- [ ] **2FA TOTP** : `pyotp` + `qrcode`, table `totp_secrets`, flow login en deux étapes (`requires_totp` + `partial_token`), backup codes, section dédiée dans Réglages.
-- [ ] **Vérifier `SECRET_KEY`** sur Railway (rotation périodique).
-- [ ] **Journal de connexion** : table `login_events` (IP, UA, timestamp), vue admin.
+### Rebrand & landing (Raphyy31 — 2026-05-09/10)
+- [x] **Rebrand Wealthly → Trove** (logo, nom, manifest, HTML title, AuthScreen)
+- [x] **Landing page v2** — sections Fonctionnement / Fonctionnalités / Sécurité / Tarifs (3 plans) / FAQ / CTA final
+- [x] **Page Tarifs** : Solo 0€ / Pro 7,99€/mois / Famille 14,99€/mois — toggle Mensuel/Annuel (−20 %)
+- [x] **Sidebar app** restructurée en 3 groupes : VUE D'ENSEMBLE / GESTION / CONFIGURATION
+- [x] **Dashboard v2** : hero "Bonsoir" + courbe interactive + Insights + Objectifs + cards comptes
+- [x] **demoData.js** réécrit (comptes à soldes réalistes, transactions Paris cadre, LCL compte joint positif)
 
-### Features produit (prio 2)
-- [ ] **Tooltips contextuels** sur les KPIs gestion privée.
-- [ ] **Étendre i18n** au-delà de la nav + Settings : Dashboard / Wealth / erreurs API / ImportFlow / toasts.
+### Sécurité backend (Raphyy31 — 2026-05-10)
+- [x] **`security.py`** — audit log (`record_auth_event`), brute-force lockout (5 échecs/15 min → blocage 30 min), HIBP k-anonymity password check, CSP + HSTS + X-Frame-Options + headers complets
+- [x] **`AuthEvent` table** — journal de connexions (IP, UA, kind, success, created_at)
+- [x] **`User.is_admin`** et **`User.full_name`** — champs admin et nom complet
+- [x] **`/admin` router backend** — `GET /admin/stats`, `GET /admin/auth-events`, `GET /admin/users` (protégé par `require_admin`)
+- [x] **`Admin.jsx` frontend** — KPIs sécurité, table événements, table users (visible seulement si `is_admin`)
+- [x] **Multi-currency hooks** (`useBaseCurrency`, `useQuotes`, `useRates`) + service quotes Frankfurter/Yahoo
 
-### PDF — itération suivante (prio 2)
-- [ ] **Embed de screenshots de la plateforme** dans le bilan PDF (à la Finary annual report) : html2canvas → PNG dataURL → `doc.addImage`. Capturer Dashboard, courbe patrimoine, score santé, allocation Sankey. Page dédiée "Tableau de bord" insérée après la cover.
-- [ ] **Cover graphique** : ajouter un graphe sparkline net worth en filigrane derrière le hero, ou un mini donut composition d'actifs.
+### Sécurité précédente (2026-05-06)
+- [x] Rate limiting auth (slowapi) : login 10/min, register 5/min, forgot-password 5/min
+- [x] CORS regex pour tous les deploys Vercel
+- [x] JWT signé 7 jours, bcrypt passwords, SHA-256 reset tokens
+- [x] Alembic infrastructure (auto-stamp baseline)
+- [x] 25+ tests pytest (auth, reset, snapshots, rules, banks) + CI GitHub Actions
 
-### Stratégie business (prio 1 hors code)
-- [ ] **Trademark check Wealthly** : EUIPO / INPI / USPTO (wealthly.com existe déjà). Décision rebrand → si oui, candidats hébreu : Kéren, Otsar, Segula, Nahala, Yesod.
-- [ ] **Multi-currency** : `currency` sur households + `formatMoney(amount, currency, locale)` centralisé + Alembic revision. Utile dès qu'on sort de la France.
-
-### Infra (prio 3)
-- [ ] **Tests frontend** : vitest sur `taxFr.js` (couverture rigoureuse du moteur fiscal).
-- [ ] **Cron Railway pour sync bancaire** : endpoint `/internal/sync-all-banks` protégé par secret header, déclenché 1×/jour à 6h UTC.
-- [ ] **Notif email J-7 expiration consentement DSP2** via Resend.
-
-### Refactoring (prio 4 — quand le besoin se fera sentir)
-- [ ] **Découpe data layer** : extraire les hooks `useReload`, `useMembers`, `useAccounts`, `useTransactions`, `useWealth` du shell `WealthlyApp.jsx` (~1100 lignes, encore prop-drillage).
-- [ ] **TypeScript** ? À discuter — pour l'instant pas de friction concrète.
-
----
-
-## 🚫 Hors scope (volontairement)
-
-- ❌ **Rebalancing automatique d'allocation** — refusé.
-- ❌ **Garde alternée** dans le simulateur d'impôt — supprimée sur demande.
-- ❌ **Mode clair** — supprimé sur demande utilisateur (dark-only).
+### Fonctionnalités core (sessions précédentes)
+- [x] Gestion multi-membres foyer (adultes + enfants), comptes bancaires avec rôles cashflow
+- [x] Import CSV (détection auto banque), synchro PSD2 GoCardless (90j consent, dedup external_id)
+- [x] Transactions : filtres multi-critères, catégorisation regex + IA Claude Haiku (BYOK), virements internes (auto-detect + override manuel)
+- [x] Patrimoine : actifs/passifs, snapshots mensuels, plus-values latentes, plafonds PEA/Livret A
+- [x] Score santé 0-100 (jauge SVG, 5 critères), Cashflow Sankey, 50/30/20 budgets, objectifs épargne
+- [x] Simulateur IR 2025 FR (barème, parts, crédits, niches 10 000 €)
+- [x] PDF bilan dark multi-pages, PWA installable, i18n FR/EN (partiel)
+- [x] Mot de passe oublié (Resend, 60 min, single-use)
 
 ---
 
-## 📅 Notes des sessions
+## 🐛 Bugs connus — corriger avant toute demo externe
 
-**2026-05-06 (matin) — Refonte visuelle "investor-ready" + découpe complète**
-Audit benchmarking Finary / Monarch / Kubera / Copilot. Diagnostic : direction or-sobre OK mais exécution sous-spec. Sortie : hero dramatique, sidebar desktop, mobile bottom-nav 6 items, palette refinée, fonts DM Sans/Mono, modales modernisées, empty states sober. Découpe `WealthlyApp.jsx` 6 386 → 1 139 lignes (L1 utils/constants/Styles + L2 toutes les vues + leaf components).
+> Identifiés le 2026-05-10 par navigation directe sur la démo live.
 
-**2026-05-06 (après-midi) — Sécu basique + features signature**
-Rate limiting auth, alembic infra (auto-stamp baseline), filtres transactions multi-critères avec panel, score santé financière 0-100 avec jauge SVG hand-rolled.
+### Demo data — incohérences critiques
 
-**2026-05-06 (soir) — Features patrimoniales + i18n + PDF dark + bug-bash**
-Plus-values latentes, plafonds régulés (PEA/Livret A/LDDS), YoY sur Suivi mensuel, drawer compte avec cross-view filter, refonte LiabilityDetail façon Finary, AuthScreen polish, PDF rebuild en thème dark mirror du site (cover hero + amortissement par dette + sanitize Unicode pour fixer les glyphs `/` et `"` venant de `Intl.NumberFormat`). i18n FR/EN setup avec bouton FR · EN inline (sortie de Réglages). Hotfixes : `WEALTH_SUBVIEWS` résiduel post-sed, SW cache version bump, `formatDate` manquant dans Dashboard (écran noir post-login).
+| # | Problème | Fichier | Fix |
+|---|----------|---------|-----|
+| 1 | **Double logement** : "Virement loyer 14 rue de Vaugirard" −1 400 €/mois + "Échéance prêt immobilier" −1 150 €/mois. Un propriétaire ne paie pas de loyer. Double comptage housing = 2 550 €/mois. | `frontend/src/demoData.js` | Remplacer "Virement loyer" par "Charges de copropriété" −250 €/mois |
+| 2 | **YTD +1257 %** sur le hero — absurde. Probablement aucun `wealthSnapshots` dans `getDemoData()` → calcul compare à 0. | `frontend/src/demoData.js` + Dashboard | Ajouter des snapshots réalistes dans le seed (6 mois, +3–5 %/an) |
+| 3 | **Widget "Activité récente"** : libellés "—" et "Non catégorisé" sur le Dashboard, alors que /transactions affiche tout correctement. Régression post-refonte. | `frontend/src/views/Dashboard.jsx` | Vérifier le mapping `label` / `categoryId` dans le composant |
+| 4 | **Donut "NET" faux** : affiche ~515 000 € (somme brute actifs) au lieu du patrimoine net ~284 000 €. | `frontend/src/views/Dashboard.jsx` | Corriger le calcul ou changer le label en "ACTIFS BRUTS" |
 
-**2026-05-05 — Synchro bancaire DSP2**
-Intégration GoCardless Bank Account Data. Tables `bank_connections`, `bank_account_links`. Dédup sur `external_id`.
+### Budget mensuel réaliste — persona cible
 
-**Direction visuelle (stabilisée)** : encre profonde + or sobre + sage / terracotta sourds. Tabular-nums partout. Pas de translateY au hover. Or = signature unique sur les CTA et les trends positifs.
+**Couple Paris : Alice 3 850 €/mois + Bob 3 220 €/mois, propriétaires, 1 enfant (Léa)**
+
+```
+REVENUS                         7 070 €
+Prêt immobilier (seul item)    −1 150 €
+Charges copropriété              −250 €  ← remplace le loyer erroné
+Crèche Léa                       −680 €
+EDF + Free Box                   −127 €
+Assurances (habitation + auto)    −96 €
+CESU Mme Sanchez                 −160 €
+Abonnements (Netflix+Spotify+sport)  −68 €
+Carburant                        −140 €
+Courses (Carrefour+Monoprix+Naturalia)  −348 €
+Restaurants + loisirs            −116 €
+Épargne Livret A                 −600 €
+─────────────────────────────────────
+RESTE À VIVRE                  3 335 €  (47 % d'épargne — excellent, crédible)
+```
+
+---
+
+## 🔜 À faire — priorisé
+
+### 🔴 P0 — Migration Alembic (bloquant pour prod)
+
+Les nouvelles tables/colonnes (`AuthEvent`, `User.is_admin`, `User.full_name`) existent via `create_all()` mais **aucune revision Alembic n'existe**. Sur une DB existante, ces colonnes sont absentes → admin panel cassé en prod.
+
+- [ ] `alembic revision --autogenerate -m "add_auth_events_admin_fields"` et vérifier le diff
+- [ ] Ajouter `User.is_active` si absent (nécessaire pour suspension utilisateur)
+- [ ] Tester la revision sur la DB Supabase Railway avant de pousser
+
+### 🔴 P0 — Créer les 2 comptes admin
+
+Aucun moyen de créer un admin sans accès DB direct. Besoin d'un script :
+
+- [ ] `backend/scripts/seed_admins.py` — crée/met à jour les comptes kdtheory + Raphyy31 avec `is_admin=True`
+- [ ] Variables d'env : `ADMIN_EMAIL_1`, `ADMIN_PASSWORD_1`, `ADMIN_EMAIL_2`, `ADMIN_PASSWORD_2`
+- [ ] Lancer via `railway run python backend/scripts/seed_admins.py` (one-shot)
+
+### 🔴 P0 — Corriger les 4 bugs démo (tableau ci-dessus)
+
+### 🟠 P1 — JWT → httpOnly cookies
+
+Actuellement le JWT est dans `localStorage` → accessible à tout JS injecté. La section Sécurité de la landing le présente comme une feature — c'est une erreur à corriger aussi.
+
+**Backend** (`backend/app/routers/auth.py`) :
+- [ ] `POST /auth/login` → `Set-Cookie: trove_token=...; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800`
+- [ ] `GET /auth/me` → lire cookie en priorité (fallback Bearer header pour compatibilité)
+- [ ] `POST /auth/logout` → effacer le cookie (`Max-Age=0`) + endpoint frontend
+
+**Backend** (`backend/app/main.py`) :
+- [ ] CORS : ajouter `allow_credentials=True`
+
+**Frontend** :
+- [ ] `api.js` → `credentials: 'include'` sur tous les fetch
+- [ ] `App.jsx` + `AuthScreen.jsx` → supprimer les `localStorage` du token
+- [ ] Landing `Sécurité` : supprimer/reformuler la phrase "Un JWT en localStorage, c'est tout"
+
+### 🟠 P1 — 2FA TOTP (obligatoire pour admins)
+
+- [ ] Table `totp_secrets` (user_id, secret, backup_codes JSON, verified_at)
+- [ ] `POST /auth/totp/setup` → génère secret PyOTP + URI QR
+- [ ] `POST /auth/totp/verify` → active le TOTP
+- [ ] `POST /auth/totp/disable` → désactive (admin seulement)
+- [ ] Flow login modifié : si TOTP actif → retourner `{ requires_totp: true, partial_token }` → frontend step 2
+- [ ] Middleware admin : bloquer `/admin/*` si TOTP non vérifié pour les `is_admin`
+- [ ] Frontend `AuthScreen.jsx` : écran "Entrez votre code 2FA" (6 chiffres + backup code)
+- [ ] `Settings.jsx` : section "Sécurité du compte" — activer/désactiver TOTP + afficher backup codes
+
+### 🟡 P2 — Admin panel — actions manquantes
+
+Panel actuel = lecture seule. À ajouter :
+
+- [ ] `PUT /admin/users/{id}/toggle-active` — suspendre/réactiver (toggle `is_active`) + audit log
+- [ ] `DELETE /admin/users/{id}` — suppression avec confirmation (soft delete recommandé)
+- [ ] Frontend : boutons Suspendre / Réactiver / Supprimer dans la table users
+- [ ] Pagination sur `/admin/auth-events` (actuellement limité à 100)
+
+### 🟡 P2 — Cron bank sync + alertes DSP2
+
+- [ ] `POST /internal/sync-all-banks` protégé par header `X-Cron-Secret`
+- [ ] Cron Railway planifié 1×/jour à 6h UTC
+- [ ] Email Resend J-7 avant expiration consentement (90 jours)
+
+### 🔵 P3 — Docker self-hosting production-grade
+
+- [ ] Audit `docker-compose.yml` actuel (volumes, restart policies, healthchecks)
+- [ ] `docker-compose.prod.yml` avec Caddy (TLS auto) + Postgres local + backend + frontend
+- [ ] Images publiées sur GHCR
+- [ ] `SELF_HOSTING.md` : guide install, backup, mise à jour, variables d'env
+
+### ⚪ Plus tard
+
+- [ ] **Multi-devise complet** : brancher les hooks `useQuotes`/`useRates`/`useBaseCurrency` (déjà créés) sur le frontend
+- [ ] **Tests frontend vitest** : moteur fiscal `taxFr.js`
+- [ ] **Stripe paywall** : Solo 0€ / Pro 7,99€ / Famille 14,99€ — landing prête, backend à faire
+- [ ] **Vérification trademark "Trove"** (EUIPO/INPI/USPTO) + achat domaine
+- [ ] **Architecture multi-pays** : champ `country` sur households, gating composants FR-only
+- [ ] **TypeScript** : migration progressive si friction concrète
+
+---
+
+## 🎨 Design — Raphyy31 (cette semaine)
+
+- [ ] Revue complète avec Claude Design (direction visuelle landing + app)
+- [ ] Mettre à jour les mockups dans la landing (affichent encore "Wealthly")
+- [ ] Remettre le toggle i18n FR/EN visible dans l'UI
+- [ ] Cohérence design entre landing (gradient violet/bleu) et app intérieure
+
+---
+
+## 🚫 Hors scope
+
+- ❌ Rebalancing automatique d'allocation
+- ❌ Garde alternée dans le simulateur d'impôt
+- ❌ Mode clair (dark-only)
+- ❌ Agent IA réseaux sociaux (réservé post-commercialisation)
+
+---
+
+## 📅 Sessions
+
+**2026-05-10 — Analyse live + planification sécurité (kdtheory + Claude)**
+Navigation directe sur la démo Trove. Bugs identifiés : double loyer demoData (propriétaire + loyer = impossible), YTD +1257 % absurde, widget Activité récente cassé (libellés "—"), donut label "NET" faux (515 k vs 284 k). Analyse persona réaliste : couple Paris 7 070 €/mois + enfant. Pull repo → découverte push massif Raphyy31 : security.py (audit log, lockout, HIBP, CSP), admin.py + Admin.jsx (panel lecture seule), multi-currency hooks. TODO réorganisée P0/P1/P2/P3.
+
+**2026-05-08/09 — Refonte Trove (Raphyy31)**
+Rebrand Wealthly → Trove. Landing v2 (tarifs 3 plans, FAQ, sécurité, fonctionnement). Dashboard v2 (hero, courbe interactive, Insights, Objectifs). Sidebar restructurée. demoData.js réécrit. security.py + admin.py + Admin.jsx livrés. Hooks multi-devise.
+
+**2026-05-08 — Account roles + transfer detection (kdtheory)**
+5 rôles cashflow/compte, détection virements internes auto (±3j, ±1 %), override manuel tri-state, section Mouvements internes Dashboard.
+
+**2026-05-06 — Investor-ready push (Raphyy31 + kdtheory)**
+Refonte visuelle Méridien, découpe WealthlyApp.jsx −82 %, rate limiting, Alembic, filtres transactions, score santé SVG, plus-values latentes, plafonds régulés, PDF dark, i18n FR/EN.
+
+**2026-05-05 — Session fondatrice**
+Stack, import CSV, PWA, simulateur IR, DSP2, budgets, snapshots, reset password, mode démo.
