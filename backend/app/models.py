@@ -64,6 +64,8 @@ class Household(Base):
 
     id = Column(String, primary_key=True, default=_uuid)
     name = Column(String, nullable=False, default="Mon foyer")
+    # plan: solo | pro | family | admin (free forever for platform founders)
+    plan = Column(String, nullable=False, default="solo")
     created_at = Column(DateTime, default=datetime.utcnow)
 
     users = relationship("User", back_populates="household", cascade="all, delete-orphan")

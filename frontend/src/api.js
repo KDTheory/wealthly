@@ -112,11 +112,16 @@ export const auth = {
 // ADMIN
 // ============================================================================
 export const admin = {
-  stats: () => get('/admin/stats'),
-  authEvents: (limit = 100, kind = null) => get(`/admin/auth-events?limit=${limit}${kind ? `&kind=${encodeURIComponent(kind)}` : ''}`),
-  users: () => get('/admin/users'),
-  toggleUser: (userId) => request('PUT', `/admin/users/${userId}/toggle`),
-  deleteUser: (userId) => request('DELETE', `/admin/users/${userId}`),
+  stats:        ()              => get('/admin/stats'),
+  metrics:      ()              => get('/admin/metrics'),
+  growth:       ()              => get('/admin/growth'),
+  authEvents:   (limit = 100, kind = null) => get(`/admin/auth-events?limit=${limit}${kind ? `&kind=${encodeURIComponent(kind)}` : ''}`),
+  users:        ()              => get('/admin/users'),
+  households:   ()              => get('/admin/households'),
+  toggleUser:   (id)            => request('PUT',    `/admin/users/${id}/toggle`),
+  deleteUser:   (id)            => request('DELETE', `/admin/users/${id}`),
+  updatePlan:   (householdId, plan) => request('PUT', `/admin/households/${householdId}/plan`, { plan }),
+  resetPassword:(id)            => request('POST',   `/admin/users/${id}/reset-password`),
 };
 
 // ============================================================================
