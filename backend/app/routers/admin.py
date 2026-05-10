@@ -113,13 +113,17 @@ def metrics(db: Session = Depends(get_db)):
     total_liabilities_value = db.query(func.sum(Liability.remaining_capital)).scalar() or 0
     total_accounts = db.query(func.count(Account.id)).scalar() or 0
 
-    # Plans breakdown
-    plans = (
-        db.query(Household.plan, func.count(Household.id).label("n"))
-        .group_by(Household.plan)
-        .all()
-    )
-    plans_breakdown = {p: int(n) for p, n in plans}
+    # Plans breakdown — defensive in case migration hasn't applied plan column yet
+    try:
+        plans = (
+            db.query(Household.plan, func.count(Household.id).label("n"))
+            .group_by(Household.plan)
+            .all()
+        )
+        plans_breakdown = {p: int(n) for p, n in plans}
+    except Exception:
+        db.rollback()
+        plans_breakdown = {"solo": int(total_households)}
 
     # New users this week / this month
     now = datetime.utcnow()
@@ -228,7 +232,11 @@ def users(db: Session = Depends(get_db)):
             .order_by(desc(Transaction.date))
             .first()
         )
-        household = db.query(Household).filter(Household.id == u.household_id).first()
+        try:
+            household = db.query(Household).filter(Household.id == u.household_id).first()
+        except Exception:
+            db.rollback()
+            household = None
 
         out.append({
             "id": u.id,
@@ -238,7 +246,7 @@ def users(db: Session = Depends(get_db)):
             "is_active": bool(u.is_active),
             "household_id": u.household_id,
             "household_name": household.name if household else None,
-            "plan": household.plan if household else "solo",
+            "plan": getattr(household, 'plan', 'solo') if household else "solo",
             "created_at": u.created_at.isoformat() if u.created_at else None,
             "last_login_at": last_login.created_at.isoformat() if last_login else None,
             "last_login_ip": last_login.ip if last_login else None,
@@ -254,7 +262,18 @@ def users(db: Session = Depends(get_db)):
 @router.get("/households")
 def households(db: Session = Depends(get_db)):
     """All households with member/account/transaction stats."""
-    rows = db.query(Household).order_by(desc(Household.created_at)).all()
+    # Use explicit columns to avoid crashing if 'plan' column not yet migrated
+    try:
+        rows = db.query(Household).order_by(desc(Household.created_at)).all()
+        has_plan = True
+    except Exception:
+        db.rollback()
+        # Fallback: query without plan column
+        from sqlalchemy import text
+        raw = db.execute(text("SELECT id, name, created_at FROM households ORDER BY created_at DESC")).fetchall()
+        rows = [type('H', (), {'id': r[0], 'name': r[1], 'created_at': r[2], 'plan': 'solo'})() for r in raw]
+        has_plan = False
+
     out = []
     for h in rows:
         member_count = db.query(func.count(Member.id)).filter(Member.household_id == h.id).scalar() or 0
@@ -270,11 +289,12 @@ def households(db: Session = Depends(get_db)):
             .first()
         )
 
+        plan = getattr(h, 'plan', 'solo') or 'solo'
         out.append({
             "id": h.id,
             "name": h.name,
-            "plan": h.plan,
-            "plan_label": PLAN_LABELS.get(h.plan, h.plan),
+            "plan": plan,
+            "plan_label": PLAN_LABELS.get(plan, plan),
             "created_at": h.created_at.isoformat() if h.created_at else None,
             "owner_email": owner.email if owner else None,
             "member_count": int(member_count),
