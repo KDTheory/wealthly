@@ -141,7 +141,7 @@ export default function BankCallback({ onDone }) {
     <>
       <h2 style={title}>Lier les comptes — {callback.institution_name}</h2>
       <p style={muted}>
-        Choisis pour chaque compte distant s'il correspond à un compte Trove existant ou s'il faut en créer un nouveau.
+        Choisis pour chaque compte distant s'il correspond à un compte Wealthly existant ou s'il faut en créer un nouveau.
         Les transactions des 90 derniers jours seront importées dès la validation.
       </p>
 

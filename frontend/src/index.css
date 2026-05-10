@@ -1,263 +1,712 @@
 /* ============================================================================
- * Trove — Design System (Tailwind v4 + custom tokens)
+ * Wealthly — Design System v3 (Refonte Claude Design)
  *
- * Visual direction: modern fintech. Dark blue-tinted surfaces with a soft
- * gradient mesh, a single electric-blue accent, Inter Tight typography,
- * vivid semantic colors. Mercury × Stripe × Linear DNA — built for a
- * commercial product, not a niche internal tool.
+ * Direction: papier chaud + cobalt sobre, Geist sans + Newsreader serif,
+ * tabular-nums systématique, format FR strict, zéro fioriture.
  *
- * Tokens are exposed as CSS variables AND as Tailwind theme colors,
- * so utilities like `bg-w-surface` / `text-w-muted` work out of the box.
+ * Token source: design_handoff_wealthly_dashboard/tokens.css
+ * Light mode = par défaut. Dark via [data-theme="dark"] sur <html>.
  *
- * Preflight is intentionally NOT loaded — the existing CSS-in-JS in
- * WealthlyApp.jsx still owns global resets. We only add tokens + utilities.
- * Variable names are kept (--color-w-*, --primary, --text-primary) so the
- * existing CSS-in-JS in Styles.jsx auto-inherits the new palette.
+ * Cohabitation : on conserve les alias hérités (--color-w-*, --bg-page,
+ * --primary, --text-primary, etc.) en les remappant sur les nouveaux tokens,
+ * pour que `Styles.jsx` (CSS-in-JS de 1500 lignes) s'adapte sans réécriture.
+ * Le Dashboard et la sidebar utilisent directement les nouveaux tokens.
  * ============================================================================ */
 
 @layer theme, base, components, utilities;
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
 
-@theme {
-  /* Surfaces — dark with a slight blue tint, lifted off pure black so the
-     UI feels more product than terminal. */
-  --color-w-bg: #151926;
-  --color-w-surface: #1f2434;
-  --color-w-surface-2: #252b3d;
-  --color-w-surface-3: #2d3447;
+/* ─────────────────────────────────────────────────────────────────────────
+   1. Tokens — Light mode (par défaut)
+   ───────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Surfaces — papier chaud */
+  --bg:           #F7F6F2;
+  --bg-elev:      #FFFFFF;
+  --bg-sunk:      #EFEDE6;
+  --bg-hover:     #F1EFE8;
+  --border:       #E4E1D8;
+  --border-strong:#D2CEC0;
 
-  /* Borders */
-  --color-w-border: rgba(255, 255, 255, 0.08);
-  --color-w-border-strong: rgba(255, 255, 255, 0.15);
+  /* Ink */
+  --ink:        #16150F;
+  --ink-2:      #56544A;
+  --ink-3:      #8C8979;
+  --ink-mute:   #B5B2A4;
 
-  /* Text */
-  --color-w-text: #f5f5f7;
-  --color-w-muted: #9ea3b3;
-  --color-w-faint: #6a6f80;
+  /* Accent — cobalt (rare, interactif et data principale) */
+  --accent:       #2540D9;
+  --accent-2:     #1A2FA8;
+  --accent-soft:  #E7EBFF;
+  --accent-line:  #BFC8FF;
 
-  /* Accent — electric blue (deeper saturation, not too bright) */
-  --color-w-accent: #3b6fe0;
-  --color-w-accent-hover: #5285ee;
-  --color-w-accent-2: #7aa3ff;
-  --color-w-accent-soft: rgba(59, 111, 224, 0.16);
-  --color-w-accent-dim: rgba(59, 111, 224, 0.10);
+  /* Sémantique */
+  --positive:      #136D3E;
+  --positive-soft: #DBEDE2;
+  --negative:      #B0392B;
+  --negative-soft: #F4E2DE;
+  --warning:       #8E641A;
+  --warning-soft:  #F2E7CE;
+  --neutral-soft:  #ECE9DF;
 
-  /* Semantic — vivid, modern fintech (no more muted) */
-  --color-w-success: #34d399;
-  --color-w-success-soft: rgba(52, 211, 153, 0.16);
-  --color-w-danger: #f87171;
-  --color-w-danger-soft: rgba(248, 113, 113, 0.16);
-  --color-w-warning: #fbbf24;
-  --color-w-warning-soft: rgba(251, 191, 36, 0.16);
-  --color-w-info: #7aa3ff;
+  /* Dataviz — 7 séries stables */
+  --d1: #2540D9;
+  --d2: #1F8E6E;
+  --d3: #C2733B;
+  --d4: #7B57C6;
+  --d5: #B85D7A;
+  --d6: #4D4D4D;
+  --d7: #E0B23E;
 
-  /* Numerical semantic colours (positive / negative deltas in tables) */
-  --color-w-num-positive: #34d399;
-  --color-w-num-negative: #f87171;
+  /* Radii */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 
-  /* Asset class palette — distinct hues, all desaturated to sit together */
-  --color-w-asset-realestate: #34d399;
-  --color-w-asset-equity: #a78bfa;
-  --color-w-asset-bond: #94a3b8;
-  --color-w-asset-crypto: #fbbf24;
-  --color-w-asset-cash: #3b6fe0;
-  --color-w-asset-pension: #c084fc;
-  --color-w-asset-other: #94a3b8;
-
-  /* Radii — slightly rounder for friendly product feel */
-  --radius-w-sm: 8px;
-  --radius-w-md: 10px;
-  --radius-w-lg: 14px;
-  --radius-w-xl: 20px;
+  /* Spacing — 4 px scale */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
 
   /* Shadows */
-  --shadow-w-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-w-md: 0 8px 24px -10px rgba(0, 0, 0, 0.4);
-  --shadow-w-lg: 0 20px 60px -20px rgba(0, 0, 0, 0.5);
-  --shadow-w-glow-accent: 0 0 0 4px rgba(59, 111, 224, 0.18);
+  --shadow-sm:  0 1px 0 rgba(20,20,15,.04), 0 1px 2px rgba(20,20,15,.04);
+  --shadow-md:  0 1px 0 rgba(20,20,15,.04), 0 4px 12px -2px rgba(20,20,15,.06);
+  --shadow-pop: 0 1px 0 rgba(20,20,15,.06), 0 12px 32px -8px rgba(20,20,15,.12);
 
-  /* Typography */
-  --font-sans: "Inter Tight", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Transitions */
+  --t-fast: 120ms cubic-bezier(.2,.6,.2,1);
+  --t-med:  180ms cubic-bezier(.2,.6,.2,1);
+
+  /* Fonts */
+  --font-sans:  'Geist', system-ui, -apple-system, sans-serif;
+  --font-mono:  'Geist Mono', ui-monospace, 'SF Mono', monospace;
+  --font-serif: 'Newsreader', Georgia, serif;
+
+  /* ── Alias hérités (mappent l'ancien système sur le nouveau) ── */
+  --bg-page:         var(--bg);
+  --bg-card:         var(--bg-elev);
+  --bg-card-hover:   var(--bg-hover);
+  --bg-subtle:       var(--bg-sunk);
+  --bg-elevated:     var(--bg-elev);
+  --text-primary:    var(--ink);
+  --text-secondary:  var(--ink-2);
+  --text-tertiary:   var(--ink-3);
+  --border-subtle:   var(--border);
+  --border-default:  var(--border);
+  --border-light:    var(--border);
+  --primary:         var(--accent);
+  --primary-hover:   var(--accent-2);
+  --primary-soft:    var(--accent-soft);
+  --primary-dim:     var(--accent-soft);
+  --primary-text:    var(--accent-2);
+  --success:         var(--positive);
+  --success-soft:    var(--positive-soft);
+  --success-text:    var(--positive);
+  --danger:          var(--negative);
+  --danger-soft:     var(--negative-soft);
+  --danger-text:     var(--negative);
+  --warning-text:    var(--warning);
+
+  /* Tailwind v4 @theme tokens (alias for the bg-w-* utilities still in use) */
+  --color-w-bg: var(--bg);
+  --color-w-surface: var(--bg-elev);
+  --color-w-surface-2: var(--bg-sunk);
+  --color-w-surface-3: var(--bg-hover);
+  --color-w-border: var(--border);
+  --color-w-border-strong: var(--border-strong);
+  --color-w-text: var(--ink);
+  --color-w-muted: var(--ink-2);
+  --color-w-faint: var(--ink-3);
+  --color-w-accent: var(--accent);
+  --color-w-accent-hover: var(--accent-2);
+  --color-w-accent-2: var(--accent-2);
+  --color-w-accent-soft: var(--accent-soft);
+  --color-w-accent-dim: var(--accent-soft);
+  --color-w-success: var(--positive);
+  --color-w-success-soft: var(--positive-soft);
+  --color-w-danger: var(--negative);
+  --color-w-danger-soft: var(--negative-soft);
+  --color-w-warning: var(--warning);
+  --color-w-warning-soft: var(--warning-soft);
+  --color-w-info: var(--accent);
+  --color-w-num-positive: var(--positive);
+  --color-w-num-negative: var(--negative);
+  --color-w-asset-realestate: var(--d2);
+  --color-w-asset-equity:     var(--d3);
+  --color-w-asset-bond:       var(--d6);
+  --color-w-asset-crypto:     var(--d4);
+  --color-w-asset-cash:       var(--d1);
+  --color-w-asset-pension:    var(--d5);
+  --color-w-asset-other:      var(--d7);
 }
 
-/* Light mode — soft neutral, blue accent stays.
-   Activated by `data-theme="light"` on <html>. */
-:root[data-theme="light"] {
-  --color-w-bg: #f7f8fc;
-  --color-w-surface: #ffffff;
-  --color-w-surface-2: #f1f3f9;
-  --color-w-surface-3: #e8ebf3;
+/* ─────────────────────────────────────────────────────────────────────────
+   2. Dark mode
+   ───────────────────────────────────────────────────────────────────────── */
+:root[data-theme="dark"] {
+  --bg:           #0F0E0C;
+  --bg-elev:      #181714;
+  --bg-sunk:      #0A0908;
+  --bg-hover:     #1F1D19;
+  --border:       #2A2823;
+  --border-strong:#3A382F;
 
-  --color-w-border: #e3e6ee;
-  --color-w-border-strong: #cdd2dd;
+  --ink:        #F1EEE4;
+  --ink-2:      #A29E91;
+  --ink-3:      #75716A;
+  --ink-mute:   #4D4A45;
 
-  --color-w-text: #0e1119;
-  --color-w-muted: #5b6275;
-  --color-w-faint: #8a92a3;
+  --accent:       #7E92FF;
+  --accent-2:     #A6B4FF;
+  --accent-soft:  #1B214A;
+  --accent-line:  #2E3A7A;
 
-  --color-w-accent: #2855c8;
-  --color-w-accent-hover: #1f47b3;
-  --color-w-accent-2: #3b6fe0;
-  --color-w-accent-soft: rgba(40, 85, 200, 0.10);
-  --color-w-accent-dim: rgba(40, 85, 200, 0.06);
+  --positive:      #4FB57A;
+  --positive-soft: #15301F;
+  --negative:      #E07A6E;
+  --negative-soft: #341B17;
+  --warning:       #D4A74C;
+  --warning-soft:  #2A2316;
+  --neutral-soft:  #1F1D17;
 
-  --color-w-success: #10b981;
-  --color-w-success-soft: rgba(16, 185, 129, 0.10);
-  --color-w-danger: #dc2626;
-  --color-w-danger-soft: rgba(220, 38, 38, 0.10);
-  --color-w-warning: #d97706;
-  --color-w-warning-soft: rgba(217, 119, 6, 0.10);
-  --color-w-info: #2855c8;
+  --d1: #7E92FF;
+  --d2: #4FB57A;
+  --d3: #E0975A;
+  --d4: #B69BF2;
+  --d5: #DA8AA1;
+  --d6: #9C988B;
+  --d7: #E5C75E;
 
-  --color-w-num-positive: #10b981;
-  --color-w-num-negative: #dc2626;
+  --shadow-sm:  0 1px 0 rgba(0,0,0,.3), 0 1px 2px rgba(0,0,0,.3);
+  --shadow-md:  0 1px 0 rgba(0,0,0,.3), 0 4px 12px -2px rgba(0,0,0,.4);
+  --shadow-pop: 0 1px 0 rgba(0,0,0,.4), 0 12px 32px -8px rgba(0,0,0,.6);
 
-  --shadow-w-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
-  --shadow-w-md: 0 8px 24px -10px rgba(15, 23, 42, 0.10);
-  --shadow-w-lg: 0 20px 60px -20px rgba(15, 23, 42, 0.15);
+  color-scheme: dark;
 }
 
-/* Tabular numerals on monetary values for clean column alignment. */
-.w-num {
+/* ─────────────────────────────────────────────────────────────────────────
+   3. Base
+   ───────────────────────────────────────────────────────────────────────── */
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-feature-settings: 'cv11', 'ss01', 'ss03';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background var(--t-med), color var(--t-med);
+}
+
+.num, .amount, [data-financial], .w-num {
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1, "cv11" 1;
+  font-feature-settings: 'tnum';
 }
 
-/* Mesh background — subtle gradient halos sitting behind the whole app
-   to give the dark surface its own personality (Mercury / Stripe vibe). */
-.w-mesh {
-  background-image:
-    radial-gradient(1500px 700px at 100% -10%, rgba(91, 141, 239, 0.18), transparent 55%),
-    radial-gradient(1000px 600px at -10% 20%, rgba(167, 139, 250, 0.10), transparent 55%),
-    radial-gradient(800px 500px at 60% 110%, rgba(52, 211, 153, 0.07), transparent 55%);
-  background-attachment: fixed;
-}
-:root[data-theme="light"] .w-mesh {
-  background-image:
-    radial-gradient(1500px 700px at 100% -10%, rgba(40, 85, 200, 0.06), transparent 55%),
-    radial-gradient(1000px 600px at -10% 20%, rgba(167, 139, 250, 0.05), transparent 55%);
-}
+/* ─────────────────────────────────────────────────────────────────────────
+   4. Composants — Système nouveau (classes ds-*)
+   ───────────────────────────────────────────────────────────────────────── */
 
-/* Glassy card with top inner highlight — used for hero, panels, account cards. */
-.w-glass {
-  background: var(--color-w-surface);
-  border: 1px solid var(--color-w-border);
-  border-radius: var(--radius-w-lg);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.04) inset,
-    0 8px 24px -10px rgba(0, 0, 0, 0.4);
-}
-
-/* Gain pill — green by default, danger-red variant. Robinhood-style. */
-.w-gain-pill {
-  display: inline-flex;
-  align-items: center;
+/* Buttons */
+.ds-btn {
+  display: inline-flex; align-items: center; justify-content: center;
   gap: 6px;
-  padding: 5px 11px;
-  border-radius: 999px;
-  background: var(--color-w-success-soft);
-  color: var(--color-w-success);
-  font-weight: 600;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
   font-size: 13px;
-  border: 1px solid rgba(52, 211, 153, 0.25);
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+  white-space: nowrap;
 }
-.w-gain-pill.danger {
-  background: var(--color-w-danger-soft);
-  color: var(--color-w-danger);
-  border-color: rgba(248, 113, 113, 0.25);
+.ds-btn:hover { background: var(--bg-hover); border-color: var(--border-strong); }
+.ds-btn:active { transform: translateY(1px); }
+.ds-btn:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.ds-btn.sm { height: 28px; padding: 0 10px; font-size: 12px; }
+.ds-btn.lg { height: 40px; padding: 0 18px; font-size: 14px; }
+
+.ds-btn.primary { background: var(--ink); color: var(--bg); border-color: transparent; }
+.ds-btn.primary:hover { background: var(--ink-2); }
+.ds-btn.ghost { background: transparent; border-color: transparent; }
+.ds-btn.ghost:hover { background: var(--bg-hover); }
+.ds-btn.danger { background: var(--negative); color: #fff; border-color: transparent; }
+
+/* Icon button */
+.ds-icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+}
+.ds-icon-btn:hover { background: var(--bg-hover); color: var(--ink); border-color: var(--border-strong); }
+
+/* Inputs */
+.ds-input {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--ink);
+  font: 400 13px/1.4 var(--font-sans);
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+  width: 100%;
+}
+.ds-input::placeholder { color: var(--ink-3); }
+.ds-input:hover { border-color: var(--border-strong); }
+.ds-input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
-/* Live "synced" pulsing dot for the topbar. */
-.w-live-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--color-w-success);
-  box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6);
-  animation: w-pulse 2s infinite;
+/* Pills */
+.ds-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  background: var(--neutral-soft);
+  color: var(--ink-2);
+  border: 1px solid transparent;
 }
-@keyframes w-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
-  70%  { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+.ds-pill.pos { background: var(--positive-soft); color: var(--positive); }
+.ds-pill.neg { background: var(--negative-soft); color: var(--negative); }
+.ds-pill.warn { background: var(--warning-soft); color: var(--warning); }
+.ds-pill.accent { background: var(--accent-soft); color: var(--accent-2); }
+.ds-pill .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor; opacity: .8;
 }
 
-/* ────────────────────────────────────────────────────────────────────
-   Legacy Méridien classes — kept as no-ops so any view that still uses
-   them (`.w-serif`, `.w-roman`, `.w-eyebrow`, `.w-section-h`) doesn't
-   crash. They fall back to plain Inter-Tight + tracking and the old
-   gold accent maps to the new electric blue automatically.
-   ──────────────────────────────────────────────────────────────────── */
-.w-serif {
-  font-family: var(--font-sans);
-  font-style: normal;
-  font-weight: 700;
-  letter-spacing: -0.025em;
+/* Banner */
+.ds-banner {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent-2);
+  font-size: 13px;
+  line-height: 1.5;
 }
-.w-serif-italic {
+.ds-banner.pos { background: var(--positive-soft); color: var(--positive); border-color: transparent; }
+.ds-banner.neg { background: var(--negative-soft); color: var(--negative); border-color: transparent; }
+.ds-banner.warn { background: var(--warning-soft); color: var(--warning); border-color: transparent; }
+
+/* Card + Panel */
+.ds-card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+}
+.ds-panel {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+.ds-panel-head {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+}
+.ds-panel-title { font: 600 14px/1.3 var(--font-sans); color: var(--ink); letter-spacing: -0.005em; }
+.ds-panel-sub   { font-size: 12px; color: var(--ink-3); }
+
+/* Caption labels */
+.ds-caption {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.ds-micro {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Range tabs (segmented) */
+.ds-range-tabs {
+  display: inline-flex;
+  background: var(--bg-sunk);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  gap: 2px;
+}
+.ds-range-tabs button {
+  height: 26px;
+  padding: 0 10px;
+  border: none;
+  background: transparent;
+  color: var(--ink-2);
+  font: 500 12px/1 var(--font-sans);
+  border-radius: 4px;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.ds-range-tabs button:hover { color: var(--ink); }
+.ds-range-tabs button.on {
+  background: var(--bg-elev);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Chip filters */
+.ds-chip {
+  display: inline-flex; align-items: center;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--ink-2);
+  font: 500 12px/1 var(--font-sans);
+  cursor: pointer;
+  transition: all var(--t-fast);
+}
+.ds-chip:hover { background: var(--bg-hover); }
+.ds-chip.on { background: var(--accent-soft); color: var(--accent-2); border-color: transparent; }
+
+/* Hero number (Newsreader) */
+.ds-hero-num {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 64px;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.ds-hero-num .cents {
+  font-size: 32px;
+  color: var(--ink-3);
+}
+
+/* Bank mark */
+.ds-bank-mark {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font: 700 11px/1 var(--font-mono);
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+/* Tx icon */
+.ds-tx-icon {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font: 600 12px/1 var(--font-sans);
+  flex-shrink: 0;
+}
+
+/* Live dot — pulse */
+.ds-live-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--positive);
+  animation: ds-pulse 2s ease-in-out infinite;
+}
+@keyframes ds-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.35; }
+}
+
+/* Focus ring (utility) */
+.ds-focus:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   5. Legacy compatibility (no-op classes to keep older views from crashing)
+   ───────────────────────────────────────────────────────────────────────── */
+.w-serif, .w-serif-italic {
   font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: -0.02em;
   font-style: normal;
-  font-weight: 700;
-  letter-spacing: -0.025em;
-  /* Map the old "italic accent" to a subtle electric-blue accent. */
-  color: var(--color-w-accent-2);
+  color: inherit;
 }
 .w-section-h {
-  font-size: 12px;
-  letter-spacing: 0.04em;
-  text-transform: none;
-  color: var(--color-w-text);
+  font-size: 14px; font-weight: 600; color: var(--ink);
   display: flex; align-items: baseline; gap: 6px;
-  font-weight: 600;
 }
-.w-roman {
-  display: none;  /* roman-numeral preface no longer fits the new direction */
-}
+.w-roman { display: none; }
 .w-eyebrow {
-  font-size: 11px;
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-  color: var(--color-w-muted);
-  font-weight: 600;
-  margin-bottom: 10px;
+  font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-3); font-weight: 500;
+  margin-bottom: 8px;
   display: inline-flex; align-items: center; gap: 8px;
 }
 .w-eyebrow::before {
-  content: '';
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--color-w-success);
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--positive);
 }
-.w-divider-dot {
-  border-bottom: 1px solid var(--color-w-border);
+.w-divider-dot { border-bottom: 1px solid var(--border); }
+.w-mesh { background: var(--bg); }
+.w-glass {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.w-gain-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 999px;
+  background: var(--positive-soft); color: var(--positive);
+  font-weight: 500; font-size: 12px;
+}
+.w-gain-pill.danger { background: var(--negative-soft); color: var(--negative); }
+.w-live-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--positive);
+  animation: ds-pulse 2s ease-in-out infinite;
 }
 
-/* ────────────────────────────────────────────────────────────────────
-   Modern fintech page-header pattern — used by all sub-views.
-   Title left-aligned, optional supporting paragraph, optional CTA on
-   the right. Replaces the editorial "Relevé · X / Votre Y." pattern.
-   ──────────────────────────────────────────────────────────────────── */
+/* Page header pattern (used by sub-views) */
 .subview-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
   margin-bottom: 24px;
 }
 .subview-header h1 {
-  font-size: clamp(24px, 3vw, 30px);
-  font-weight: 700;
-  letter-spacing: -0.025em;
-  color: var(--color-w-text);
+  font-size: clamp(22px, 2.4vw, 28px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
   line-height: 1.15;
   margin: 0 0 6px;
 }
 .subview-header p {
   font-size: 14px;
-  color: var(--color-w-muted);
+  color: var(--ink-2);
   line-height: 1.55;
   margin: 0;
   max-width: 640px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   6. Sidebar v3 — Wealthly (240 px, papier chaud, cobalt rare)
+   ───────────────────────────────────────────────────────────────────────── */
+.ws-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  height: 100vh;
+  position: sticky; top: 0;
+  background: var(--bg);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  padding: 16px 12px;
+  gap: 12px;
+}
+.ws-brand {
+  display: flex; align-items: center; gap: 10px;
+  padding: 4px 4px 8px;
+  cursor: pointer;
+}
+.ws-brand-mark {
+  width: 28px; height: 28px;
+  background: var(--ink); color: var(--bg);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font: 700 14px/1 var(--font-sans);
+}
+.ws-brand-name {
+  font: 600 14px/1.1 var(--font-sans);
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.ws-brand-sub {
+  font: 400 11px/1.1 var(--font-sans);
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+
+.ws-search {
+  display: flex; align-items: center; gap: 8px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-elev);
+  color: var(--ink-3);
+}
+.ws-search input {
+  flex: 1; min-width: 0;
+  border: none; background: transparent; outline: none;
+  font: 400 13px/1.2 var(--font-sans);
+  color: var(--ink);
+}
+.ws-search input::placeholder { color: var(--ink-3); }
+.ws-kbd {
+  font: 500 10px/1 var(--font-mono);
+  color: var(--ink-3);
+  background: var(--bg-sunk);
+  border-radius: 4px;
+  padding: 3px 5px;
+}
+
+.ws-nav {
+  display: flex; flex-direction: column;
+  gap: 1px;
+  overflow-y: auto;
+  flex: 1;
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+.ws-nav-group {
+  font: 500 10px/1.2 var(--font-sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 12px 8px 4px;
+}
+.ws-nav-group:first-child { margin-top: 4px; }
+
+.ws-nav button {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--ink-2);
+  font: 450 13.5px/1.2 var(--font-sans);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--t-fast), color var(--t-fast);
+  width: 100%;
+  font-weight: 450;
+}
+.ws-nav button svg { color: var(--ink-3); flex-shrink: 0; transition: color var(--t-fast); }
+.ws-nav button > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ws-nav button:hover { background: var(--bg-hover); color: var(--ink); }
+.ws-nav button:hover svg { color: var(--ink-2); }
+.ws-nav button.on {
+  background: var(--bg-sunk);
+  color: var(--ink);
+  font-weight: 500;
+}
+.ws-nav button.on svg { color: var(--accent); }
+
+.ws-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  background: var(--negative-soft); color: var(--negative);
+  border-radius: 999px;
+  font: 600 10px/1 var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+
+.ws-bank-dot {
+  width: 14px; height: 14px;
+  border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font: 600 8px/1 var(--font-mono);
+  flex-shrink: 0;
+}
+
+.ws-add-btn {
+  color: var(--ink-3) !important;
+  font-style: normal;
+}
+.ws-add-btn svg { color: var(--ink-3); }
+
+/* Sidebar footer */
+.ws-foot {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 8px;
+  position: relative;
+}
+.ws-foot-actions { display: flex; gap: 6px; }
+.ws-user {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background var(--t-fast);
+  text-align: left;
+  font-family: inherit;
+}
+.ws-user:hover { background: var(--bg-hover); }
+.ws-user-avatar {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font: 600 11px/1 var(--font-sans);
+  flex-shrink: 0;
+}
+.ws-user-info { flex: 1; min-width: 0; }
+.ws-user-name { font: 500 12.5px/1.2 var(--font-sans); color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ws-user-meta { font: 400 11px/1.2 var(--font-sans); color: var(--ink-3); margin-top: 2px; }
+
+.ws-popover {
+  position: absolute;
+  bottom: calc(100% - 4px);
+  left: 0; right: 0;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-pop);
+  padding: 4px;
+}
+.ws-popover button {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  font: 500 13px/1 var(--font-sans);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+.ws-popover button:hover { background: var(--bg-hover); }
+.ws-popover-danger { color: var(--negative) !important; }
+
+@media (max-width: 1024px) {
+  .ws-sidebar { display: none; }
 }

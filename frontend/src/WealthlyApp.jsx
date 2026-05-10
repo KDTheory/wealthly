@@ -35,6 +35,7 @@ import { SettingsView } from './views/Settings.jsx';
 import { Admin } from './views/Admin.jsx';
 import { ImportFlow } from './views/ImportFlow.jsx';
 import { AccountDrawer } from './components/AccountDrawer.jsx';
+import { useTheme, ThemeToggle } from './components/ui/ThemeToggle.jsx';
 
 const TaxSimulator = lazy(() => import('./TaxSimulator.jsx'));
 
@@ -59,7 +60,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   const [drawerAccount, setDrawerAccount] = useState(null);
   const [navOpen, setNavOpen] = useState(false);
   const [txInitialAccountFilter, setTxInitialAccountFilter] = useState(null);
-  const theme = 'dark';
+  const [theme] = useTheme();
   const [members, setMembers] = useState([]);
   const [activeMemberId, setActiveMemberId] = useState('all');
   const [accounts, setAccounts] = useState([]);
@@ -1118,67 +1119,102 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
       )}
 
       <div className="app-shell">
-        {/* Desktop sidebar (≥1024px) */}
-        <aside className="app-sidebar">
-          <div className="sidebar-brand" onClick={() => setView('dashboard')}>
-            <div className="brand-mark">T</div>
-            <div className="brand-text">
-              <div className="brand-name">{APP_NAME}</div>
-              <div className="brand-tagline">Patrimoine familial</div>
+        {/* Desktop sidebar (≥1024px) — Wealthly v3 handoff spec */}
+        <aside className="ws-sidebar">
+          <div className="ws-brand" onClick={() => setView('dashboard')}>
+            <div className="ws-brand-mark">W</div>
+            <div>
+              <div className="ws-brand-name">{APP_NAME}</div>
+              <div className="ws-brand-sub">Patrimoine personnel</div>
             </div>
           </div>
 
-          <nav className="sidebar-nav">
-            <div className="sidebar-section">Vue d'ensemble</div>
-            <button onClick={() => setView('dashboard')} className={view === 'dashboard' ? 'active' : ''}><Activity size={15}/> <span>{t('nav.dashboard')}</span></button>
-            <button onClick={() => setView('wealth')} className={view === 'wealth' ? 'active' : ''}><Landmark size={15}/> <span>{t('nav.wealth')}</span></button>
-            <button onClick={() => setView('transactions')} className={view === 'transactions' ? 'active' : ''}><BarChart3 size={15}/> <span>{t('nav.transactions')}</span></button>
-            <button onClick={() => setView('analysis')} className={view === 'analysis' ? 'active' : ''}><TrendingUp size={15}/> <span>Analyse</span></button>
+          <div className="ws-search">
+            <Search size={14} />
+            <input placeholder="Rechercher" />
+            <kbd className="ws-kbd">⌘K</kbd>
+          </div>
 
-            <div className="sidebar-section">Gestion</div>
-            <button onClick={() => setView('monthly')} className={view === 'monthly' ? 'active' : ''}>
-              <Calendar size={15}/> <span>{t('nav.monthly')}</span>
-              {budgetsOverCount > 0 && <span className="nav-alert-dot" title={`${budgetsOverCount} budget${budgetsOverCount > 1 ? 's' : ''} dépassé${budgetsOverCount > 1 ? 's' : ''}`}>{budgetsOverCount}</span>}
+          <nav className="ws-nav">
+            <div className="ws-nav-group">Pilotage</div>
+            <button onClick={() => setView('dashboard')} className={view === 'dashboard' ? 'on' : ''}>
+              <Activity size={16}/> <span>Vue d'ensemble</span>
             </button>
-            <button onClick={() => setView('budgets')} className={view === 'budgets' ? 'active' : ''}><Target size={15}/> <span>Budgets &amp; objectifs</span></button>
-            <button onClick={() => setView('cashflow')} className={view === 'cashflow' ? 'active' : ''}><ArrowUpDown size={15}/> <span>Cashflow</span></button>
-            <button onClick={() => setView('tax')} className={view === 'tax' ? 'active' : ''}><Calculator size={15}/> <span>{t('nav.tax')}</span></button>
+            <button onClick={() => setView('wealth')} className={view === 'wealth' ? 'on' : ''}>
+              <Landmark size={16}/> <span>Patrimoine</span>
+            </button>
+            <button onClick={() => setView('transactions')} className={view === 'transactions' ? 'on' : ''}>
+              <BarChart3 size={16}/> <span>Transactions</span>
+            </button>
+            <button onClick={() => setView('analysis')} className={view === 'analysis' ? 'on' : ''}>
+              <TrendingUp size={16}/> <span>Performance</span>
+            </button>
 
-            <div className="sidebar-section">Configuration</div>
-            <button onClick={() => setView('settings')} className={view === 'settings' ? 'active' : ''}><Settings size={15}/> <span>{t('nav.settings')}</span></button>
+            <div className="ws-nav-group">Gestion</div>
+            <button onClick={() => setView('monthly')} className={view === 'monthly' ? 'on' : ''}>
+              <Calendar size={16}/> <span>Budget mensuel</span>
+              {budgetsOverCount > 0 && <span className="ws-badge">{budgetsOverCount}</span>}
+            </button>
+            <button onClick={() => setView('budgets')} className={view === 'budgets' ? 'on' : ''}>
+              <Target size={16}/> <span>Objectifs</span>
+            </button>
+            <button onClick={() => setView('cashflow')} className={view === 'cashflow' ? 'on' : ''}>
+              <ArrowUpDown size={16}/> <span>Cashflow</span>
+            </button>
+            <button onClick={() => setView('tax')} className={view === 'tax' ? 'on' : ''}>
+              <Calculator size={16}/> <span>Fiscalité</span>
+            </button>
+
+            <div className="ws-nav-group">Comptes</div>
+            {(accounts || []).slice(0, 4).map(a => (
+              <button key={a.id} onClick={() => setDrawerAccount(a)} className="ws-account-item">
+                <span className="ws-bank-dot" style={{ background: bankColor(a.bank) }}>
+                  {(a.bank || a.name || '?')[0].toUpperCase()}
+                </span>
+                <span>{a.bank || a.name}</span>
+              </button>
+            ))}
+            <button onClick={() => setView('settings')} className="ws-add-btn">
+              <Plus size={14}/> <span>Ajouter</span>
+            </button>
+
+            <div className="ws-nav-group">Configuration</div>
+            <button onClick={() => setView('settings')} className={view === 'settings' ? 'on' : ''}>
+              <Settings size={16}/> <span>Réglages</span>
+            </button>
             {currentUser?.is_admin && (
-              <button onClick={() => setView('admin')} className={view === 'admin' ? 'active' : ''}><Lock size={15}/> <span>Admin</span></button>
+              <button onClick={() => setView('admin')} className={view === 'admin' ? 'on' : ''}>
+                <Lock size={16}/> <span>Admin</span>
+              </button>
             )}
           </nav>
 
-          <div className="sidebar-footer">
+          <div className="ws-foot">
+            <div className="ws-foot-actions">
+              <ThemeToggle/>
+              <LangButton/>
+              <button className="ds-icon-btn" onClick={() => setHideAmounts(!hideAmounts)}
+                      title={hideAmounts ? 'Afficher les montants' : 'Masquer les montants'}>
+                {hideAmounts ? <EyeOff size={15}/> : <Eye size={15}/>}
+              </button>
+            </div>
             {currentUser && (
-              <button
-                className="sidebar-member-switcher"
-                onClick={() => setSidebarMenuOpen(o => !o)}
-                title={currentUser.email}
-              >
-                <div className="sidebar-user-avatar">
+              <button className="ws-user" onClick={() => setSidebarMenuOpen(o => !o)} title={currentUser.email}>
+                <div className="ws-user-avatar">
                   {(currentUser.full_name || currentUser.email || '?')[0].toUpperCase()}
                 </div>
-                <div className="sidebar-user-info">
-                  <div className="sidebar-user-name">{currentUser.full_name || currentUser.email.split('@')[0]}</div>
-                  <div className="sidebar-user-email">{members.length > 1 ? `+ ${members.length - 1} membre${members.length > 2 ? 's' : ''}` : 'Foyer'}</div>
+                <div className="ws-user-info">
+                  <div className="ws-user-name">{currentUser.full_name || currentUser.email.split('@')[0]}</div>
+                  <div className="ws-user-meta">
+                    {currentUser.plan || 'Gratuit'} · <span style={{ color: 'var(--positive)' }}>DSP2 ✓</span>
+                  </div>
                 </div>
-                <ChevronUp size={14} className="sidebar-user-chevron"/>
+                <ChevronUp size={13} style={{ color: 'var(--ink-3)' }}/>
               </button>
             )}
             {sidebarMenuOpen && (
-              <div className="sidebar-popover">
-                <button onClick={() => { setHideAmounts(!hideAmounts); setSidebarMenuOpen(false); }}>
-                  {hideAmounts ? <Eye size={14}/> : <EyeOff size={14}/>}
-                  <span>{hideAmounts ? 'Afficher les montants' : 'Masquer les montants'}</span>
-                </button>
-                <div className="sidebar-popover-row">
-                  <span style={{ fontSize: 12, color: 'var(--text-tertiary)', flex: 1 }}>Langue</span>
-                  <LangButton />
-                </div>
-                <button onClick={() => { logout(); setSidebarMenuOpen(false); }} className="sidebar-popover-danger">
+              <div className="ws-popover">
+                <button onClick={() => { logout(); setSidebarMenuOpen(false); }} className="ws-popover-danger">
                   <LogOut size={14}/>
                   <span>Déconnexion</span>
                 </button>
@@ -1241,6 +1277,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             setView={setView}
             onAccountClick={(a) => setDrawerAccount(a)}
             baseCurrency={baseCurrency} rates={rates}
+            currentUser={currentUser}
           />
         )}
         {['monthly','cashflow','budgets'].includes(view) && (
@@ -1429,3 +1466,17 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   );
 }
 
+// Resolves a bank name to a swatch color (used in sidebar dots).
+const BANK_COLORS = {
+  boursobank: '#1A1A1A', boursorama: '#1A1A1A',
+  revolut: '#0075EB',
+  'crédit agricole': '#009530', 'credit agricole': '#009530',
+  fortuneo: '#E20613',
+  linxea: '#5A0FAB',
+  'trade republic': '#0E1B4D',
+  bnp: '#009286',
+};
+function bankColor(b) {
+  if (!b) return 'var(--ink-mute)';
+  return BANK_COLORS[b.toLowerCase().trim()] || 'var(--ink-2)';
+}

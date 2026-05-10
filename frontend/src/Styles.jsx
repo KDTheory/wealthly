@@ -12,66 +12,34 @@
 export function Styles({ theme }) {
   const dark = theme === 'dark';
   const css = `
-:root {
-  /* Trove — modern fintech tokens. Dark blue-tinted surfaces with electric
-     blue accent. Light mode is a clean off-white with a deeper blue accent. */
-  --bg-page:       ${dark ? '#151926' : '#f7f8fc'};
-  --bg-card:       ${dark ? '#1f2434' : '#ffffff'};
-  --bg-card-hover: ${dark ? '#252b3d' : '#f1f3f9'};
-  --bg-subtle:     ${dark ? '#1a1f2e' : '#f1f3f9'};
-  --bg-hover:      ${dark ? '#252b3d' : '#eef0f7'};
-  /* Text */
-  --text-primary:   ${dark ? '#f5f5f7' : '#0e1119'};
-  --text-secondary: ${dark ? '#c8c8d0' : '#36405a'};
-  --text-tertiary:  ${dark ? '#9ea3b3' : '#5b6275'};
-  --text-muted:     ${dark ? '#6a6f80' : '#8a92a3'};
-  /* Borders */
-  --border:        ${dark ? 'rgba(255, 255, 255, 0.08)' : '#e3e6ee'};
-  --border-light:  ${dark ? 'rgba(255, 255, 255, 0.05)' : '#edeff5'};
-  --border-strong: ${dark ? 'rgba(255, 255, 255, 0.15)' : '#cdd2dd'};
-  /* Primary — electric blue (Trove signature) */
-  --primary:       ${dark ? '#3b6fe0' : '#2855c8'};
-  --primary-hover: ${dark ? '#5285ee' : '#1f47b3'};
-  --primary-soft:  ${dark ? 'rgba(59, 111, 224, 0.16)' : 'rgba(40, 85, 200, 0.10)'};
-  --primary-dim:   ${dark ? 'rgba(59, 111, 224, 0.10)' : 'rgba(40, 85, 200, 0.06)'};
-  --primary-text:  ${dark ? '#7aa3ff' : '#1f47b3'};
-  /* Success — vivid green */
-  --success:       ${dark ? '#34d399' : '#10b981'};
-  --success-soft:  ${dark ? 'rgba(52, 211, 153, 0.16)' : 'rgba(16, 185, 129, 0.10)'};
-  --success-text:  ${dark ? '#6ee7b7' : '#047857'};
-  /* Danger — vivid red */
-  --danger:        ${dark ? '#f87171' : '#dc2626'};
-  --danger-soft:   ${dark ? 'rgba(248, 113, 113, 0.16)' : 'rgba(220, 38, 38, 0.10)'};
-  --danger-text:   ${dark ? '#fca5a5' : '#991b1b'};
-  /* Warning — amber */
-  --warning:       ${dark ? '#fbbf24' : '#d97706'};
-  --warning-soft:  ${dark ? 'rgba(251, 191, 36, 0.16)' : 'rgba(217, 119, 6, 0.10)'};
-  --warning-text:  ${dark ? '#fcd34d' : '#92400e'};
-  /* Numerical semantic colours */
-  --num-positive:  ${dark ? '#34d399' : '#10b981'};
-  --num-negative:  ${dark ? '#f87171' : '#dc2626'};
-  /* Purple — joint accounts / pension */
-  --purple:        ${dark ? '#a78bfa' : '#7c3aed'};
-  --purple-soft:   ${dark ? 'rgba(167, 139, 250, 0.16)' : 'rgba(124, 58, 237, 0.10)'};
-  /* Info — accent variant */
-  --info:          ${dark ? '#7aa3ff' : '#2855c8'};
-  --info-soft:     ${dark ? 'rgba(122, 163, 255, 0.16)' : 'rgba(40, 85, 200, 0.10)'};
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0,0,0,${dark ? '0.3' : '0.05'});
-  --shadow-md: 0 8px 24px -10px rgba(0,0,0,${dark ? '0.4' : '0.10'});
-  --shadow-lg: 0 20px 60px -20px rgba(0,0,0,${dark ? '0.5' : '0.15'});
-  --shadow-xl: 0 28px 80px -20px rgba(0,0,0,${dark ? '0.6' : '0.18'});
-  /* Gradients — signature blue→violet, plus brand corner gradient */
-  --gradient-hero:    linear-gradient(135deg, ${dark ? '#5285ee' : '#3b6fe0'} 0%, ${dark ? '#3b6fe0' : '#2855c8'} 50%, ${dark ? '#7d5cf0' : '#6b3bd0'} 100%);
-  --gradient-success: linear-gradient(135deg, ${dark ? '#34d399' : '#10b981'} 0%, ${dark ? '#10b981' : '#047857'} 100%);
-  --gradient-mesh:
-    radial-gradient(1500px 700px at 100% -10%, ${dark ? 'rgba(91,141,239,0.18)' : 'rgba(40,85,200,0.06)'}, transparent 55%),
-    radial-gradient(1000px 600px at -10% 20%, ${dark ? 'rgba(167,139,250,0.10)' : 'rgba(167,139,250,0.05)'}, transparent 55%),
-    radial-gradient(800px 500px at 60% 110%, ${dark ? 'rgba(52,211,153,0.07)' : 'rgba(52,211,153,0.04)'}, transparent 55%);
+/* Wealthly v3 — Claude Design handoff tokens.
+   Le :root canonique vit dans index.css. Ici on (re)mappe juste les noms
+   d'alias hérités utilisés par les ~1500 lignes de CSS-in-JS qui suivent,
+   pour qu'ils résolvent en variables du nouveau système.
+
+   Source des couleurs : tokens.css du handoff (light = défaut, dark via
+   [data-theme="dark"] sur <html>). On les laisse hériter directement
+   plutôt que de les redéclarer ici. La prop `theme` est conservée pour
+   compatibilité mais ne pilote plus le branchement (le nouveau switch
+   est sur data-theme côté <html>).
+   theme=${dark ? 'dark' : 'light'} (informatif) */
+.app {
+  --num-positive: var(--positive);
+  --num-negative: var(--negative);
+  --border-light: var(--border);
+  --info: var(--accent);
+  --info-soft: var(--accent-soft);
+  --purple: var(--d4);
+  --purple-soft: var(--accent-soft);
+  --shadow-xl: var(--shadow-pop);
+  --shadow-lg: var(--shadow-pop);
+  --gradient-hero: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  --gradient-success: linear-gradient(135deg, var(--positive) 0%, var(--positive) 100%);
+  --gradient-mesh: none;
 }
 * { box-sizing: border-box; }
 .app {
-  font-family: 'Inter Tight', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   background: var(--bg-page);
   background-image: var(--gradient-mesh);
   background-attachment: fixed;
@@ -83,7 +51,7 @@ export function Styles({ theme }) {
 /* Tabular numerals for every monetary value. We keep them in sans (Inter Tight)
    for consistency — Inter Tight has full tnum support. */
 .w-num, .nw-current-value, .kpi-card-value, .subview-hero-value, .ws-value, .wk-value, .mk-value, .summary-num, .cashflow-kpi-value, .merchant-total, .rest-hero-value, .rest-stat-value, .nw-current-delta, .alloc-pct, .alloc-val, .td-amount, .td-date, .ratio-card-amount, .ratio-card-pct {
-  font-family: 'Inter Tight', -apple-system, system-ui, sans-serif;
+  font-family: 'Geist', -apple-system, system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
   letter-spacing: -0.015em;
@@ -120,7 +88,7 @@ export function Styles({ theme }) {
 }
 .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
 .brand-name {
-  font-family: 'Inter Tight', system-ui, sans-serif;
+  font-family: 'Geist', system-ui, sans-serif;
   font-size: 19px; font-weight: 700;
   letter-spacing: -0.025em;
 }
@@ -227,7 +195,7 @@ export function Styles({ theme }) {
   box-shadow: 0 4px 14px rgba(59,111,224,0.35), inset 0 1px 0 rgba(255,255,255,0.20);
 }
 .sidebar-brand .brand-text { display: flex; flex-direction: column; line-height: 1.1; min-width: 0; }
-.sidebar-brand .brand-name { font-family: 'Inter Tight', system-ui, sans-serif; font-size: 18px; font-weight: 700; letter-spacing: -0.025em; color: var(--text-primary); }
+.sidebar-brand .brand-name { font-family: 'Geist', system-ui, sans-serif; font-size: 18px; font-weight: 700; letter-spacing: -0.025em; color: var(--text-primary); }
 .sidebar-brand .brand-tagline { font-size: 10px; color: var(--text-tertiary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 1px; }
 
 .sidebar-nav { display: flex; flex-direction: column; gap: 1px; flex: 1; }

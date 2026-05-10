@@ -1,5 +1,5 @@
 // ============================================================================
-// Landing — public marketing page (Trove rebrand)
+// Landing — public marketing page (Wealthly rebrand)
 //
 // Modern fintech landing: sticky nav → hero with gradient mesh → "comment
 // ça marche" 3-step → features bento → security → pricing tiers → FAQ →
@@ -43,7 +43,7 @@ export default function Landing({ onSignIn, onSignUp, onTryDemo }) {
         <div className="lp-nav-inner">
           <div className="lp-brand">
             <Tmark size={18}/>
-            <span className="lp-brand-name">Trove</span>
+            <span className="lp-brand-name">Wealthly</span>
           </div>
           <nav className="lp-nav-links">
             <a href="#how">Fonctionnement</a>
@@ -70,7 +70,7 @@ export default function Landing({ onSignIn, onSignUp, onTryDemo }) {
           <span className="lp-h1-grad">enfin clair.</span>
         </h1>
         <p className="lp-sub">
-          Trove rassemble vos comptes, placements, biens et dettes dans un
+          Wealthly rassemble vos comptes, placements, biens et dettes dans un
           tableau de bord moderne. Compris en 30 secondes, partagé entre membres
           du foyer, sécurisé en Europe.
         </p>
@@ -106,7 +106,7 @@ export default function Landing({ onSignIn, onSignUp, onTryDemo }) {
 
         <div className="lp-hero-shot">
           <div className="lp-shot-frame">
-            <img src="/landing/hero-dashboard.png" alt="Tableau de bord Trove"/>
+            <img src="/landing/hero-dashboard.png" alt="Tableau de bord Wealthly"/>
           </div>
         </div>
       </section>
@@ -117,14 +117,14 @@ export default function Landing({ onSignIn, onSignUp, onTryDemo }) {
           <div className="lp-section-eyebrow">Fonctionnement</div>
           <h2 className="lp-h2">Trois étapes, dix minutes.</h2>
           <p className="lp-section-sub">
-            Importez ce que vous avez déjà, laissez Trove faire le reste.
+            Importez ce que vous avez déjà, laissez Wealthly faire le reste.
           </p>
         </div>
         <div className="lp-steps">
           <div className="lp-step">
             <div className="lp-step-num">1</div>
             <h3>Connectez vos comptes</h3>
-            <p>Synchro DSP2 en lecture seule via GoCardless, ou import CSV de vos relevés. Aucun identifiant bancaire ne transite par Trove.</p>
+            <p>Synchro DSP2 en lecture seule via GoCardless, ou import CSV de vos relevés. Aucun identifiant bancaire ne transite par Wealthly.</p>
           </div>
           <div className="lp-step">
             <div className="lp-step-num">2</div>
@@ -152,7 +152,7 @@ export default function Landing({ onSignIn, onSignUp, onTryDemo }) {
             </div>
             <h3>Patrimoine net consolidé</h3>
             <p>Comptes courants, placements, immobilier, dettes — tout dans une vue unique avec performance 30j/3M/YTD.</p>
-            <img src="/landing/hero-dashboard.png" alt="Patrimoine net consolidé Trove"/>
+            <img src="/landing/hero-dashboard.png" alt="Patrimoine net consolidé Wealthly"/>
           </div>
           <div className="lp-bento-card">
             <div className="lp-bento-icon" style={{ background: 'rgba(52,211,153,0.16)', color: '#34d399' }}>
@@ -195,7 +195,7 @@ export default function Landing({ onSignIn, onSignUp, onTryDemo }) {
           <div className="lp-section-eyebrow">Sécurité</div>
           <h2 className="lp-h2">Vos données restent les vôtres.</h2>
           <p className="lp-section-sub">
-            Trove ne revend rien, ne profile pas, ne pose aucun tracker tiers.
+            Wealthly ne revend rien, ne profile pas, ne pose aucun tracker tiers.
           </p>
         </div>
         <div className="lp-security-grid">
@@ -203,7 +203,7 @@ export default function Landing({ onSignIn, onSignUp, onTryDemo }) {
             <Lock size={18}/>
             <div>
               <h4>Lecture seule</h4>
-              <p>Synchro DSP2 via GoCardless, prestataire agréé. Trove n'a jamais vos identifiants bancaires.</p>
+              <p>Synchro DSP2 via GoCardless, prestataire agréé. Wealthly n'a jamais vos identifiants bancaires.</p>
             </div>
           </div>
           <div className="lp-security-item">
@@ -335,24 +335,24 @@ export default function Landing({ onSignIn, onSignUp, onTryDemo }) {
         </div>
         <div className="lp-faq">
           <details>
-            <summary>Trove est-il gratuit&nbsp;? <ChevronDown size={16}/></summary>
+            <summary>Wealthly est-il gratuit&nbsp;? <ChevronDown size={16}/></summary>
             <p>Oui, le plan Solo est entièrement gratuit, à vie. Vous pouvez l'utiliser sans carte de crédit pour gérer jusqu'à 3 comptes bancaires. Les plans Pro et Famille débloquent les comptes illimités, la synchro automatique et les fonctions avancées.</p>
           </details>
           <details>
-            <summary>Comment Trove protège-t-il mes données bancaires&nbsp;? <ChevronDown size={16}/></summary>
-            <p>Trove n'a <strong>jamais</strong> vos identifiants bancaires. La connexion DSP2 passe par GoCardless Bank Account Data, prestataire agréé par l'ACPR, en lecture seule. La base est hébergée chez Supabase en Union européenne, chiffrée at-rest. Aucune donnée n'est partagée avec des tiers.</p>
+            <summary>Comment Wealthly protège-t-il mes données bancaires&nbsp;? <ChevronDown size={16}/></summary>
+            <p>Wealthly n'a <strong>jamais</strong> vos identifiants bancaires. La connexion DSP2 passe par GoCardless Bank Account Data, prestataire agréé par l'ACPR, en lecture seule. La base est hébergée chez Supabase en Union européenne, chiffrée at-rest. Aucune donnée n'est partagée avec des tiers.</p>
           </details>
           <details>
-            <summary>Puis-je auto-héberger Trove&nbsp;? <ChevronDown size={16}/></summary>
-            <p>Oui. Le code source est entièrement disponible sur GitHub sous licence permissive. Vous pouvez déployer Trove sur votre propre infrastructure (VPS, Raspberry Pi, etc.). La documentation détaille les étapes pour Vercel + Railway + Supabase, ou pour Docker self-hosted.</p>
+            <summary>Puis-je auto-héberger Wealthly&nbsp;? <ChevronDown size={16}/></summary>
+            <p>Oui. Le code source est entièrement disponible sur GitHub sous licence permissive. Vous pouvez déployer Wealthly sur votre propre infrastructure (VPS, Raspberry Pi, etc.). La documentation détaille les étapes pour Vercel + Railway + Supabase, ou pour Docker self-hosted.</p>
           </details>
           <details>
             <summary>Mes données sont-elles vendues&nbsp;? <ChevronDown size={16}/></summary>
-            <p>Jamais. Trove ne revend, ne loue, ne partage aucune donnée. Pas de Google Analytics, pas de Meta Pixel, pas de tracker publicitaire. Notre seul revenu vient des abonnements payants.</p>
+            <p>Jamais. Wealthly ne revend, ne loue, ne partage aucune donnée. Pas de Google Analytics, pas de Meta Pixel, pas de tracker publicitaire. Notre seul revenu vient des abonnements payants.</p>
           </details>
           <details>
             <summary>Qui peut voir le patrimoine de mon foyer&nbsp;? <ChevronDown size={16}/></summary>
-            <p>Vous seul, et les membres que vous invitez explicitement. Chaque membre dispose de son propre compte, et vous décidez ce qu'il peut consulter ou modifier. Aucune donnée n'est jamais visible par d'autres utilisateurs ou par Trove.</p>
+            <p>Vous seul, et les membres que vous invitez explicitement. Chaque membre dispose de son propre compte, et vous décidez ce qu'il peut consulter ou modifier. Aucune donnée n'est jamais visible par d'autres utilisateurs ou par Wealthly.</p>
           </details>
           <details>
             <summary>Quelles banques sont supportées&nbsp;? <ChevronDown size={16}/></summary>
@@ -383,7 +383,7 @@ export default function Landing({ onSignIn, onSignUp, onTryDemo }) {
           <div className="lp-foot-brand">
             <div className="lp-brand">
               <Tmark size={18}/>
-              <span className="lp-brand-name">Trove</span>
+              <span className="lp-brand-name">Wealthly</span>
             </div>
             <p>Le patrimoine de votre famille, enfin clair.</p>
           </div>
@@ -413,8 +413,8 @@ export default function Landing({ onSignIn, onSignUp, onTryDemo }) {
           </div>
         </div>
         <div className="lp-foot-bottom">
-          <span>© 2026 Trove — Tous droits réservés.</span>
-          <span className="lp-foot-disclaim">Trove ne fournit aucun conseil en investissement. Les outils proposés sont à but informatif.</span>
+          <span>© 2026 Wealthly — Tous droits réservés.</span>
+          <span className="lp-foot-disclaim">Wealthly ne fournit aucun conseil en investissement. Les outils proposés sont à but informatif.</span>
         </div>
       </footer>
 

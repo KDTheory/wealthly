@@ -88,7 +88,7 @@ export default function AuthScreen({ onAuth, onTryDemo, onBackToLanding, initial
           </button>
         )}
 
-        {/* Brand mark + wordmark — Trove identity */}
+        {/* Brand mark + wordmark — Wealthly identity */}
         <div className="auth-brand-row">
           <div
             className="auth-brand-mark"
@@ -109,7 +109,7 @@ export default function AuthScreen({ onAuth, onTryDemo, onBackToLanding, initial
           >
             T
           </div>
-          <div className="auth-wordmark">Trove</div>
+          <div className="auth-wordmark">Wealthly</div>
         </div>
 
         {/* Hero — slim version (full marketing is on Landing now) */}

@@ -18,7 +18,7 @@ export function LegalModal({ section = 'cgu', onClose }) {
             <p className="legal-date">En vigueur au 7 mai 2026</p>
 
             <h3>1. Objet</h3>
-            <p>Trove est un outil personnel de suivi de patrimoine. Il permet de consolider comptes bancaires, placements, immobilier et dettes au sein d'un foyer. Il ne constitue en aucun cas un conseil en investissement, un service bancaire ou un service de gestion sous mandat.</p>
+            <p>Wealthly est un outil personnel de suivi de patrimoine. Il permet de consolider comptes bancaires, placements, immobilier et dettes au sein d'un foyer. Il ne constitue en aucun cas un conseil en investissement, un service bancaire ou un service de gestion sous mandat.</p>
 
             <h3>2. Accès au service</h3>
             <p>L'accès nécessite la création d'un compte (email + mot de passe). Le compte ouvre un espace isolé («&nbsp;foyer&nbsp;») inaccessible aux autres utilisateurs. Chaque inscription crée un foyer distinct.</p>
@@ -27,10 +27,10 @@ export function LegalModal({ section = 'cgu', onClose }) {
             <p>Le service est réservé à un usage personnel et privé. Il n'est pas autorisé de l'utiliser à des fins commerciales, de revente ou pour traiter des données appartenant à des tiers sans leur consentement.</p>
 
             <h3>4. Disponibilité</h3>
-            <p>Trove est fourni «&nbsp;en l'état&nbsp;». Aucune garantie de disponibilité continue n'est accordée. Des interruptions liées à la maintenance ou à l'hébergement peuvent survenir sans préavis.</p>
+            <p>Wealthly est fourni «&nbsp;en l'état&nbsp;». Aucune garantie de disponibilité continue n'est accordée. Des interruptions liées à la maintenance ou à l'hébergement peuvent survenir sans préavis.</p>
 
             <h3>5. Responsabilité</h3>
-            <p>Les données affichées proviennent exclusivement de ce que l'utilisateur saisit ou importe. Trove ne se connecte à aucun établissement financier sans action explicite de l'utilisateur. L'opérateur décline toute responsabilité pour les décisions financières prises sur la base des informations affichées.</p>
+            <p>Les données affichées proviennent exclusivement de ce que l'utilisateur saisit ou importe. Wealthly ne se connecte à aucun établissement financier sans action explicite de l'utilisateur. L'opérateur décline toute responsabilité pour les décisions financières prises sur la base des informations affichées.</p>
 
             <h3>6. Résiliation</h3>
             <p>L'utilisateur peut demander la suppression définitive de son compte et de l'ensemble de ses données à tout moment en écrivant à <a href="mailto:contact@trove.app">contact@trove.app</a>. La suppression est effective sous 30 jours.</p>
@@ -49,7 +49,7 @@ export function LegalModal({ section = 'cgu', onClose }) {
             <p>Trove est opéré à titre personnel. Contact : <a href="mailto:contact@trove.app">contact@trove.app</a></p>
 
             <h3>2. Données collectées</h3>
-            <p>Trove collecte uniquement les données que vous saisissez ou importez :</p>
+            <p>Wealthly collecte uniquement les données que vous saisissez ou importez :</p>
             <ul>
               <li>Adresse email et mot de passe (haché bcrypt, jamais stocké en clair)</li>
               <li>Noms des membres du foyer</li>
@@ -69,7 +69,7 @@ export function LegalModal({ section = 'cgu', onClose }) {
             </ul>
 
             <h3>5. Accès technique de l'opérateur</h3>
-            <p>L'opérateur dispose d'un accès technique à la base de données hébergée sur Supabase. <strong>Trove s'engage à ne jamais consulter les données personnelles ou financières des utilisateurs</strong>, sauf obligation légale contraignante (réquisition judiciaire). Cet engagement est une pratique, pas un verrou technique — si vous souhaitez une garantie absolue, le code source est disponible sur GitHub pour déploiement sur votre propre infrastructure.</p>
+            <p>L'opérateur dispose d'un accès technique à la base de données hébergée sur Supabase. <strong>Wealthly s'engage à ne jamais consulter les données personnelles ou financières des utilisateurs</strong>, sauf obligation légale contraignante (réquisition judiciaire). Cet engagement est une pratique, pas un verrou technique — si vous souhaitez une garantie absolue, le code source est disponible sur GitHub pour déploiement sur votre propre infrastructure.</p>
 
             <h3>6. Durée de conservation</h3>
             <p>Les données sont conservées tant que le compte est actif. Elles sont supprimées dans les 30 jours suivant une demande de clôture de compte.</p>
@@ -86,7 +86,7 @@ export function LegalModal({ section = 'cgu', onClose }) {
             <p>Pour exercer ces droits : <a href="mailto:contact@trove.app">contact@trove.app</a>. En cas de litige non résolu, vous pouvez saisir la CNIL (<a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer">cnil.fr</a>).</p>
 
             <h3>8. Cookies</h3>
-            <p>Trove n'utilise pas de cookies publicitaires. Un token JWT est stocké dans <code>localStorage</code> pour maintenir votre session. Il expire automatiquement après 7 jours.</p>
+            <p>Wealthly n'utilise pas de cookies publicitaires. Un token JWT est stocké dans <code>localStorage</code> pour maintenir votre session. Il expire automatiquement après 7 jours.</p>
           </div>
         )}
 

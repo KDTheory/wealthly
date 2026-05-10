@@ -6,51 +6,67 @@
     <link rel="apple-touch-icon" href="/icon.svg" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#151926" />
+    <meta name="theme-color" content="#F7F6F2" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0F0E0C" media="(prefers-color-scheme: dark)" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Trove" />
+    <meta name="apple-mobile-web-app-title" content="Wealthly" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <title>Trove — Le patrimoine de votre famille, enfin clair</title>
-    <meta name="description" content="Trove rassemble tous vos comptes, placements et biens dans un tableau de bord moderne. Pour particuliers et familles qui veulent piloter leur patrimoine sans complexité." />
-    <style>
-      body { margin: 0; background: #151926; }
-      #root:empty::after {
-        content: '';
-        position: fixed;
-        inset: 0;
-        background: #151926;
-      }
-      #root:empty::before {
-        content: '';
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 28px;
-        height: 28px;
-        border: 2px solid #2f3548;
-        border-top-color: #5285ee;
-        border-radius: 50%;
-        animation: spin 0.7s linear infinite;
-        z-index: 1;
-      }
-      @keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
-    </style>
+    <title>Wealthly — Le patrimoine de votre famille, enfin clair</title>
+    <meta name="description" content="Wealthly rassemble tous vos comptes, placements et biens dans un tableau de bord moderne. Pour particuliers et familles qui veulent piloter leur patrimoine sans complexité." />
+
+    <!-- No-flash theme: applied before first paint so the first frame matches user preference. -->
+    <script>
+      (function() {
+        try {
+          var t = localStorage.getItem('wealthly-theme');
+          if (!t) {
+            t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          document.documentElement.setAttribute('data-theme', t);
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      })();
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Trove typography: Inter Tight (UI + numbers, full tnum support).
-         JetBrains Mono kept for occasional code/technical labels. -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Wealthly typography v3 (Claude Design handoff):
+         Geist     — UI sans (95% de l'app)
+         Geist Mono — IBAN, codes, axes
+         Newsreader — UNIQUEMENT hero patrimoine + chapitres éditoriaux -->
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+
     <style>
-      /* Prevents the white flash on first paint before React mounts */
+      :root { color-scheme: light; }
+      :root[data-theme="dark"] { color-scheme: dark; }
       html, body {
-        background: #151926;
-        color: #f5f5f7;
-        color-scheme: dark;
         margin: 0;
-        font-family: 'Inter Tight', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+        background: #F7F6F2;
+        color: #16150F;
+        font-family: 'Geist', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
       }
+      :root[data-theme="dark"] html, :root[data-theme="dark"] body {
+        background: #0F0E0C;
+        color: #F1EEE4;
+      }
+      /* Spinner pendant le chargement React */
+      #root:empty::after {
+        content: ''; position: fixed; inset: 0;
+        background: var(--bg, #F7F6F2);
+      }
+      #root:empty::before {
+        content: ''; position: fixed; top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 28px; height: 28px;
+        border: 2px solid var(--border, #E4E1D8);
+        border-top-color: var(--accent, #2540D9);
+        border-radius: 50%;
+        animation: ws 0.7s linear infinite;
+        z-index: 1;
+      }
+      @keyframes ws { to { transform: translate(-50%, -50%) rotate(360deg); } }
     </style>
   </head>
   <body>
