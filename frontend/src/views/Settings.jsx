@@ -6,15 +6,16 @@
 // All read/write through the api module; the parent only passes data + a few
 // CRUD callbacks.
 // ============================================================================
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Plus, Trash2, Edit3, Check, Upload, Download, Users, Wallet,
-  Lightbulb, Sparkles, Activity, AlertCircle, RefreshCw, Link2, Unlink, X,
+  Lightbulb, Sparkles, Activity, AlertCircle, RefreshCw, Link2, Unlink, X, Cloud,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import * as api from '../api.js';
 import { MEMBER_PALETTE } from '../constants.js';
 import { ACCOUNT_ROLES, ACCOUNT_ROLE_KEYS, suggestAccountRole, SUPPORTED_CURRENCIES } from '../utils.js';
+import { BankConnectModal } from '../components/BankConnectModal.jsx';
 
 const CURRENCY_FLAGS = { EUR: '🇪🇺', USD: '🇺🇸', GBP: '🇬🇧', CHF: '🇨🇭' };
 const CURRENCY_NAMES = { EUR: 'Euro', USD: 'Dollar US', GBP: 'Livre sterling', CHF: 'Franc suisse' };
@@ -403,41 +404,34 @@ function CustomRulesSection({ categories }) {
 function BankConnectionsSection() {
   const [connections, setConnections] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [unavailable, setUnavailable] = useState(false);
   const [picker, setPicker] = useState(false);
   const [syncingId, setSyncingId] = useState(null);
   const [syncMessage, setSyncMessage] = useState(null);
 
-  const reload = async () => {
+  const reload = useCallback(async () => {
     setLoading(true);
     try {
-      const list = await api.banks.listConnections();
+      const list = await api.banking.listConnections();
       setConnections(list || []);
-      setUnavailable(false);
     } catch (e) {
-      // 503 = backend not configured, hide the section gracefully
-      if (e.message && e.message.includes('non configurées')) {
-        setUnavailable(true);
-      } else {
-        setSyncMessage({ kind: 'error', text: e.message });
-      }
+      setSyncMessage({ kind: 'error', text: e.message });
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { reload(); }, []);
+  useEffect(() => { reload(); }, [reload]);
 
   const handleSync = async (id) => {
     setSyncingId(id);
     setSyncMessage(null);
     try {
-      const res = await api.banks.sync(id);
+      const res = await api.banking.sync(id);
       setSyncMessage({
-        kind: res.error ? 'warn' : 'ok',
-        text: res.error
-          ? `${res.inserted} nouvelles · ${res.skipped} ignorées · erreur : ${res.error}`
-          : `${res.inserted} nouvelles transaction${res.inserted > 1 ? 's' : ''}, ${res.skipped} ignorée${res.skipped > 1 ? 's' : ''}`,
+        kind: res.errors?.length ? 'warn' : 'ok',
+        text: res.errors?.length
+          ? `${res.imported} importées · ${res.skipped} ignorées · erreurs : ${res.errors.join(', ')}`
+          : `✅ ${res.imported} nouvelle${res.imported > 1 ? 's' : ''} transaction${res.imported > 1 ? 's' : ''}, ${res.skipped} ignorée${res.skipped > 1 ? 's' : ''}`,
       });
       await reload();
     } catch (e) {
@@ -450,34 +444,20 @@ function BankConnectionsSection() {
   const handleDelete = async (id, name) => {
     if (!confirm(`Déconnecter ${name} ? Les transactions importées sont conservées.`)) return;
     try {
-      await api.banks.delete(id);
+      await api.banking.deleteConnection(id);
       await reload();
     } catch (e) {
       setSyncMessage({ kind: 'error', text: e.message });
     }
   };
 
-  if (unavailable) {
-    return (
-      <section className="card">
-        <div className="card-header"><h3><Link2 size={16}/> Connexions bancaires</h3></div>
-        <div className="settings-info">
-          <Lightbulb size={14}/>
-          <span>
-            La synchronisation bancaire automatique n'est pas activée sur ce backend. Configure
-            <code style={{ margin: '0 4px' }}>GOCARDLESS_SECRET_ID</code> et
-            <code style={{ margin: '0 4px' }}>GOCARDLESS_SECRET_KEY</code> côté Railway pour l'activer.
-          </span>
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section className="card">
       <div className="card-header">
-        <h3><Link2 size={16}/> Connexions bancaires {loading && <RefreshCw size={12} className="spin" style={{marginLeft:6,opacity:.5}}/>}</h3>
-        <button className="secondary-btn" onClick={() => setPicker(true)}><Plus size={14}/> Connecter une banque</button>
+        <h3><Cloud size={16}/> Synchro bancaire (Enable Banking) {loading && <RefreshCw size={12} className="spin" style={{marginLeft:6,opacity:.5}}/>}</h3>
+        <button className="primary-btn" style={{ fontSize: 12, padding: '6px 14px' }} onClick={() => setPicker(true)}>
+          <Plus size={13}/> Connecter une banque
+        </button>
       </div>
 
       {syncMessage && (
@@ -490,151 +470,59 @@ function BankConnectionsSection() {
 
       {connections.length === 0 && !loading && (
         <div className="empty-mini">
-          <Link2 size={24}/>
-          <p>Aucune banque connectée. Ajoute-en une pour recevoir tes transactions automatiquement.</p>
+          <Cloud size={24}/>
+          <p>Aucune banque connectée. Connectez votre banque pour importer les transactions automatiquement.</p>
+          <button className="primary-btn" style={{ marginTop: 8 }} onClick={() => setPicker(true)}>
+            Connecter ma banque
+          </button>
         </div>
       )}
 
       <div className="member-list">
-        {connections.map((c) => {
-          const expiringSoon = c.days_until_expiry !== null && c.days_until_expiry <= 7;
-          const linkedCount = c.account_links.filter((l) => l.account_id).length;
-          return (
-            <div key={c.id} className="member-card" style={{ alignItems: 'flex-start' }}>
-              <span className="member-avatar large" style={{ background: '#1f2026', overflow: 'hidden' }}>
-                {c.institution_logo ? (
-                  <img src={c.institution_logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
-                ) : (c.institution_name || '?').charAt(0)}
-              </span>
-              <div className="member-card-info" style={{ flex: 1 }}>
-                <div className="member-card-name">{c.institution_name}</div>
-                <div className="member-card-role">
-                  {linkedCount}/{c.account_links.length} compte{c.account_links.length > 1 ? 's' : ''} lié{linkedCount > 1 ? 's' : ''}
-                  {' · '}
-                  {c.last_sync_at ? `Synchro : ${new Date(c.last_sync_at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}` : 'Jamais synchronisé'}
-                  {' · '}
-                  <span style={{ color: c.status === 'LN' ? 'var(--success)' : 'var(--warning)' }}>
-                    {c.status_label}
-                  </span>
-                  {expiringSoon && (
-                    <span style={{ color: 'var(--warning)' }}>
-                      {' · expire dans '}{c.days_until_expiry}j
-                    </span>
-                  )}
-                </div>
-                {c.last_sync_error && (
-                  <div className="member-card-role" style={{ color: 'var(--danger)', marginTop: 4 }}>
-                    {c.last_sync_error}
-                  </div>
-                )}
+        {connections.map((c) => (
+          <div key={c.id} className="member-card">
+            <span className="member-avatar large" style={{
+              background: c.status === 'authorized' ? '#10b981' : c.status === 'error' ? '#ef4444' : '#f59e0b',
+            }}>
+              {c.bank_name.charAt(0)}
+            </span>
+            <div className="member-card-info" style={{ flex: 1 }}>
+              <div className="member-card-name">{c.bank_name}</div>
+              <div className="member-card-role">
+                {c.status === 'authorized' ? '✅ Connecté' : c.status === 'error' ? '❌ Erreur' : '⏳ En attente'}
+                {c.last_synced_at && ` · Synchro ${new Date(c.last_synced_at).toLocaleDateString('fr-FR')}`}
+                {c.accounts?.length > 0 && ` · ${c.accounts.length} compte(s)`}
               </div>
-              <button
-                className="icon-btn-sm"
-                title="Synchroniser maintenant"
-                onClick={() => handleSync(c.id)}
-                disabled={syncingId === c.id || c.status !== 'LN'}
-              >
-                <RefreshCw size={13} className={syncingId === c.id ? 'spin' : ''}/>
-              </button>
-              <button className="icon-btn-sm" title="Déconnecter" onClick={() => handleDelete(c.id, c.institution_name)}>
-                <Unlink size={13}/>
-              </button>
+              {c.error_message && (
+                <div style={{ fontSize: 11, color: 'var(--danger-text)', marginTop: 2 }}>{c.error_message}</div>
+              )}
             </div>
-          );
-        })}
+            {c.status === 'authorized' && (
+              <button
+                className="secondary-btn"
+                style={{ fontSize: 11, padding: '5px 10px', whiteSpace: 'nowrap' }}
+                onClick={() => handleSync(c.id)}
+                disabled={syncingId === c.id}
+              >
+                <RefreshCw size={12} className={syncingId === c.id ? 'spin' : ''}/> Sync
+              </button>
+            )}
+            <button className="icon-btn-sm" title="Déconnecter" onClick={() => handleDelete(c.id, c.bank_name)}>
+              <Unlink size={13}/>
+            </button>
+          </div>
+        ))}
       </div>
 
       <div className="settings-info" style={{ marginTop: 14 }}>
         <Lightbulb size={14}/>
         <span>
-          Le consentement DSP2 dure <strong>90 jours</strong> max — à renouveler en re-connectant la banque. Les transactions sont catégorisées avec tes règles existantes.
+          Connexion sécurisée via <strong>Enable Banking</strong> (PSD2 open banking). Vos identifiants bancaires ne transitent pas par Wealthly.
         </span>
       </div>
 
-      {picker && <InstitutionPicker onClose={() => setPicker(false)}/>}
+      {picker && <BankConnectModal onClose={() => { setPicker(false); reload(); }}/>}
     </section>
-  );
-}
-
-function InstitutionPicker({ onClose }) {
-  const [institutions, setInstitutions] = useState(null);
-  const [filter, setFilter] = useState('');
-  const [error, setError] = useState(null);
-  const [connecting, setConnecting] = useState(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const list = await api.banks.listInstitutions('FR');
-        setInstitutions(list || []);
-      } catch (e) {
-        setError(e.message);
-      }
-    })();
-  }, []);
-
-  const filtered = (institutions || []).filter((i) =>
-    i.name.toLowerCase().includes(filter.toLowerCase())
-  );
-
-  const start = async (institutionId) => {
-    setConnecting(institutionId);
-    try {
-      const res = await api.banks.connect(institutionId);
-      // Hard navigation to the bank's auth page
-      window.location.href = res.redirect_url;
-    } catch (e) {
-      setError(e.message);
-      setConnecting(null);
-    }
-  };
-
-  return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560 }}>
-        <div className="modal-header">
-          <h2>Connecter une banque</h2>
-          <button className="icon-btn-sm" onClick={onClose}><X size={16}/></button>
-        </div>
-        <div className="modal-body">
-          {error && <div className="settings-info" style={{ color: 'var(--danger)' }}><AlertCircle size={14}/><span>{error}</span></div>}
-          <label>
-            <span>Rechercher</span>
-            <input
-              type="text"
-              autoFocus
-              placeholder="BNP, Boursorama, Revolut…"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            />
-          </label>
-          {!institutions && !error && <div className="empty-mini"><RefreshCw size={20} className="spin"/><p>Chargement des banques…</p></div>}
-          {institutions && (
-            <div className="member-list" style={{ maxHeight: 320, overflowY: 'auto', marginTop: 12 }}>
-              {filtered.map((i) => (
-                <button
-                  key={i.id}
-                  className="member-card"
-                  onClick={() => start(i.id)}
-                  disabled={connecting === i.id}
-                  style={{ cursor: 'pointer', textAlign: 'left', background: 'transparent', border: '1px solid var(--border)' }}
-                >
-                  <span className="member-avatar large" style={{ background: '#1f2026', overflow: 'hidden' }}>
-                    {i.logo ? <img src={i.logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}/> : i.name.charAt(0)}
-                  </span>
-                  <div className="member-card-info">
-                    <div className="member-card-name">{i.name}</div>
-                    {i.bic && <div className="member-card-role">{i.bic}</div>}
-                  </div>
-                  {connecting === i.id && <RefreshCw size={14} className="spin"/>}
-                </button>
-              ))}
-              {filtered.length === 0 && <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: 16 }}>Aucune banque pour ce filtre.</p>}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
   );
 }
 
