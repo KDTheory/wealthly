@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import engine, Base
-from app.routers import auth, members, accounts, transactions, wealth, other, categorize
+from app.routers import auth, members, accounts, transactions, wealth, other, categorize, banking
 
 # Create tables on startup (simple approach for self-hosted apps).
 # For production with migrations, use Alembic instead.
@@ -43,3 +43,4 @@ app.include_router(transactions.router)
 app.include_router(wealth.router)
 app.include_router(other.router)
 app.include_router(categorize.router)
+app.include_router(banking.router)

@@ -171,3 +171,28 @@ export const categorizeAI = {
 export const migrate = {
   importJson: (jsonData) => post('/migrate/import-json', jsonData),
 };
+
+// ============================================================================
+// ENABLE BANKING — open banking sync
+// ============================================================================
+export const banking = {
+  /** List available banks in a country (default FR) */
+  listBanks: (country = 'FR') => get(`/banking/banks?country=${country}`),
+
+  /** Initiate connection → returns {redirect_url, connection_id, state} */
+  connect: (bankName, bankCountry = 'FR') =>
+    post('/banking/connect', { bank_name: bankName, bank_country: bankCountry }),
+
+  /** Complete after OAuth callback — pass state param from URL */
+  complete: (state) => post('/banking/complete', { state }),
+
+  /** Sync transactions for a connection */
+  sync: (connectionId, daysBack = 90) =>
+    post(`/banking/sync/${connectionId}?days_back=${daysBack}`),
+
+  /** List all connections */
+  listConnections: () => get('/banking/connections'),
+
+  /** Delete a connection */
+  deleteConnection: (id) => del(`/banking/connections/${id}`),
+};

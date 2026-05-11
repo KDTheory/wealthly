@@ -424,6 +424,10 @@ export default function WealthlyApp() {
   const [toast, setToast] = useState(null);
   const [confettiActive, setConfettiActive] = useState(false);
 
+  // Banking sync state
+  const [bankConnections, setBankConnections] = useState([]);
+  const [bankingPendingState, setBankingPendingState] = useState(null); // state param from callback URL
+
   const [importFile, setImportFile] = useState(null);
   const [importStep, setImportStep] = useState('upload');
   const [parsedData, setParsedData] = useState(null);
@@ -544,7 +548,7 @@ export default function WealthlyApp() {
   // Reload everything from the server
   const reloadAll = useCallback(async () => {
     try {
-      const [memList, accList, txList, astList, liaList, catList, budList, goalList, achList, ruleList] = await Promise.all([
+      const [memList, accList, txList, astList, liaList, catList, budList, goalList, achList, ruleList, connList] = await Promise.all([
         api.members.list(),
         api.accounts.list(),
         api.transactions.list(),
@@ -555,6 +559,7 @@ export default function WealthlyApp() {
         api.goals.list(),
         api.achievements.list(),
         api.rules.list(),
+        api.banking.listConnections().catch(() => []),
       ]);
       setMembers(memList);
       setAccounts(accList.map(accountFromApi));
@@ -571,6 +576,7 @@ export default function WealthlyApp() {
       setAchievements((achList || []).map(a => a.achievement_slug));
       // Custom rules
       setCustomRules((ruleList || []).map(r => ({ pattern: r.pattern, categoryId: r.category_slug, source: r.source, _id: r.id })));
+      setBankConnections(connList || []);
     } catch (err) {
       showToast('Erreur de chargement : ' + err.message, 'error');
     }
@@ -602,6 +608,15 @@ export default function WealthlyApp() {
         setOnboarded(false);
       }
       setLoading(false);
+
+      // Handle Enable Banking callback: URL contains ?state=xxx after bank OAuth
+      const urlParams = new URLSearchParams(window.location.search);
+      const stateParam = urlParams.get('state');
+      if (stateParam) {
+        setBankingPendingState(stateParam);
+        // Clean up URL without reload
+        window.history.replaceState({}, '', window.location.pathname);
+      }
     })();
   }, [reloadAll]);
 
@@ -969,6 +984,54 @@ export default function WealthlyApp() {
     } catch (err) { showToast('Erreur : ' + err.message, 'error'); }
   };
 
+  // ===== Banking / Enable Banking =====
+  const completeBankCallback = useCallback(async (state) => {
+    try {
+      const result = await api.banking.complete(state);
+      setBankingPendingState(null);
+      if (result.status === 'authorized') {
+        showToast('🏦 Banque connectée ! Vous pouvez maintenant synchroniser vos transactions.', 'success');
+        const conns = await api.banking.listConnections();
+        setBankConnections(conns);
+      } else {
+        showToast('En attente d\'autorisation bancaire...', 'info');
+      }
+    } catch (err) {
+      setBankingPendingState(null);
+      showToast('Erreur connexion bancaire : ' + err.message, 'error');
+    }
+  }, []);
+
+  // Auto-complete when bankingPendingState is set (after URL callback detection)
+  useEffect(() => {
+    if (bankingPendingState && !loading) {
+      completeBankCallback(bankingPendingState);
+    }
+  }, [bankingPendingState, loading, completeBankCallback]);
+
+  const syncBankConnection = async (connectionId) => {
+    try {
+      showToast('⏳ Synchronisation en cours...', 'info');
+      const result = await api.banking.sync(connectionId);
+      showToast(`✅ ${result.imported} nouvelles transactions importées`, 'success');
+      await reloadAll();
+      if (result.imported > 0) unlockAchievement('first_import');
+    } catch (err) {
+      showToast('Erreur sync : ' + err.message, 'error');
+    }
+  };
+
+  const deleteBankConnection = async (connectionId) => {
+    if (!confirm('Déconnecter cette banque ?')) return;
+    try {
+      await api.banking.deleteConnection(connectionId);
+      setBankConnections(prev => prev.filter(c => c.id !== connectionId));
+      showToast('Connexion bancaire supprimée', 'info');
+    } catch (err) {
+      showToast('Erreur : ' + err.message, 'error');
+    }
+  };
+
   const saveAsset = async (asset) => {
     try {
       const apiPayload = assetToApi(asset);
@@ -1270,6 +1333,9 @@ export default function WealthlyApp() {
             saveMember={saveMember} deleteMember={deleteMember}
             deleteAccount={deleteAccount} achievements={achievements}
             exportData={exportData} importData={importData} resetAllData={resetAllData}
+            bankConnections={bankConnections}
+            syncBankConnection={syncBankConnection}
+            deleteBankConnection={deleteBankConnection}
             fmt={fmt}
           />
         )}
@@ -3163,8 +3229,9 @@ function Analysis({ transactions, categories, recurringIds, recurringGroups, mon
 // ============================================================================
 // SETTINGS
 // ============================================================================
-function SettingsView({ members, accounts, accountBalances, saveMember, deleteMember, deleteAccount, achievements, exportData, importData, resetAllData, fmt }) {
+function SettingsView({ members, accounts, accountBalances, saveMember, deleteMember, deleteAccount, achievements, exportData, importData, resetAllData, bankConnections, syncBankConnection, deleteBankConnection, fmt }) {
   const [editingMember, setEditingMember] = useState(null);
+  const [showBankModal, setShowBankModal] = useState(false);
   const COLORS = ['#3b82f6', '#10b981', '#f97316', '#ec4899', '#8b5cf6', '#06b6d4', '#f59e0b', '#ef4444'];
 
   return (
@@ -3215,6 +3282,60 @@ function SettingsView({ members, accounts, accountBalances, saveMember, deleteMe
           })}
         </div>
       </section>
+
+      {/* ── Bank Sync (Enable Banking) ── */}
+      <section className="card">
+        <div className="card-header">
+          <h3><Cloud size={16}/> Synchro bancaire</h3>
+          <button className="primary-btn" style={{ fontSize: 12, padding: '6px 14px' }} onClick={() => setShowBankModal(true)}>
+            <Plus size={13}/> Connecter une banque
+          </button>
+        </div>
+        {bankConnections.length === 0 ? (
+          <div className="empty-mini">
+            <RefreshCw size={24}/>
+            <p>Aucune banque connectée. Connectez votre banque pour importer vos transactions automatiquement.</p>
+            <button className="primary-btn" style={{ marginTop: 8 }} onClick={() => setShowBankModal(true)}>
+              Connecter ma banque
+            </button>
+          </div>
+        ) : (
+          <div className="member-list">
+            {bankConnections.map(conn => (
+              <div key={conn.id} className="member-card">
+                <span className="member-avatar large" style={{ background: conn.status === 'authorized' ? '#10b981' : conn.status === 'error' ? '#ef4444' : '#f59e0b' }}>
+                  {conn.bank_name.charAt(0)}
+                </span>
+                <div className="member-card-info">
+                  <div className="member-card-name">{conn.bank_name}</div>
+                  <div className="member-card-role">
+                    {conn.status === 'authorized' ? '✅ Connecté' : conn.status === 'error' ? '❌ Erreur' : '⏳ En attente'}
+                    {conn.last_synced_at && ` · Synchro ${new Date(conn.last_synced_at).toLocaleDateString('fr-FR')}`}
+                    {conn.accounts?.length > 0 && ` · ${conn.accounts.length} compte(s)`}
+                  </div>
+                  {conn.error_message && <div style={{ fontSize: 11, color: 'var(--danger-text)', marginTop: 2 }}>{conn.error_message}</div>}
+                </div>
+                {conn.status === 'authorized' && (
+                  <button className="secondary-btn" style={{ fontSize: 11, padding: '5px 10px', whiteSpace: 'nowrap' }} onClick={() => syncBankConnection(conn.id)}>
+                    <RefreshCw size={12}/> Sync
+                  </button>
+                )}
+                <button className="icon-btn-sm" onClick={() => deleteBankConnection(conn.id)}><Trash2 size={13}/></button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="settings-info" style={{ marginTop: 8 }}>
+          <Lightbulb size={14}/>
+          <span>Connexion sécurisée via <strong>Enable Banking</strong> (PSD2 open banking). Vos identifiants bancaires ne transitent pas par Wealthly.</span>
+        </div>
+      </section>
+
+      {showBankModal && (
+        <BankConnectModal
+          onClose={() => setShowBankModal(false)}
+        />
+      )}
 
       <section className="card">
         <div className="card-header"><h3><Award size={16}/> Vos succès</h3><span className="card-meta">{achievements.length}/{ACHIEVEMENT_DEFS.length} débloqués</span></div>
@@ -3285,6 +3406,139 @@ function MemberEditor({ member, onSave, onCancel }) {
           <button className="secondary-btn" onClick={onCancel}>Annuler</button>
           <button className="primary-btn" onClick={() => { if (draft.name) onSave(draft); }}><Check size={14}/> Enregistrer</button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// BANK CONNECT MODAL
+// ============================================================================
+function BankConnectModal({ onClose }) {
+  const [step, setStep] = useState('country'); // country → list → redirect
+  const [country, setCountry] = useState('FR');
+  const [banks, setBanks] = useState([]);
+  const [loadingBanks, setLoadingBanks] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [error, setError] = useState(null);
+  const [search, setSearch] = useState('');
+
+  const COUNTRIES = [
+    { code: 'FR', name: '🇫🇷 France' },
+    { code: 'DE', name: '🇩🇪 Allemagne' },
+    { code: 'ES', name: '🇪🇸 Espagne' },
+    { code: 'IT', name: '🇮🇹 Italie' },
+    { code: 'BE', name: '🇧🇪 Belgique' },
+    { code: 'NL', name: '🇳🇱 Pays-Bas' },
+    { code: 'PT', name: '🇵🇹 Portugal' },
+    { code: 'GB', name: '🇬🇧 Royaume-Uni' },
+  ];
+
+  const loadBanks = async () => {
+    setLoadingBanks(true);
+    setError(null);
+    try {
+      const data = await api.banking.listBanks(country);
+      const list = data.banks || data || [];
+      setBanks(Array.isArray(list) ? list : []);
+      setStep('list');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoadingBanks(false);
+    }
+  };
+
+  const connectBank = async (bankName) => {
+    setConnecting(true);
+    setError(null);
+    try {
+      const result = await api.banking.connect(bankName, country);
+      if (result.redirect_url) {
+        // Redirect user to bank authentication page
+        window.location.href = result.redirect_url;
+      } else {
+        setError('Pas d\'URL de redirection reçue');
+        setConnecting(false);
+      }
+    } catch (err) {
+      setError(err.message);
+      setConnecting(false);
+    }
+  };
+
+  const filteredBanks = banks.filter(b => {
+    const name = b.name || b.full_name || '';
+    return name.toLowerCase().includes(search.toLowerCase());
+  });
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>🏦 Connecter ma banque</h2>
+          <button className="icon-btn-sm" onClick={onClose}><X size={16}/></button>
+        </div>
+
+        {step === 'country' && (
+          <div className="modal-body">
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
+              Connexion sécurisée via Enable Banking (PSD2). Vos identifiants restent sur le site de votre banque.
+            </p>
+            <label>
+              <span>Pays de votre banque</span>
+              <select value={country} onChange={(e) => setCountry(e.target.value)}>
+                {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+              </select>
+            </label>
+            {error && <div className="error-banner" style={{ marginTop: 10 }}>{error}</div>}
+            <div className="modal-footer">
+              <button className="secondary-btn" onClick={onClose}>Annuler</button>
+              <button className="primary-btn" onClick={loadBanks} disabled={loadingBanks}>
+                {loadingBanks ? '⏳ Chargement…' : 'Voir les banques →'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 'list' && (
+          <div className="modal-body">
+            <input
+              className="search-input"
+              placeholder="Chercher votre banque…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ width: '100%', marginBottom: 12 }}
+              autoFocus
+            />
+            <div style={{ maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {filteredBanks.length === 0 && (
+                <div className="empty-mini" style={{ padding: 20 }}>
+                  {banks.length === 0 ? 'Aucune banque disponible pour ce pays' : 'Aucun résultat'}
+                </div>
+              )}
+              {filteredBanks.map((bank, idx) => {
+                const bankName = bank.name || bank.full_name || `Banque ${idx}`;
+                return (
+                  <button
+                    key={idx}
+                    className="bank-option-btn"
+                    onClick={() => connectBank(bankName)}
+                    disabled={connecting}
+                  >
+                    <span className="bank-initial">{bankName.charAt(0).toUpperCase()}</span>
+                    <span className="bank-option-name">{bankName}</span>
+                    {connecting ? <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>⏳</span> : <ChevronRight size={14}/>}
+                  </button>
+                );
+              })}
+            </div>
+            {error && <div className="error-banner" style={{ marginTop: 10 }}>{error}</div>}
+            <div style={{ marginTop: 12 }}>
+              <button className="secondary-btn" style={{ width: '100%' }} onClick={() => setStep('country')}>← Changer de pays</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -4064,6 +4318,16 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color:
 .toast-error { border-color: var(--danger); }
 .toast-content { font-size: 13px; font-weight: 600; }
 @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+/* BANK SYNC */
+.bank-option-btn { display: flex; align-items: center; gap: 12px; padding: 11px 14px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; font-family: inherit; font-size: 13px; color: var(--text-primary); font-weight: 500; transition: all 0.15s; text-align: left; width: 100%; }
+.bank-option-btn:hover:not(:disabled) { background: var(--primary-soft); border-color: var(--primary); color: var(--primary-text); }
+.bank-option-btn:disabled { opacity: 0.6; cursor: wait; }
+.bank-initial { width: 34px; height: 34px; border-radius: 9px; background: var(--primary-soft); color: var(--primary-text); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; flex-shrink: 0; }
+.bank-option-name { flex: 1; }
+.error-banner { background: var(--danger-soft); color: var(--danger-text); border-radius: 8px; padding: 10px 12px; font-size: 12px; font-weight: 600; }
+.search-input { padding: 9px 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg-subtle); color: var(--text-primary); font-size: 13px; font-family: inherit; outline: none; }
+.search-input:focus { border-color: var(--primary); background: var(--bg-card); }
 `;
   return <style>{css}</style>;
 }
