@@ -26,8 +26,13 @@ _DEFAULT_RULES = [
     (r"carrefour|leclerc|lidl|auchan|monoprix|franprix|intermarch|casino|super u|biocoop|naturalia", "groceries"),
     (r"uber eats|deliveroo|just eat|mcdonald|burger king|kfc|subway|starbucks|paul |brioche dor|krispy kreme", "restaurants"),
     (r"restaurant|brasserie|bistrot|pizzeria|sushi|kebab|tacos|pizza", "restaurants"),
-    (r"netflix|spotify|disney|prime video|deezer|apple\.com/bill|youtube premium|canal\+|salto|amazon prime", "subscriptions"),
-    (r"icloud|google one|dropbox|microsoft 365|adobe|github", "subscriptions"),
+    # Subscriptions — streaming, gym, app stores, tools (volontairement large)
+    (r"netflix|spotify|disney|prime video|deezer|youtube|canal\+|salto|paramount|hbo|apple tv|apple music|soundcloud|tidal|qobuz|napster|molotov|olarc", "subscriptions"),
+    (r"apple\.com/bill|app store|appstore|itunes|google play|playstore|google\*|microsoft store|xbox|playstation|nintendo|steam|epic games|ea games|ubisoft", "subscriptions"),
+    (r"icloud|google one|dropbox|microsoft 365|office 365|adobe|github|notion|linear|canva|figma|evernote|lastpass|1password|nordvpn|expressvpn|surfshark|proton ", "subscriptions"),
+    (r"basic-?fit|basic fit|fitness park|anytime fitness|on air fitness|l'orange bleue|neoness|magic form|keepcool|club med gym|elancia|gigafit|fit\\s*[24]|cmg sports", "subscriptions"),
+    (r"hellofresh|hello fresh|quitoque|gousto|kitchen daily|frichti|gigamic|abonnement", "subscriptions"),
+    (r"le monde|le figaro|liberation|mediapart|les echos|l.equipe|la croix|le point|nouvel obs|lemag|la presse", "subscriptions"),
     (r"sfr|orange|free mobile|bouygues|red by sfr|sosh|prixtel", "utilities"),
     (r"edf |engie|total energies|enedis|grdf|veolia|suez", "utilities"),
     (r"loyer|location|fonciere|syndic|charges copro", "housing"),
@@ -48,6 +53,13 @@ _DEFAULT_RULES = [
     (r"commission|frais|cotisation carte|agios", "fees"),
     (r"ecole|creche|nounou|assistante mater|cantine|periscolaire", "children"),
     (r"cultura|udemy|coursera|formation", "education"),
+    # Generic virements — must be LAST so more specific rules above
+    # (salary, savings, investment) win first.
+    (
+        r"virement (re[cç]u de|de la part de|en faveur de|au profit de|à |a |internet|sepa|instantan|inst |ordinaire|external|familial|interne)"
+        r"|virement\s+\w+|^vir\.?\s|prelevement.*virement|annulation virement",
+        "transfer",
+    ),
 ]
 
 

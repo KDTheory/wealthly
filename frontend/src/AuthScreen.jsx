@@ -1,27 +1,85 @@
-import React, { useState } from 'react';
-import { Sparkles, Mail, Lock, User, Home, Eye, EyeOff, AlertCircle } from 'lucide-react';
-import { auth, setToken } from './api.js';
+// ============================================================================
+// AuthScreen — Wealthly v3 (Claude Design)
+//
+// Même vocabulaire que la Landing magazine : top strip + masthead serif
+// + carte formulaire sobre. Papier chaud, cobalt rare, Newsreader pour
+// les titres, Geist pour l'UI.
+//
+// Modes: login | register | forgot | reset.
+// Auth = cookie-based (set-cookie au login/register/reset), pas de
+// localStorage côté token de session.
+// ============================================================================
+import { useEffect, useState } from 'react';
+import { Mail, Lock, User, Home, Eye, EyeOff, AlertCircle, ArrowLeft, Check, Sparkles } from 'lucide-react';
+import { auth } from './api.js';
+import { enableDemoMode } from './demoData.js';
+import { LegalModal } from './components/LegalModal.jsx';
 
-export default function AuthScreen({ onAuth }) {
-  const [mode, setMode] = useState('login'); // 'login' | 'register'
+function readResetTokenFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('reset_token');
+}
+
+export default function AuthScreen({ onAuth, onTryDemo, onBackToLanding, initialMode = 'login' }) {
+  const initialResetToken = readResetTokenFromUrl();
+  const [mode, setMode] = useState(initialResetToken ? 'reset' : initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [householdName, setHouseholdName] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [info, setInfo] = useState(null);
+  const [resetToken] = useState(initialResetToken);
+  const [legal, setLegal] = useState(null);
+
+  // Force dark — cohérent avec la Landing magazine en encre profonde.
+  useEffect(() => {
+    const prev = document.documentElement.getAttribute('data-theme');
+    document.documentElement.setAttribute('data-theme', 'dark');
+    return () => { if (prev) document.documentElement.setAttribute('data-theme', prev); };
+  }, []);
+
+  // Scrub reset_token de l'URL après lecture.
+  useEffect(() => {
+    if (initialResetToken) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('reset_token');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [initialResetToken]);
+
+  const switchMode = (next) => {
+    setMode(next);
+    setError(null);
+    setInfo(null);
+    setPassword('');
+    setConfirmPassword('');
+  };
 
   const submit = async (e) => {
     e.preventDefault();
     setError(null);
+    setInfo(null);
     setLoading(true);
     try {
-      const result = mode === 'login'
-        ? await auth.login(email, password)
-        : await auth.register(email, password, fullName, householdName || 'Mon foyer');
-      setToken(result.access_token);
-      onAuth();
+      if (mode === 'login') {
+        await auth.login(email, password);
+        onAuth();
+      } else if (mode === 'register') {
+        await auth.register(email, password, fullName, householdName || 'Mon foyer');
+        onAuth();
+      } else if (mode === 'forgot') {
+        await auth.forgotPassword(email);
+        setInfo("Si cet email existe, un lien de réinitialisation vient d'être envoyé. Vérifiez votre boîte (et vos spams).");
+      } else if (mode === 'reset') {
+        if (password.length < 10) throw new Error("Le mot de passe doit faire au moins 10 caractères.");
+        if (password !== confirmPassword) throw new Error("Les deux mots de passe ne correspondent pas.");
+        await auth.resetPassword(resetToken, password);
+        onAuth();
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -30,235 +88,488 @@ export default function AuthScreen({ onAuth }) {
   };
 
   return (
-    <div className="auth-screen">
-      <div className="auth-bg-mesh" />
-      <div className="auth-card">
-        <div className="auth-brand">
+    <>
+      <Styles/>
+      <div className="auth-page">
+        {/* TOP STRIP — identique à la Landing */}
+        <div className="auth-strip">
           <div className="auth-mark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="32" height="32">
-              <path d="M12 2L2 7l10 5 10-5-10-5z" />
-              <path d="M2 17l10 5 10-5" />
-              <path d="M2 12l10 5 10-5" />
-            </svg>
+            <span className="auth-logo">W</span>
+            <span>Wealthly Studio</span>
           </div>
-          <h1>Wealthly</h1>
-          <p>Smart family finance</p>
+          <div className="auth-strip-actions">
+            {onBackToLanding && (
+              <button type="button" onClick={onBackToLanding} className="auth-strip-link">
+                <ArrowLeft size={12}/> Retour
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="auth-tabs">
-          <button
-            className={mode === 'login' ? 'active' : ''}
-            onClick={() => { setMode('login'); setError(null); }}
-            type="button"
-          >Connexion</button>
-          <button
-            className={mode === 'register' ? 'active' : ''}
-            onClick={() => { setMode('register'); setError(null); }}
-            type="button"
-          >Créer un compte</button>
+        {/* MASTHEAD compact — eyebrow + titre serif + deck */}
+        <div className="auth-masthead">
+          <div className="auth-num-issue">
+            {mode === 'login'    && '01 — Espace personnel'}
+            {mode === 'register' && '02 — Création de compte'}
+            {mode === 'forgot'   && '03 — Mot de passe oublié'}
+            {mode === 'reset'    && '04 — Nouveau mot de passe'}
+          </div>
+          <h1 className="auth-title">
+            {mode === 'login'    && <>Bon <em>retour.</em></>}
+            {mode === 'register' && <>Créer <em>votre compte.</em></>}
+            {mode === 'forgot'   && <>Récupérer <em>votre accès.</em></>}
+            {mode === 'reset'    && <>Choisir <em>un nouveau mot de passe.</em></>}
+          </h1>
+          <p className="auth-deck">
+            {mode === 'login'    && 'Identifiez-vous pour accéder à votre tableau de bord.'}
+            {mode === 'register' && <>Email et mot de passe. <strong>Pas de carte bleue, pas d'engagement.</strong></>}
+            {mode === 'forgot'   && 'Renseignez votre email — vous recevrez un lien pour choisir un nouveau mot de passe.'}
+            {mode === 'reset'    && 'Choisissez un mot de passe que vous saurez retenir.'}
+          </p>
         </div>
 
-        <form onSubmit={submit} className="auth-form">
-          {mode === 'register' && (
-            <>
-              <label className="auth-field">
-                <span><User size={14} /> Votre prénom</span>
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="ex : Antoine"
-                  required
-                  autoFocus
-                />
-              </label>
-              <label className="auth-field">
-                <span><Home size={14} /> Nom du foyer (optionnel)</span>
-                <input
-                  type="text"
-                  value={householdName}
-                  onChange={(e) => setHouseholdName(e.target.value)}
-                  placeholder="ex : Famille Dupont"
-                />
-              </label>
-            </>
-          )}
-
-          <label className="auth-field">
-            <span><Mail size={14} /> Email</span>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="vous@exemple.fr"
-              required
-              autoFocus={mode === 'login'}
-            />
-          </label>
-
-          <label className="auth-field">
-            <span><Lock size={14} /> Mot de passe</span>
-            <div className="password-input">
-              <input
-                type={showPwd ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={mode === 'register' ? 'Au moins 8 caractères' : '••••••••'}
-                minLength={mode === 'register' ? 8 : undefined}
-                required
-              />
+        {/* CARTE FORMULAIRE */}
+        <div className="auth-card">
+          {(mode === 'login' || mode === 'register') && (
+            <div className="auth-tabs">
               <button
                 type="button"
-                className="pwd-toggle"
-                onClick={() => setShowPwd(!showPwd)}
-                aria-label="Afficher / masquer le mot de passe"
-              >
-                {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-          </label>
-
-          {error && (
-            <div className="auth-error">
-              <AlertCircle size={14} /> {error}
+                className={mode === 'login' ? 'on' : ''}
+                onClick={() => switchMode('login')}
+              >Connexion</button>
+              <button
+                type="button"
+                className={mode === 'register' ? 'on' : ''}
+                onClick={() => switchMode('register')}
+              >Créer un compte</button>
             </div>
           )}
 
-          <button type="submit" className="auth-submit" disabled={loading}>
-            {loading ? 'Patientez…' : (mode === 'login' ? 'Se connecter' : 'Créer mon compte')}
-          </button>
-        </form>
+          {(mode === 'forgot' || mode === 'reset') && mode !== 'reset' && (
+            <button type="button" onClick={() => switchMode('login')} className="auth-back-link">
+              <ArrowLeft size={12}/> Retour à la connexion
+            </button>
+          )}
 
-        <div className="auth-footer">
-          {mode === 'login' ? (
-            <span>Pas encore de compte ? <a onClick={() => setMode('register')}>Créer un compte</a></span>
-          ) : (
-            <span>Déjà inscrit ? <a onClick={() => setMode('login')}>Se connecter</a></span>
+          <form onSubmit={submit} className="auth-form">
+            {mode === 'register' && (
+              <>
+                <Field
+                  label="Votre prénom"
+                  icon={<User size={13}/>}
+                  type="text"
+                  value={fullName}
+                  onChange={setFullName}
+                  placeholder="Antoine"
+                  required autoFocus
+                />
+                <Field
+                  label={<>Nom du foyer <em className="auth-optional">(optionnel)</em></>}
+                  icon={<Home size={13}/>}
+                  type="text"
+                  value={householdName}
+                  onChange={setHouseholdName}
+                  placeholder="Famille Dupont"
+                />
+              </>
+            )}
+
+            {(mode === 'login' || mode === 'register' || mode === 'forgot') && (
+              <Field
+                label="Email"
+                icon={<Mail size={13}/>}
+                type="email"
+                value={email}
+                onChange={setEmail}
+                placeholder="vous@exemple.fr"
+                required
+                autoFocus={mode === 'login' || mode === 'forgot'}
+              />
+            )}
+
+            {(mode === 'login' || mode === 'register' || mode === 'reset') && (
+              <Field
+                label={mode === 'reset' ? 'Nouveau mot de passe' : 'Mot de passe'}
+                icon={<Lock size={13}/>}
+                type={showPwd ? 'text' : 'password'}
+                value={password}
+                onChange={setPassword}
+                placeholder={mode === 'login' ? '••••••••' : 'Au moins 10 caractères'}
+                minLength={mode === 'login' ? undefined : 10}
+                required
+                autoFocus={mode === 'reset'}
+                trailing={
+                  <button
+                    type="button"
+                    className="auth-pwd-toggle"
+                    onClick={() => setShowPwd(!showPwd)}
+                    aria-label="Afficher / masquer le mot de passe"
+                  >
+                    {showPwd ? <EyeOff size={14}/> : <Eye size={14}/>}
+                  </button>
+                }
+              />
+            )}
+
+            {mode === 'reset' && (
+              <Field
+                label="Confirmer le mot de passe"
+                icon={<Lock size={13}/>}
+                type={showPwd ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={setConfirmPassword}
+                placeholder="Retapez le même mot de passe"
+                minLength={10}
+                required
+              />
+            )}
+
+            {error && (
+              <div className="auth-error" role="alert">
+                <AlertCircle size={14}/> {error}
+              </div>
+            )}
+            {info && (
+              <div className="auth-info" role="status">
+                <Check size={14}/> {info}
+              </div>
+            )}
+
+            <button type="submit" className="auth-submit" disabled={loading}>
+              {loading ? 'Patientez…' :
+               mode === 'login'    ? 'Se connecter' :
+               mode === 'register' ? 'Créer mon compte' :
+               mode === 'forgot'   ? 'Envoyer le lien' :
+                                     'Définir le mot de passe'}
+            </button>
+          </form>
+
+          {/* Liens secondaires sous le formulaire */}
+          <div className="auth-secondary">
+            {mode === 'login' && (
+              <>
+                <button type="button" onClick={() => switchMode('forgot')} className="auth-link">
+                  Mot de passe oublié ?
+                </button>
+              </>
+            )}
+            {mode === 'register' && (
+              <span className="auth-secondary-note">
+                Déjà inscrit ?{' '}
+                <button type="button" onClick={() => switchMode('login')} className="auth-link">Se connecter</button>
+              </span>
+            )}
+            {mode === 'forgot' && (
+              <span className="auth-secondary-note">
+                Vous vous souvenez ?{' '}
+                <button type="button" onClick={() => switchMode('login')} className="auth-link">Se connecter</button>
+              </span>
+            )}
+          </div>
+
+          {(mode === 'login' || mode === 'register') && onTryDemo && (
+            <button
+              type="button"
+              onClick={() => { enableDemoMode(); onTryDemo(); }}
+              className="auth-demo"
+            >
+              <Sparkles size={13}/> Essayer avec un jeu de démo
+            </button>
           )}
         </div>
 
-        <div className="auth-features">
-          <div className="auth-feature"><Sparkles size={14} /> 100% auto-hébergé · vos données chez vous</div>
+        {/* COLOPHON */}
+        <div className="auth-colophon">
+          <span>WEALTHLY · v3 · {new Date().getFullYear()}</span>
+          <span className="auth-star">✦</span>
+          <span className="auth-legal">
+            <button onClick={() => setLegal('cgu')}>CGU</button>
+            <button onClick={() => setLegal('privacy')}>Confidentialité</button>
+          </span>
         </div>
       </div>
 
-      <style>{authStyles}</style>
-    </div>
+      {legal && <LegalModal section={legal} onClose={() => setLegal(null)}/>}
+    </>
   );
 }
 
-const authStyles = `
-.auth-screen {
+function Field({ label, icon, type, value, onChange, placeholder, required, autoFocus, minLength, trailing }) {
+  return (
+    <label className="auth-field">
+      <span className="auth-field-label">{icon}{label}</span>
+      <span className="auth-field-input">
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          required={required}
+          autoFocus={autoFocus}
+          minLength={minLength}
+        />
+        {trailing}
+      </span>
+    </label>
+  );
+}
+
+function Styles() {
+  return <style dangerouslySetInnerHTML={{ __html: css }}/>;
+}
+
+const css = `
+.auth-page * { box-sizing: border-box; margin: 0; padding: 0; }
+.auth-page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 56px 32px 56px;
   min-height: 100vh;
-  display: flex; align-items: center; justify-content: center;
-  background: #fafbfc;
-  padding: 24px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  position: relative; overflow: hidden;
+  display: flex; flex-direction: column;
+  gap: 36px;
+  background: #0F0E0C;
+  color: #F1EEE4;
+  font-family: 'Geist', system-ui, -apple-system, sans-serif;
+  font-feature-settings: 'ss01', 'cv11';
   -webkit-font-smoothing: antialiased;
 }
-.auth-bg-mesh {
-  position: absolute; inset: 0; pointer-events: none;
-  background:
-    radial-gradient(circle at 20% 20%, rgba(59,130,246,0.15), transparent 40%),
-    radial-gradient(circle at 80% 80%, rgba(139,92,246,0.12), transparent 40%),
-    radial-gradient(circle at 50% 50%, rgba(236,72,153,0.06), transparent 50%);
+.auth-page button { font-family: inherit; cursor: pointer; }
+
+/* TOP STRIP */
+.auth-strip {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #2A2823;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em;
+  color: #75716A; font-weight: 500;
 }
+.auth-mark { display: flex; align-items: center; gap: 10px; color: #F1EEE4; }
+.auth-logo {
+  width: 22px; height: 22px;
+  background: #F1EEE4; border-radius: 5px;
+  display: grid; place-items: center;
+  color: #0F0E0C;
+  font-weight: 700; font-size: 11px; letter-spacing: 0;
+}
+.auth-strip-actions { display: flex; gap: 12px; }
+.auth-strip-link {
+  background: transparent; border: none;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em;
+  font-weight: 500; color: #A29E91;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: color 120ms;
+}
+.auth-strip-link:hover { color: #F1EEE4; }
+
+/* MASTHEAD */
+.auth-masthead { display: flex; flex-direction: column; gap: 14px; }
+.auth-num-issue {
+  font-family: 'Newsreader', Georgia, serif;
+  font-style: italic; font-size: 14px;
+  color: #75716A; font-weight: 400; letter-spacing: -0.01em;
+}
+.auth-num-issue::before { content: '№ '; color: #4D4A45; }
+.auth-title {
+  font-family: 'Newsreader', Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(40px, 6vw, 56px);
+  line-height: 0.96;
+  letter-spacing: -0.04em;
+  color: #F1EEE4;
+}
+.auth-title em { font-style: italic; color: #A29E91; }
+.auth-deck {
+  font-size: 15px; line-height: 1.5;
+  color: #A29E91; max-width: 48ch;
+  letter-spacing: -0.005em;
+}
+.auth-deck strong { color: #F1EEE4; font-weight: 500; }
+
+/* CARD */
 .auth-card {
-  background: white;
-  border-radius: 24px;
-  padding: 40px;
-  max-width: 440px;
-  width: 100%;
-  box-shadow: 0 24px 48px -12px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
-  position: relative; z-index: 1;
+  background: #181714;
+  border: 1px solid #2A2823;
+  border-radius: 16px;
+  padding: 28px 28px 24px;
+  display: flex; flex-direction: column; gap: 20px;
 }
-.auth-brand { text-align: center; margin-bottom: 28px; }
-.auth-mark {
-  width: 64px; height: 64px; border-radius: 18px;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-  display: inline-flex; align-items: center; justify-content: center;
-  color: white; box-shadow: 0 12px 24px rgba(59,130,246,0.3);
-  margin-bottom: 16px;
-}
-.auth-brand h1 {
-  font-size: 28px; font-weight: 800; margin: 0;
-  letter-spacing: -0.025em; color: #0f172a;
-}
-.auth-brand p {
-  font-size: 13px; color: #64748b;
-  margin: 4px 0 0; font-weight: 500;
-}
+
+/* Tabs */
 .auth-tabs {
-  display: flex; gap: 4px; padding: 4px;
-  background: #f1f5f9; border-radius: 12px; margin-bottom: 24px;
+  display: flex;
+  background: #0A0908;
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
 }
 .auth-tabs button {
-  flex: 1; padding: 9px; border: none; background: transparent;
-  color: #64748b; font-size: 13px; font-weight: 600;
-  border-radius: 8px; cursor: pointer; transition: all .15s;
-  font-family: inherit;
+  flex: 1;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px; font-weight: 500; letter-spacing: -0.005em;
+  color: #A29E91;
+  transition: background 120ms, color 120ms;
 }
-.auth-tabs button.active {
-  background: white; color: #3b82f6;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+.auth-tabs button:hover { color: #F1EEE4; }
+.auth-tabs button.on {
+  background: #181714;
+  color: #F1EEE4;
+  box-shadow: 0 1px 0 rgba(20,20,15,.04), 0 1px 2px rgba(20,20,15,.04);
 }
+
+.auth-back-link {
+  background: transparent; border: none;
+  font-size: 13px; color: #A29E91;
+  display: inline-flex; align-items: center; gap: 6px;
+  align-self: flex-start;
+  letter-spacing: -0.005em;
+  transition: color 120ms;
+}
+.auth-back-link:hover { color: #F1EEE4; }
+
+/* Form */
 .auth-form { display: flex; flex-direction: column; gap: 14px; }
 .auth-field { display: flex; flex-direction: column; gap: 6px; }
-.auth-field span {
-  font-size: 12px; font-weight: 600; color: #475569;
-  display: inline-flex; align-items: center; gap: 5px;
-}
-.auth-field input {
-  padding: 11px 14px; border: 1px solid #e2e8f0;
-  border-radius: 10px; font-size: 14px; color: #0f172a;
-  font-family: inherit; transition: all .15s; background: white;
-}
-.auth-field input:focus {
-  outline: none; border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
-}
-.password-input { position: relative; }
-.password-input input { padding-right: 44px; width: 100%; }
-.pwd-toggle {
-  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-  background: none; border: none; cursor: pointer; padding: 4px;
-  color: #94a3b8; display: flex;
-}
-.pwd-toggle:hover { color: #0f172a; }
-.auth-error {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 12px; background: #fee2e2; color: #991b1b;
-  border-radius: 8px; font-size: 13px; font-weight: 500;
-}
-.auth-submit {
-  margin-top: 8px; padding: 13px;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-  color: white; border: none; border-radius: 12px;
-  font-size: 14px; font-weight: 700; cursor: pointer;
-  transition: all .15s; font-family: inherit;
-  box-shadow: 0 4px 12px rgba(59,130,246,0.3);
-}
-.auth-submit:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(59,130,246,0.4);
-}
-.auth-submit:disabled { opacity: 0.6; cursor: not-allowed; }
-.auth-footer {
-  text-align: center; margin-top: 20px;
-  font-size: 13px; color: #64748b;
-}
-.auth-footer a {
-  color: #3b82f6; font-weight: 600; cursor: pointer;
-}
-.auth-footer a:hover { text-decoration: underline; }
-.auth-features {
-  margin-top: 20px; padding-top: 20px;
-  border-top: 1px solid #f1f5f9;
-  text-align: center;
-}
-.auth-feature {
+.auth-field-label {
   display: inline-flex; align-items: center; gap: 6px;
-  font-size: 11px; color: #94a3b8; font-weight: 500;
+  font-size: 12px; font-weight: 500; color: #A29E91;
+  letter-spacing: -0.005em;
+}
+.auth-field-label svg { color: #75716A; }
+.auth-optional {
+  font-family: 'Newsreader', Georgia, serif;
+  font-style: italic; font-weight: 400; color: #75716A;
+}
+.auth-field-input {
+  position: relative;
+  display: flex;
+}
+.auth-field-input input {
+  flex: 1;
+  height: 40px;
+  padding: 0 14px;
+  padding-right: 38px;
+  border: 1px solid #2A2823;
+  border-radius: 8px;
+  background: #0F0E0C;
+  color: #F1EEE4;
+  font: 400 14px/1.4 'Geist', system-ui, sans-serif;
+  letter-spacing: -0.005em;
+  transition: border-color 120ms, box-shadow 120ms, background 120ms;
+  width: 100%;
+}
+.auth-field-input input::placeholder { color: #4D4A45; }
+.auth-field-input input:hover { border-color: #3A382F; }
+.auth-field-input input:focus-visible {
+  outline: none;
+  background: #181714;
+  border-color: #7E92FF;
+  box-shadow: 0 0 0 3px #1B214A;
+}
+.auth-pwd-toggle {
+  position: absolute; right: 10px; top: 50%;
+  transform: translateY(-50%);
+  background: transparent; border: none;
+  color: #75716A;
+  width: 24px; height: 24px;
+  display: grid; place-items: center;
+  border-radius: 4px;
+  transition: color 120ms, background 120ms;
+}
+.auth-pwd-toggle:hover { color: #F1EEE4; background: #1F1D19; }
+
+/* Submit */
+.auth-submit {
+  height: 44px;
+  background: #F1EEE4;
+  color: #0F0E0C;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px; font-weight: 500; letter-spacing: -0.005em;
+  margin-top: 4px;
+  transition: background 120ms;
+}
+.auth-submit:hover:not(:disabled) { background: #E5E2D8; }
+.auth-submit:active:not(:disabled) { transform: translateY(1px); }
+.auth-submit:disabled { opacity: 0.55; cursor: wait; }
+
+/* Error / info banners */
+.auth-error, .auth-info {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px; line-height: 1.45;
+}
+.auth-error {
+  background: #341B17; color: #E07A6E;
+}
+.auth-info {
+  background: #15301F; color: #4FB57A;
+}
+
+/* Secondary links */
+.auth-secondary {
+  display: flex; justify-content: center; gap: 12px;
+  font-size: 13px; color: #A29E91;
+}
+.auth-secondary-note { color: #A29E91; }
+.auth-link {
+  background: transparent; border: none; padding: 0;
+  font-size: 13px;
+  color: #7E92FF;
+  text-decoration: underline; text-underline-offset: 3px;
+  font-family: inherit;
+  font-weight: 500;
+  transition: color 120ms;
+}
+.auth-link:hover { color: #A6B4FF; }
+
+/* Demo button */
+.auth-demo {
+  background: transparent;
+  border: 1px dashed #3A382F;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 13px;
+  color: #A29E91;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  letter-spacing: -0.005em;
+  transition: border-color 120ms, color 120ms, background 120ms;
+}
+.auth-demo:hover {
+  border-color: #A29E91;
+  color: #F1EEE4;
+  background: #1F1D19;
+}
+
+/* Colophon */
+.auth-colophon {
+  margin-top: auto;
+  padding-top: 18px;
+  border-top: 1px solid #2A2823;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 11px; letter-spacing: 0.06em; color: #75716A;
+  text-transform: uppercase;
+}
+.auth-star { color: #4D4A45; font-size: 14px; letter-spacing: 0.4em; }
+.auth-legal { display: flex; gap: 14px; }
+.auth-legal button {
+  background: transparent; border: none;
+  font-size: 11px; letter-spacing: 0.06em; color: #75716A;
+  text-transform: uppercase;
+  font-family: inherit;
+  text-decoration: underline; text-underline-offset: 3px;
+  transition: color 120ms;
+}
+.auth-legal button:hover { color: #F1EEE4; }
+
+/* Responsive */
+@media (max-width: 520px) {
+  .auth-page { padding: 32px 20px 32px; gap: 28px; }
+  .auth-card { padding: 22px 18px 20px; }
+  .auth-title { font-size: 36px; }
+  .auth-colophon { flex-direction: column; gap: 8px; }
 }
 `;

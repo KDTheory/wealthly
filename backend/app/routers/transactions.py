@@ -49,6 +49,7 @@ def _to_out(tx: Transaction, db: Session) -> dict:
         "category_slug": cat_slug,
         "is_manual_category": tx.is_manual_category,
         "is_recurring_override": tx.is_recurring_override,
+        "is_transfer_override": tx.is_transfer_override,
         "notes": tx.notes or "",
         "household_id": tx.household_id,
     }
@@ -100,6 +101,7 @@ def create_transaction(payload: TransactionCreate, db: Session = Depends(get_db)
         category_id=cat_id,
         is_manual_category=payload.is_manual_category,
         is_recurring_override=payload.is_recurring_override,
+        is_transfer_override=payload.is_transfer_override,
         notes=payload.notes or "",
         dedup_hash=dedup,
     )
@@ -144,6 +146,7 @@ def bulk_import(payload: TransactionImport, db: Session = Depends(get_db), user:
             category_id=cat_id,
             is_manual_category=t.is_manual_category,
             is_recurring_override=t.is_recurring_override,
+            is_transfer_override=t.is_transfer_override,
             notes=t.notes or "",
             dedup_hash=dedup,
         )

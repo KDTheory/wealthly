@@ -64,6 +64,8 @@ class Household(Base):
 
     id = Column(String, primary_key=True, default=_uuid)
     name = Column(String, nullable=False, default="Mon foyer")
+    # plan: solo | pro | family | admin (free forever for platform founders)
+    plan = Column(String, nullable=False, default="solo")
     created_at = Column(DateTime, default=datetime.utcnow)
 
     users = relationship("User", back_populates="household", cascade="all, delete-orphan")
@@ -99,6 +101,29 @@ class User(Base):
     member_id = Column(String, ForeignKey("members.id", ondelete="SET NULL"), nullable=True)
 
 
+class AuthEvent(Base):
+    """Append-only audit log of every authentication attempt.
+    Powers the /admin monitoring page + brute-force lockout logic.
+
+    `kind` enum:
+      - login_success / login_failure
+      - register_success / register_failure
+      - password_reset_request / password_reset_success
+      - logout
+    """
+    __tablename__ = "auth_events"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    user_id = Column(String, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    email = Column(String, nullable=True, index=True)  # captured even on register failure
+    kind = Column(String, nullable=False, index=True)
+    success = Column(Boolean, nullable=False, default=True, index=True)
+    ip = Column(String, nullable=True, index=True)
+    user_agent = Column(Text, nullable=True)
+    detail = Column(Text, nullable=True)  # free-form: failure reason, country, etc.
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+
 class Member(Base):
     """A person tracked in the household. Adults usually have a User login,
     children do not."""
@@ -126,7 +151,22 @@ class Account(Base):
     name = Column(String, nullable=False)
     bank = Column(String, nullable=True)
     type = Column(String, nullable=False, default="checking")  # checking|savings|pea|credit
+    # Cashflow role — drives which accounts contribute to income / expenses
+    # aggregates. Independent from `type` (which is the bank product family).
+    #   principal      — main account, salary lands here, all flows count
+    #   depenses       — secondary spend wallet (Revolut style); outflows ARE
+    #                    real expenses, inflows are usually transfers from
+    #                    principal and DO NOT count as income
+    #   epargne        — savings; balance counts in net worth, neither inflows
+    #                    nor outflows count for monthly cashflow
+    #   investissement — broker; same rule as epargne for cashflow purposes
+    #   professionnel  — fully excluded from personal patrimoine and cashflow
+    role = Column(String, nullable=False, default="principal", index=True)
     initial_balance = Column(Float, nullable=False, default=0.0)
+    # ISO 4217 currency the account is denominated in (EUR / USD / GBP / CHF / …).
+    # Lets us aggregate multi-currency holdings: the frontend converts to the
+    # user's display currency at render time using live ECB rates.
+    currency = Column(String, nullable=False, default="EUR")
     created_at = Column(DateTime, default=datetime.utcnow)
 
     household_id = Column(String, ForeignKey("households.id", ondelete="CASCADE"), nullable=False)
@@ -148,9 +188,15 @@ class Transaction(Base):
     category_id = Column(String, ForeignKey("categories.id", ondelete="SET NULL"), nullable=True)
     is_manual_category = Column(Boolean, default=False)
     is_recurring_override = Column(Boolean, nullable=True)  # null = auto-detect, true/false = manual override
+    is_transfer_override = Column(Boolean, nullable=True)   # null = auto-detect, true/false = manual override on internal-transfer detection
     notes = Column(Text, nullable=True, default="")
     # Hash for deduplication on import: account_id|date|amount|label_truncated
     dedup_hash = Column(String, nullable=False, index=True)
+    # Source of the transaction: csv | manual | gocardless
+    source = Column(String, nullable=False, default="manual", index=True)
+    # Stable identifier from the bank aggregator (e.g. GoCardless transactionId).
+    # When set, a unique (account_id, external_id) index dedups syncs across runs.
+    external_id = Column(String, nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     household_id = Column(String, ForeignKey("households.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -160,20 +206,49 @@ class Transaction(Base):
 
     __table_args__ = (
         UniqueConstraint("household_id", "dedup_hash", name="uq_household_dedup"),
+        UniqueConstraint("account_id", "external_id", name="uq_account_external_id"),
         Index("ix_tx_household_date", "household_id", "date"),
     )
 
 
 class Asset(Base):
-    """Non-bank asset: real estate, life insurance, PEA, crypto, etc."""
+    """Non-bank asset: real estate, life insurance, PEA, crypto, etc.
+
+    Real-estate-specific fields (purchase_price, surface_m2, notary_fees,
+    agency_fees, works_fees, furniture_fees, purchase_date,
+    construction_year, ownership_pct, subtype) were added 2026-05-05 to
+    feed the Finary-style "Ajouter mon immobilier" wizard. They're all
+    optional and only meaningful when type == "real_estate".
+    """
     __tablename__ = "assets"
 
     id = Column(String, primary_key=True, default=_uuid)
     type = Column(String, nullable=False)  # real_estate | life_insurance | pea | per | savings_account | crypto | stocks | other_asset
     name = Column(String, nullable=False)
     current_value = Column(Float, nullable=False, default=0.0)
+    # ISO 4217 — see Account.currency comment.
+    currency = Column(String, nullable=False, default="EUR")
+    # Live-pricing — when set, the frontend overrides current_value with
+    # quantity × live_price coming from /quotes (Yahoo Finance). Empty
+    # ticker means the asset stays manually-valued (real estate, livret, …).
+    # Examples: AAPL, MSFT, CW8.PA (Amundi MSCI World on Euronext), BTC-EUR.
+    ticker = Column(String, nullable=True, index=True)
+    quantity = Column(Float, nullable=True)
     notes = Column(Text, nullable=True, default="")
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Real-estate enrichment — Finary parity
+    subtype = Column(String, nullable=True)              # RP | locative | secondaire | scpi | other
+    purchase_price = Column(Float, nullable=True)
+    surface_m2 = Column(Float, nullable=True)
+    notary_fees = Column(Float, nullable=True)
+    agency_fees = Column(Float, nullable=True)
+    works_fees = Column(Float, nullable=True)
+    furniture_fees = Column(Float, nullable=True)
+    purchase_date = Column(Date, nullable=True)
+    construction_year = Column(Integer, nullable=True)
+    ownership_pct = Column(Float, nullable=True, default=100.0)
+    address = Column(String, nullable=True)              # liée à l'emprunt si tu veux
 
     household_id = Column(String, ForeignKey("households.id", ondelete="CASCADE"), nullable=False)
     household = relationship("Household", back_populates="assets")
@@ -181,22 +256,40 @@ class Asset(Base):
 
 
 class Liability(Base):
-    """A loan: mortgage, consumer credit, auto loan, etc."""
+    """A loan: mortgage, consumer credit, auto loan, etc.
+
+    Enriched fields (added 2026-05-05) drive the Finary-style detail view:
+    amortization schedule, mensualité breakdown (capital / intérêts /
+    assurance), %-remboursé, coût total. They're all optional — legacy
+    rows still render, just without the breakdown.
+    """
     __tablename__ = "liabilities"
 
     id = Column(String, primary_key=True, default=_uuid)
     type = Column(String, nullable=False)  # mortgage | consumer_loan | auto_loan | other_loan
     name = Column(String, nullable=False)
-    initial_capital = Column(Float, nullable=False, default=0.0)
-    remaining_capital = Column(Float, nullable=False, default=0.0)
-    monthly_payment = Column(Float, nullable=False, default=0.0)
-    interest_rate = Column(Float, nullable=False, default=0.0)
+    initial_capital = Column(Float, nullable=False, default=0.0)   # original principal
+    remaining_capital = Column(Float, nullable=False, default=0.0) # current outstanding
+    monthly_payment = Column(Float, nullable=False, default=0.0)   # full mensualité (P+I+A)
+    # ISO 4217 — see Account.currency comment.
+    currency = Column(String, nullable=False, default="EUR")
+    interest_rate = Column(Float, nullable=False, default=0.0)     # annual rate %
     end_date = Column(Date, nullable=True)
     notes = Column(Text, nullable=True, default="")
+
+    # Enriched
+    down_payment = Column(Float, nullable=True)            # apport
+    insurance_rate = Column(Float, nullable=True)          # annual % of initial capital
+    application_fees = Column(Float, nullable=True)        # frais de dossier (one-shot)
+    ownership_pct = Column(Float, nullable=True, default=100.0)  # détention de l'emprunt
+    duration_months = Column(Integer, nullable=True)       # total duration
+    start_date = Column(Date, nullable=True)               # first echéance
+    linked_asset_id = Column(String, ForeignKey("assets.id", ondelete="SET NULL"), nullable=True)
 
     household_id = Column(String, ForeignKey("households.id", ondelete="CASCADE"), nullable=False)
     household = relationship("Household", back_populates="liabilities")
     members = relationship("Member", secondary=liability_members, back_populates="liabilities")
+    linked_asset = relationship("Asset", foreign_keys=[linked_asset_id])
 
 
 class Category(Base):
@@ -299,3 +392,167 @@ class Achievement(Base):
     __table_args__ = (
         UniqueConstraint("household_id", "achievement_slug", name="uq_household_achievement"),
     )
+
+
+class PasswordResetToken(Base):
+    """Single-use token sent to a user's email to reset their password.
+
+    Stored as a SHA-256 hash so a leaked DB row cannot be replayed
+    against the live link. Tokens expire after 60 minutes.
+    """
+    __tablename__ = "password_reset_tokens"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    token_hash = Column(String, nullable=False, index=True)
+    expires_at = Column(DateTime, nullable=False)
+    used_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class WealthSnapshot(Base):
+    """Monthly snapshot of household net worth.
+
+    One row per (household, year-month). Lets the frontend render a real
+    patrimoine evolution curve — without it, the only history available
+    came from bank-account balances rolled forward from transactions,
+    which excluded assets / liabilities valued in the wealth tab.
+
+    The frontend POSTs a snapshot on first load each month (idempotent —
+    upserts on the unique constraint), so the timeline is always current.
+    """
+    __tablename__ = "wealth_snapshots"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    month = Column(String, nullable=False)  # 'YYYY-MM'
+    captured_at = Column(DateTime, default=datetime.utcnow)
+
+    # All values in EUR, household-level (sum across members).
+    net_worth = Column(Float, nullable=False, default=0.0)
+    liquid_wealth = Column(Float, nullable=False, default=0.0)
+    assets_value = Column(Float, nullable=False, default=0.0)
+    liabilities_value = Column(Float, nullable=False, default=0.0)
+
+    # Breakdown — added 2026-05-05 to power the brut / net / financier toggle
+    # in the Synthèse view. Nullable for backwards compatibility; older
+    # snapshots simply fall back to the aggregate values above.
+    real_estate_value = Column(Float, nullable=True)        # subset of assets_value
+    financial_assets_value = Column(Float, nullable=True)   # liquid + non-RE assets
+    mortgage_debt = Column(Float, nullable=True)            # subset of liabilities_value
+    other_debt = Column(Float, nullable=True)               # liabilities - mortgage
+
+    household_id = Column(String, ForeignKey("households.id", ondelete="CASCADE"), nullable=False)
+    household = relationship("Household")
+
+    __table_args__ = (
+        UniqueConstraint("household_id", "month", name="uq_household_snapshot_month"),
+    )
+
+
+class BankConnection(Base):
+    """A connection to a bank via an aggregator (GoCardless Bank Account Data
+    for now). One row per (household, institution) link — owns 1+ accounts.
+
+    The PSD2 consent expires after 90 days max; the user must re-link the bank
+    after that. We track expires_at to surface a warning before that point.
+    """
+    __tablename__ = "bank_connections"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    provider = Column(String, nullable=False, default="gocardless")
+    institution_id = Column(String, nullable=False)   # provider-side institution id
+    institution_name = Column(String, nullable=False)
+    institution_logo = Column(String, nullable=True)
+
+    # Provider-side handles
+    requisition_id = Column(String, nullable=False, index=True)
+    agreement_id = Column(String, nullable=True)
+    # Reference we pass to GoCardless so we can correlate the callback
+    reference = Column(String, nullable=False, index=True)
+
+    # CR (created, awaiting auth) | LN (linked) | EX (expired) | ER (error) | RJ (rejected)
+    status = Column(String, nullable=False, default="CR")
+    last_sync_at = Column(DateTime, nullable=True)
+    last_sync_error = Column(Text, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    expires_at = Column(DateTime, nullable=True)
+
+    household_id = Column(String, ForeignKey("households.id", ondelete="CASCADE"), nullable=False, index=True)
+    household = relationship("Household", back_populates="bank_connections")
+    account_links = relationship("BankAccountLink", back_populates="connection", cascade="all, delete-orphan")
+
+
+class BankAccountLink(Base):
+    """A specific external account exposed by a BankConnection, mapped to an
+    internal Account. One row per (connection, external_account_id).
+
+    `account_id` is nullable because right after the callback we know the
+    external accounts but the user hasn't yet picked which internal Account
+    each one maps to (or chosen to create a new one).
+    """
+    __tablename__ = "bank_account_links"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    connection_id = Column(String, ForeignKey("bank_connections.id", ondelete="CASCADE"), nullable=False, index=True)
+    external_account_id = Column(String, nullable=False, index=True)
+
+    iban = Column(String, nullable=True)
+    currency = Column(String, nullable=True, default="EUR")
+    owner_name = Column(String, nullable=True)
+    display_name = Column(String, nullable=True)  # what the bank calls it
+
+    account_id = Column(String, ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True, index=True)
+    last_synced_at = Column(DateTime, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    connection = relationship("BankConnection", back_populates="account_links")
+    account = relationship("Account")
+
+    __table_args__ = (
+        UniqueConstraint("connection_id", "external_account_id", name="uq_connection_ext_account"),
+    )
+
+
+# Association table — FixedCharge can be assigned to specific household members
+fixed_charge_members = Table(
+    "fixed_charge_members",
+    Base.metadata,
+    Column("fixed_charge_id", String, ForeignKey("fixed_charges.id", ondelete="CASCADE"), primary_key=True),
+    Column("member_id", String, ForeignKey("members.id", ondelete="CASCADE"), primary_key=True),
+)
+
+
+class FixedCharge(Base):
+    """A stable monthly charge defined by the user.
+
+    Unlike auto-detected recurring expenses (which derive from imported
+    transactions), these are explicit and stay constant unless the user
+    edits them. They drive the "Reste à vivre" calculation in Suivi
+    mensuel: revenus - sum(active fixed charges).
+
+    Activity window:
+    - `start_month` (YYYY-MM): the charge is active starting from this
+      month. Defaults to the creation month, so an "added today" charge
+      counts from now.
+    - `end_month` (YYYY-MM, nullable): if set, charge stops being counted
+      after that month. Useful for time-bounded subscriptions.
+    """
+    __tablename__ = "fixed_charges"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    name = Column(String, nullable=False)
+    amount = Column(Float, nullable=False, default=0.0)
+    day_of_month = Column(Integer, nullable=True)  # 1-31 — informational
+    category_slug = Column(String, nullable=True)
+    start_month = Column(String, nullable=False)   # 'YYYY-MM'
+    end_month = Column(String, nullable=True)      # 'YYYY-MM' or null
+    notes = Column(Text, nullable=True, default="")
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    household_id = Column(String, ForeignKey("households.id", ondelete="CASCADE"), nullable=False, index=True)
+    household = relationship("Household", back_populates="fixed_charges")
+    members = relationship("Member", secondary=fixed_charge_members)

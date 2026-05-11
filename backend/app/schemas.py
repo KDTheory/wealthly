@@ -75,7 +75,9 @@ class AccountBase(BaseModel):
     name: str
     bank: Optional[str] = None
     type: str = "checking"
+    role: str = "principal"  # principal | depenses | epargne | investissement | professionnel
     initial_balance: float = 0.0
+    currency: str = "EUR"  # ISO 4217 (EUR / USD / GBP / CHF / …)
 
 
 class AccountCreate(AccountBase):
@@ -86,7 +88,9 @@ class AccountUpdate(BaseModel):
     name: Optional[str] = None
     bank: Optional[str] = None
     type: Optional[str] = None
+    role: Optional[str] = None
     initial_balance: Optional[float] = None
+    currency: Optional[str] = None
     member_ids: Optional[List[str]] = None
 
 
@@ -110,6 +114,7 @@ class TransactionBase(BaseModel):
     category_slug: Optional[str] = None
     is_manual_category: bool = False
     is_recurring_override: Optional[bool] = None
+    is_transfer_override: Optional[bool] = None
     notes: Optional[str] = ""
 
 
@@ -122,6 +127,7 @@ class TransactionUpdate(BaseModel):
     category_slug: Optional[str] = None
     is_manual_category: Optional[bool] = None
     is_recurring_override: Optional[bool] = None
+    is_transfer_override: Optional[bool] = None
     notes: Optional[str] = None
 
 
@@ -150,7 +156,24 @@ class AssetBase(BaseModel):
     type: str
     name: str
     current_value: float = 0.0
+    currency: str = "EUR"  # ISO 4217
+    # Live-pricing: when ticker + quantity are set, the frontend overrides
+    # current_value with quantity × live_price (Yahoo Finance via /quotes).
+    ticker: Optional[str] = None
+    quantity: Optional[float] = None
     notes: Optional[str] = ""
+    # Real estate enrichment — all optional, used by the immo wizard
+    subtype: Optional[str] = None
+    purchase_price: Optional[float] = None
+    surface_m2: Optional[float] = None
+    notary_fees: Optional[float] = None
+    agency_fees: Optional[float] = None
+    works_fees: Optional[float] = None
+    furniture_fees: Optional[float] = None
+    purchase_date: Optional[date] = None
+    construction_year: Optional[int] = None
+    ownership_pct: Optional[float] = 100.0
+    address: Optional[str] = None
 
 
 class AssetCreate(AssetBase):
@@ -161,8 +184,22 @@ class AssetUpdate(BaseModel):
     type: Optional[str] = None
     name: Optional[str] = None
     current_value: Optional[float] = None
+    currency: Optional[str] = None
+    ticker: Optional[str] = None
+    quantity: Optional[float] = None
     notes: Optional[str] = None
     member_ids: Optional[List[str]] = None
+    subtype: Optional[str] = None
+    purchase_price: Optional[float] = None
+    surface_m2: Optional[float] = None
+    notary_fees: Optional[float] = None
+    agency_fees: Optional[float] = None
+    works_fees: Optional[float] = None
+    furniture_fees: Optional[float] = None
+    purchase_date: Optional[date] = None
+    construction_year: Optional[int] = None
+    ownership_pct: Optional[float] = None
+    address: Optional[str] = None
 
 
 class AssetOut(AssetBase):
@@ -185,7 +222,16 @@ class LiabilityBase(BaseModel):
     monthly_payment: float = 0.0
     interest_rate: float = 0.0
     end_date: Optional[date] = None
+    currency: str = "EUR"  # ISO 4217
     notes: Optional[str] = ""
+    # Enriched fields — all optional, legacy loans still load fine
+    down_payment: Optional[float] = None
+    insurance_rate: Optional[float] = None
+    application_fees: Optional[float] = None
+    ownership_pct: Optional[float] = 100.0
+    duration_months: Optional[int] = None
+    start_date: Optional[date] = None
+    linked_asset_id: Optional[str] = None
 
 
 class LiabilityCreate(LiabilityBase):
@@ -200,8 +246,16 @@ class LiabilityUpdate(BaseModel):
     monthly_payment: Optional[float] = None
     interest_rate: Optional[float] = None
     end_date: Optional[date] = None
+    currency: Optional[str] = None
     notes: Optional[str] = None
     member_ids: Optional[List[str]] = None
+    down_payment: Optional[float] = None
+    insurance_rate: Optional[float] = None
+    application_fees: Optional[float] = None
+    ownership_pct: Optional[float] = None
+    duration_months: Optional[int] = None
+    start_date: Optional[date] = None
+    linked_asset_id: Optional[str] = None
 
 
 class LiabilityOut(LiabilityBase):
@@ -301,3 +355,42 @@ class RuleCreate(BaseModel):
 class RuleOut(RuleCreate):
     id: str
     model_config = ConfigDict(from_attributes=True)
+
+
+# ============================================================================
+# WEALTH SNAPSHOTS
+# ============================================================================
+
+class WealthSnapshotCreate(BaseModel):
+    month: str  # 'YYYY-MM'
+    net_worth: float
+    liquid_wealth: float
+    assets_value: float
+    liabilities_value: float
+    real_estate_value: Optional[float] = None
+    financial_assets_value: Optional[float] = None
+    mortgage_debt: Optional[float] = None
+    other_debt: Optional[float] = None
+
+
+class WealthSnapshotOut(WealthSnapshotCreate):
+    id: str
+    captured_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ============================================================================
+# PASSWORD RESET
+# ============================================================================
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+
+class MessageOut(BaseModel):
+    message: str

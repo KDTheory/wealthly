@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Wealthly · Direction B — Méridien</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,300;1,8..60,400;1,8..60,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:        #0e0d0a;        /* paper-grade dark, légèrement chaud */
+    --surface:   #15140f;
+    --surface-2: #1c1a14;
+    --rule:      #2a2720;
+    --rule-2:    #353128;
+    --ink:       #ebe8e3;        /* cream ink */
+    --ink-2:     #c8c3ba;
+    --muted:     #8e887d;
+    --muted-2:   #6b665d;
+    --gold:      #c5a572;        /* or antique */
+    --gold-2:    #d4b87f;
+    --gold-soft: rgba(197,165,114,.14);
+    --sage:      #88a978;
+    --terra:     #c47158;
+    /* account dots */
+    --c-orange:  #d27b3d;
+    --c-blue:    #5e7ea8;
+    --c-grey:    #8a8478;
+    --c-green:   #88a978;
+    --c-gold:    #c5a572;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  body { min-height: 100vh; }
+  .num { font-variant-numeric: tabular-nums; }
+  .serif { font-family: 'Source Serif 4', 'Source Serif Pro', 'Times New Roman', serif; letter-spacing: -0.005em; }
+  .ital { font-style: italic; }
+
+  .app { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+
+  /* ============ Sidebar (fidèle PDF B) ============ */
+  .side { background: var(--bg); border-right: 1px solid var(--rule); padding: 22px 18px 18px; display: flex; flex-direction: column; gap: 18px; }
+
+  .brand { display: flex; align-items: center; gap: 10px; padding: 0 4px; }
+  .brand-mark { width: 22px; height: 22px; position: relative; }
+  .brand-mark svg { width: 100%; height: 100%; display: block; }
+  .brand-name { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; color: var(--ink); letter-spacing: 0.01em; }
+
+  .net-mini { padding: 12px 12px 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); }
+  .net-mini .lab { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted-2); }
+  .net-mini .v { font-size: 16px; margin-top: 4px; color: var(--ink); font-weight: 500; }
+  .net-mini .d { font-size: 11px; color: var(--sage); margin-top: 1px; }
+  .net-mini .d .age { color: var(--muted-2); margin-left: 4px; }
+  .net-mini svg { margin-top: 6px; display: block; width: 100%; height: 22px; }
+
+  .nav { display: flex; flex-direction: column; gap: 1px; }
+  .nav a { display: flex; align-items: center; gap: 11px; padding: 8px 11px; border-radius: 5px; text-decoration: none; color: var(--ink-2); font-size: 13px; transition: background .15s, color .15s; }
+  .nav a:hover { background: var(--surface); color: var(--ink); }
+  .nav a.active { background: var(--surface); color: var(--ink); position: relative; }
+  .nav a.active::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px; background: var(--gold); border-radius: 0 2px 2px 0; }
+  .nav .gly { width: 14px; text-align: center; color: var(--muted); font-size: 12px; }
+  .nav a.active .gly { color: var(--gold); }
+  .nav .badge { margin-left: auto; font-size: 10.5px; color: var(--muted-2); font-variant-numeric: tabular-nums; }
+
+  .nav-section-label { display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted-2); padding: 0 11px; margin: 14px 0 4px; }
+  .nav-section-label .plus { color: var(--muted); cursor: pointer; }
+
+  .accounts-mini { display: flex; flex-direction: column; gap: 1px; }
+  .account-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 11px; border-radius: 5px; font-size: 12px; }
+  .account-row:hover { background: var(--surface); cursor: pointer; }
+  .account-row .name { color: var(--ink-2); display: flex; gap: 9px; align-items: center; }
+  .account-row .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .account-row .bal { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 11.5px; }
+
+  /* ============ Main ============ */
+  .main { padding: 28px 44px 60px; max-width: 1200px; }
+
+  /* Statement header */
+  .stmt-eyebrow { font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); margin-bottom: 28px; }
+
+  /* Hero block: title (left) + curve (right) */
+  .hero-top { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: end; margin-bottom: 18px; }
+  .stmt-h { font-family: 'Source Serif 4', serif; font-size: 60px; line-height: 1.05; font-weight: 400; letter-spacing: -0.018em; color: var(--ink-2); margin: 0; }
+  .stmt-h em { font-style: italic; color: var(--gold); font-weight: 400; }
+  .stmt-sub { font-size: 13.5px; color: var(--ink-2); max-width: 580px; line-height: 1.6; margin: 16px 0 0; }
+  .stmt-sub b { color: var(--ink); font-weight: 500; }
+
+  .hero-curve-wrap { position: relative; height: 130px; }
+  .hero-curve { width: 100%; height: 100%; }
+  .curve-axis { position: absolute; left: 0; right: 0; bottom: -16px; display: flex; justify-content: space-between; font-size: 10px; color: var(--muted-2); pointer-events: none; }
+  .curve-annot { position: absolute; right: 32%; top: 12%; font-size: 11px; font-style: italic; font-family: 'Source Serif 4', serif; color: var(--gold); }
+  .curve-annot small { display: block; font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; font-style: normal; color: var(--muted); margin-bottom: 2px; }
+
+  /* Total net worth + deltas band */
+  .nw-band { margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--rule); }
+  .nw-lab { font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .nw-row { display: grid; grid-template-columns: auto auto auto auto; gap: 64px; align-items: baseline; }
+  .nw-figure { font-family: 'Source Serif 4', serif; font-size: 88px; line-height: 1; font-weight: 400; letter-spacing: -0.025em; color: var(--ink); }
+  .nw-figure .euro { color: var(--muted); font-weight: 300; margin-right: 6px; }
+  .delta { display: flex; flex-direction: column; gap: 4px; }
+  .delta-lab { font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted-2); }
+  .delta-v { font-family: 'Source Serif 4', serif; font-style: italic; font-size: 26px; font-weight: 500; color: var(--gold); line-height: 1; }
+  .delta-sub { font-size: 11.5px; color: var(--muted); }
+
+  /* Three sections I / II / III */
+  .sections { display: grid; grid-template-columns: 1.35fr 1fr 1fr; gap: 0; margin-top: 56px; padding-top: 28px; border-top: 1px solid var(--rule); }
+  .panel { padding: 0 28px; border-right: 1px solid var(--rule); }
+  .panel:first-child { padding-left: 0; }
+  .panel:last-child { padding-right: 0; border-right: none; }
+  .panel-h { font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 22px; }
+  .panel-h .roman { font-family: 'Source Serif 4', serif; font-style: italic; text-transform: none; letter-spacing: 0; font-size: 14px; margin-right: 8px; }
+
+  /* Allocation */
+  .alloc-bar { height: 5px; border-radius: 3px; overflow: hidden; display: flex; margin-bottom: 14px; }
+  .alloc-bar > div { height: 100%; }
+  .alloc-list { display: flex; flex-direction: column; }
+  .alloc-row { display: grid; grid-template-columns: 12px 1fr auto auto; gap: 10px; align-items: baseline; padding: 9px 0; border-bottom: 1px dotted var(--rule-2); font-size: 13px; }
+  .alloc-row:last-child { border: none; }
+  .alloc-row .sw { width: 9px; height: 9px; border-radius: 2px; }
+  .alloc-row .name { color: var(--ink); }
+  .alloc-row .pct { color: var(--ink-2); font-family: 'Source Serif 4', serif; font-style: italic; font-size: 14px; min-width: 56px; text-align: right; }
+  .alloc-row .val { color: var(--muted); min-width: 84px; text-align: right; font-variant-numeric: tabular-nums; font-size: 12px; }
+
+  /* Health */
+  .health-num { font-family: 'Source Serif 4', serif; font-size: 72px; line-height: 1; font-weight: 400; letter-spacing: -0.02em; color: var(--ink); }
+  .health-num small { font-family: 'Source Serif 4', serif; font-style: italic; font-size: 22px; color: var(--muted); margin-left: 6px; font-weight: 400; }
+  .health-cap { font-size: 12.5px; color: var(--ink-2); margin-top: 14px; line-height: 1.55; font-style: italic; font-family: 'Source Serif 4', serif; max-width: 220px; }
+  .health-bars { margin-top: 22px; display: flex; flex-direction: column; gap: 11px; }
+  .hbar { display: grid; grid-template-columns: 1fr 70px 26px; align-items: center; gap: 10px; font-size: 12px; }
+  .hbar .lab { color: var(--ink-2); }
+  .hbar .track { height: 3px; background: var(--rule-2); border-radius: 2px; overflow: hidden; }
+  .hbar .fill { height: 100%; background: var(--sage); }
+  .hbar .v { color: var(--muted); font-size: 11px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* Cash position */
+  .cash-num { font-family: 'Source Serif 4', serif; font-size: 44px; line-height: 1; color: var(--ink); }
+  .cash-sub { font-size: 11.5px; color: var(--muted); margin-top: 6px; font-style: italic; font-family: 'Source Serif 4', serif; }
+  .cash-stats { display: flex; flex-direction: column; gap: 0; margin-top: 22px; }
+  .cash-row { display: flex; justify-content: space-between; padding: 9px 0; font-size: 12.5px; border-bottom: 1px dotted var(--rule-2); }
+  .cash-row:last-child { border: none; }
+  .cash-row .l { color: var(--ink-2); }
+  .cash-row .r { color: var(--ink); font-variant-numeric: tabular-nums; font-size: 12px; }
+  .cash-row.savings .r { color: var(--gold); font-family: 'Source Serif 4', serif; font-style: italic; font-size: 14px; }
+
+  /* Compare bar */
+  .compare-bar { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--rule-2); color: var(--ink-2); padding: 9px 16px; border-radius: 99px; font-size: 12px; display: flex; gap: 14px; align-items: center; box-shadow: 0 8px 24px rgba(0,0,0,.4); z-index: 50; }
+  .compare-bar a { color: var(--ink-2); text-decoration: none; opacity: .55; padding: 2px 8px; border-radius: 4px; transition: opacity .15s, background .15s; }
+  .compare-bar a:hover { opacity: 1; }
+  .compare-bar a.cur { opacity: 1; color: var(--gold); }
+  .compare-bar .sep { width: 1px; height: 14px; background: var(--rule-2); }
+  .compare-bar .label { opacity: .5; letter-spacing: .08em; font-size: 10px; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===================== Sidebar ===================== -->
+  <aside class="side">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="#c5a572" stroke-width="1.5"/>
+          <path d="M8 10 L12 14 L16 10" stroke="#ebe8e3" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="brand-name">Wealthly</div>
+    </div>
+
+    <div class="net-mini">
+      <div class="lab">Net Worth</div>
+      <div class="v num">€1 247 830</div>
+      <div class="d">↑ +2,34 % <span class="age">30j</span></div>
+      <svg viewBox="0 0 200 22" preserveAspectRatio="none">
+        <path d="M0,18 C20,16 35,14 55,15 C85,17 100,11 130,9 C160,6 180,5 200,3" fill="none" stroke="#c5a572" stroke-width="1.3"/>
+      </svg>
+    </div>
+
+    <nav class="nav">
+      <a href="#" class="active"><span class="gly">◐</span>Overview</a>
+      <a href="#"><span class="gly">◇</span>Wealth</a>
+      <a href="#"><span class="gly">⇌</span>Cashflow</a>
+      <a href="#"><span class="gly">◫</span>Budgets</a>
+      <a href="#"><span class="gly">≡</span>Activity<span class="badge">1,8 k</span></a>
+      <a href="#"><span class="gly">◉</span>Goals</a>
+      <a href="#"><span class="gly">§</span>Tax</a>
+
+      <div class="nav-section-label"><span>Accounts</span><span class="plus">+</span></div>
+      <div class="accounts-mini">
+        <div class="account-row"><span class="name"><span class="dot" style="background:var(--c-orange)"></span>Boursorama Main</span><span class="bal">€42,8 k</span></div>
+        <div class="account-row"><span class="name"><span class="dot" style="background:var(--c-blue)"></span>BNP Joint</span><span class="bal">€87,4 k</span></div>
+        <div class="account-row"><span class="name"><span class="dot" style="background:var(--c-grey)"></span>Trade Republic</span><span class="bal">€187,0 k</span></div>
+        <div class="account-row"><span class="name"><span class="dot" style="background:var(--c-green)"></span>Linxea Spirit</span><span class="bal">€89,0 k</span></div>
+        <div class="account-row"><span class="name"><span class="dot" style="background:var(--c-gold)"></span>Livret A</span><span class="bal">€22,9 k</span></div>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- ===================== Main ===================== -->
+  <main class="main">
+
+    <div class="stmt-eyebrow">Quarterly Statement · Q2 2026</div>
+
+    <!-- Title + curve in same row, like the PDF -->
+    <div class="hero-top">
+      <h1 class="stmt-h">Position <em class="ital">at a glance</em></h1>
+
+      <div class="hero-curve-wrap">
+        <svg class="hero-curve" viewBox="0 0 400 130" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="fillBg" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="#c5a572" stop-opacity="0.16"/>
+              <stop offset="100%" stop-color="#c5a572" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path d="M0,90 C30,86 55,82 85,84 C120,88 140,72 170,66 C200,60 220,72 250,62 C290,48 320,40 360,30 C380,24 390,20 400,16 L400,130 L0,130 Z" fill="url(#fillBg)"/>
+          <path d="M0,90 C30,86 55,82 85,84 C120,88 140,72 170,66 C200,60 220,72 250,62 C290,48 320,40 360,30 C380,24 390,20 400,16" fill="none" stroke="#c5a572" stroke-width="1.3"/>
+          <circle cx="400" cy="16" r="3.5" fill="#c5a572"/>
+          <circle cx="160" cy="68" r="2" fill="#c47158"/>
+        </svg>
+        <div class="curve-axis">
+          <span>May 25</span><span>Aug 25</span><span>Nov 25</span><span>Feb 26</span><span>May 26</span>
+        </div>
+        <div class="curve-annot">
+          <small>JUL 25</small>
+          summer drawdown
+        </div>
+      </div>
+    </div>
+
+    <p class="stmt-sub">Consolidated holdings across five accounts. Net worth advanced <b>+12,47 %</b> year-to-date, outpacing the household objective of <b>+8 %</b>.</p>
+
+    <!-- Total net worth + 3 deltas -->
+    <div class="nw-band">
+      <div class="nw-lab">Total Net Worth</div>
+      <div class="nw-row">
+        <div class="nw-figure num"><span class="euro">€</span>1 247 830</div>
+        <div class="delta">
+          <span class="delta-lab">30 days</span>
+          <span class="delta-v num">+2,34 %</span>
+          <span class="delta-sub num">+28 543</span>
+        </div>
+        <div class="delta">
+          <span class="delta-lab">3 months</span>
+          <span class="delta-v num">+5,81 %</span>
+          <span class="delta-sub num">+68 524</span>
+        </div>
+        <div class="delta">
+          <span class="delta-lab">Year to date</span>
+          <span class="delta-v num">+12,47 %</span>
+          <span class="delta-sub num">+138 830</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Three numbered sections -->
+    <section class="sections">
+
+      <!-- I — Asset allocation -->
+      <div class="panel">
+        <div class="panel-h"><span class="roman ital">I</span>— Asset Allocation</div>
+        <div class="alloc-bar">
+          <div style="width:55.2%;background:#d27b3d"></div>
+          <div style="width:22.0%;background:#5e7ea8"></div>
+          <div style="width:10.9%;background:#c5a572"></div>
+          <div style="width:6.8%;background:#88a978"></div>
+          <div style="width:3.3%;background:#c47158"></div>
+          <div style="width:1.8%;background:#8a8478"></div>
+        </div>
+        <div class="alloc-list">
+          <div class="alloc-row"><span class="sw" style="background:#d27b3d"></span><span class="name">Real estate</span><span class="pct">55,2 %</span><span class="val num">€720 000</span></div>
+          <div class="alloc-row"><span class="sw" style="background:#5e7ea8"></span><span class="name">Equities</span><span class="pct">22,0 %</span><span class="val num">€287 000</span></div>
+          <div class="alloc-row"><span class="sw" style="background:#c5a572"></span><span class="name">Cash</span><span class="pct">10,9 %</span><span class="val num">€142 500</span></div>
+          <div class="alloc-row"><span class="sw" style="background:#88a978"></span><span class="name">Bonds</span><span class="pct">6,8 %</span><span class="val num">€89 000</span></div>
+          <div class="alloc-row"><span class="sw" style="background:#c47158"></span><span class="name">Crypto</span><span class="pct">3,3 %</span><span class="val num">€42 830</span></div>
+          <div class="alloc-row"><span class="sw" style="background:#8a8478"></span><span class="name">Other</span><span class="pct">1,8 %</span><span class="val num">€24 000</span></div>
+        </div>
+      </div>
+
+      <!-- II — Health score -->
+      <div class="panel">
+        <div class="panel-h"><span class="roman ital">II</span>— Health Score</div>
+        <div class="health-num num">78<small class="ital">/100</small></div>
+        <div class="health-cap">Strong financial posture. Two opportunities for improvement noted below.</div>
+        <div class="health-bars">
+          <div class="hbar"><span class="lab">Savings rate</span><span class="track"><span class="fill" style="width:92%"></span></span><span class="v">92</span></div>
+          <div class="hbar"><span class="lab">Emergency fund</span><span class="track"><span class="fill" style="width:67%;background:var(--terra)"></span></span><span class="v">67</span></div>
+          <div class="hbar"><span class="lab">Debt ratio</span><span class="track"><span class="fill" style="width:88%"></span></span><span class="v">88</span></div>
+          <div class="hbar"><span class="lab">Diversification</span><span class="track"><span class="fill" style="width:80%"></span></span><span class="v">80</span></div>
+          <div class="hbar"><span class="lab">Net worth growth</span><span class="track"><span class="fill" style="width:95%"></span></span><span class="v">95</span></div>
+        </div>
+      </div>
+
+      <!-- III — Cash position -->
+      <div class="panel">
+        <div class="panel-h"><span class="roman ital">III</span>— Cash Position</div>
+        <div class="cash-num num">€142 500</div>
+        <div class="cash-sub">across 3 liquid accounts</div>
+        <div class="cash-stats">
+          <div class="cash-row"><span class="l">Inflows · April</span><span class="r num">+€8 420</span></div>
+          <div class="cash-row"><span class="l">Outflows · April</span><span class="r num">−€5 624</span></div>
+          <div class="cash-row savings"><span class="l">Net savings</span><span class="r num">€2 796</span></div>
+          <div class="cash-row"><span class="l">Savings rate</span><span class="r num">33,2 %</span></div>
+          <div class="cash-row"><span class="l">Emergency fund</span><span class="r num">4,2 months</span></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="compare-bar">
+  <span class="label">Directions</span>
+  <a href="#">A · Slate</a>
+  <a href="#" class="cur">B · Méridien</a>
+  <a href="#">C · Obsidian</a>
+  <span class="sep"></span>
+  <a href="/design-d.html">D · Aurora</a>
+</div>
+
+</body>
+</html>

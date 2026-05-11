@@ -1,0 +1,80 @@
+{
+  "nav": {
+    "dashboard": "Résumé",
+    "wealth": "Patrimoine",
+    "monthly": "Mensuel",
+    "monthlyShort": "Mensuel",
+    "transactions": "Transactions",
+    "transactionsShort": "Transac.",
+    "tax": "Impôts",
+    "settings": "Réglages",
+    "import": "Importer"
+  },
+  "hub": {
+    "monthlyTab": "Vue mensuelle",
+    "cashflowTab": "Cashflow",
+    "budgetsTab": "Budgets"
+  },
+  "dashboard": {
+    "greetingMorning": "Bonjour",
+    "greetingAfternoon": "Bon après-midi",
+    "greetingEvening": "Bonsoir",
+    "netWorth": "Patrimoine net",
+    "perf3m": "Performance 3 mois",
+    "debtRatio": "Ratio d'endettement",
+    "monthlySavings": "Épargne du mois",
+    "liquidPart": "Part liquide",
+    "anomalies": "Anomalies détectées",
+    "anomaliesMeta": "vs moyenne 3 derniers mois",
+    "composition": "Composition",
+    "topExpenses": "Top dépenses du mois",
+    "accounts": "Comptes",
+    "recent": "Activité récente",
+    "viewAll": "Voir tout",
+    "details": "Détails",
+    "exportPdf": "Bilan PDF",
+    "streakSuffix": "mois consécutifs",
+    "healthScore": "Santé financière",
+    "healthScoreMeta": "5 critères pondérés",
+    "healthRatingLow": "À surveiller",
+    "healthRatingMid": "Correct",
+    "healthRatingHigh": "Solide"
+  },
+  "settings": {
+    "title": "Réglages",
+    "subtitle": "Membres, comptes, catégories, données.",
+    "language": "Langue",
+    "languageHint": "L'interface s'adapte immédiatement. Le formatage des dates et des montants suit la même langue."
+  },
+  "import": {
+    "title": "Importer un relevé CSV",
+    "subtitle": "Glissez votre fichier ou cliquez pour le sélectionner",
+    "chooseFile": "Choisir un fichier CSV",
+    "autoDetect": "Détection auto Revolut, Crédit Agricole, Boursorama et autres",
+    "stepColumns": "Colonnes",
+    "stepAccount": "Compte",
+    "stepPreview": "Aperçu",
+    "verifyMapping": "Vérifiez le mapping",
+    "mappingDate": "Date *",
+    "mappingLabel": "Libellé",
+    "mappingAmount": "Montant signé",
+    "mappingDebit": "Débit séparé",
+    "mappingCredit": "Crédit séparé",
+    "mappingBalance": "Solde (optionnel)",
+    "preview": "Aperçu :",
+    "cancel": "Annuler",
+    "next": "Suivant",
+    "back": "Retour",
+    "previewBtn": "Aperçu",
+    "confirm": "Confirmer l'import",
+    "noneOption": "— Aucune —"
+  },
+  "errors": {
+    "rateLimited": "Trop de tentatives. Réessaie dans quelques instants.",
+    "network": "Impossible de joindre le serveur. Vérifiez votre connexion.",
+    "invalidCredentials": "Email ou mot de passe incorrect",
+    "emailExists": "Cet email est déjà utilisé",
+    "tokenExpired": "Lien expiré ou déjà utilisé. Demandez un nouveau lien.",
+    "generic": "Une erreur est survenue. Réessayez."
+  }
+}

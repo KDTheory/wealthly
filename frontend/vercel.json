@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://wealthly-production-45aa.up.railway.app/:path*"
+    },
+    { "source": "/((?!assets/|api/|sw\\.js|manifest\\.webmanifest|icon.*\\.svg|robots\\.txt).*)", "destination": "/index.html" }
+  ]
+}
