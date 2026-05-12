@@ -71,7 +71,7 @@ export function Dashboard({
   goals, budgets = {}, wealthHistory = [],
   recurringGroups, currentMonth,
   transferIds = new Set(), transferPairs = [],
-  setView, onAccountClick,
+  setView, onAccountClick, onAddAccount,
   baseCurrency = 'EUR', rates = null,
   currentUser = null,
 }) {
@@ -209,7 +209,7 @@ export function Dashboard({
         <div className="dash-actions">
           <button className="ds-btn"><Download size={14}/> {t('dashboard.export')}</button>
           <button className="ds-btn"><RefreshCw size={14}/> {t('dashboard.sync')}</button>
-          <button className="ds-btn primary"><Plus size={14}/> {t('dashboard.newAccount')}</button>
+          <button className="ds-btn primary" onClick={onAddAccount}><Plus size={14}/> {t('dashboard.newAccount')}</button>
         </div>
       </header>
 
@@ -327,7 +327,7 @@ export function Dashboard({
           })}
           {!visibleAccounts?.length && (
             <div style={{ padding: '20px', color: 'var(--ink-3)', fontSize: 13 }}>
-              {t('dashboard.noAccounts')} <button className="link-btn" onClick={() => setView?.('settings')}>{t('dashboard.connectBank')}</button>
+              {t('dashboard.noAccounts')} <button className="link-btn" onClick={onAddAccount}>{t('dashboard.connectBank')}</button>
             </div>
           )}
         </div>

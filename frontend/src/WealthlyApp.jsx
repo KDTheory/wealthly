@@ -99,6 +99,8 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
   const [bankConnections, setBankConnections] = useState([]);
   const [bankingPendingState, setBankingPendingState] = useState(null); // state param from callback URL
 
+  const [showAddAccount, setShowAddAccount] = useState(false);
+
   const [importFile, setImportFile] = useState(null);
   const [importStep, setImportStep] = useState('upload');
   const [parsedData, setParsedData] = useState(null);
@@ -891,6 +893,15 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
     } catch (err) { showToast('Erreur : ' + err.message, 'error'); }
   };
 
+  const createAccount = async (fields) => {
+    try {
+      const created = await api.accounts.create(accountToApi(fields));
+      setAccounts(prev => [...prev, accountFromApi(created)]);
+      showToast('Compte ajouté', 'success');
+      setShowAddAccount(false);
+    } catch (err) { showToast('Erreur : ' + err.message, 'error'); }
+  };
+
   const deleteAccount = async (accId) => {
     if (!confirm('Supprimer ce compte et toutes ses transactions ?')) return;
     try {
@@ -1243,7 +1254,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
                 <span>{a.bank || a.name}</span>
               </button>
             ))}
-            <button onClick={() => setView('settings')} className="ws-add-btn">
+            <button onClick={() => setShowAddAccount(true)} className="ws-add-btn">
               <Plus size={14}/> <span>{t('nav.add')}</span>
             </button>
 
@@ -1345,6 +1356,7 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
             transferIds={transferIds} transferPairs={transferPairs}
             setView={setView}
             onAccountClick={(a) => setDrawerAccount(a)}
+            onAddAccount={() => setShowAddAccount(true)}
             baseCurrency={baseCurrency} rates={rates}
             currentUser={currentUser}
           />
@@ -1525,6 +1537,112 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
           }}
         />
       )}
+
+      {showAddAccount && (
+        <AddAccountModal
+          members={members}
+          onSave={createAccount}
+          onClose={() => setShowAddAccount(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// AddAccountModal — lightweight inline form, no external deps
+// ============================================================================
+const ACCOUNT_TYPES = [
+  { value: 'checking',     label: 'Compte courant' },
+  { value: 'savings',      label: 'Livret / Épargne' },
+  { value: 'investment',   label: 'PEA / CTO / AV' },
+  { value: 'joint',        label: 'Compte joint' },
+  { value: 'professional', label: 'Professionnel' },
+];
+
+function AddAccountModal({ members = [], onSave, onClose }) {
+  const [form, setForm] = useState({
+    name: '', bank: '', type: 'checking', initialBalance: '', memberIds: [], currency: 'EUR',
+  });
+  const [saving, setSaving] = useState(false);
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const toggleMember = (id) =>
+    setForm(f => ({
+      ...f,
+      memberIds: f.memberIds.includes(id) ? f.memberIds.filter(x => x !== id) : [...f.memberIds, id],
+    }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.name.trim()) return;
+    setSaving(true);
+    await onSave({ ...form, initialBalance: parseFloat(form.initialBalance) || 0 });
+    setSaving(false);
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" style={{ maxWidth: 440 }} onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Nouveau compte</h2>
+          <button className="icon-btn" onClick={onClose}><X size={18}/></button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div>
+              <label className="form-label">Nom du compte *</label>
+              <input className="form-input" placeholder="ex: Compte courant BNP" value={form.name}
+                onChange={e => set('name', e.target.value)} autoFocus required/>
+            </div>
+            <div>
+              <label className="form-label">Banque</label>
+              <input className="form-input" placeholder="ex: BNP Paribas" value={form.bank}
+                onChange={e => set('bank', e.target.value)}/>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div>
+                <label className="form-label">Type</label>
+                <select className="form-input" value={form.type} onChange={e => set('type', e.target.value)}>
+                  {ACCOUNT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="form-label">Solde initial (€)</label>
+                <input className="form-input" type="number" step="0.01" placeholder="0,00"
+                  value={form.initialBalance} onChange={e => set('initialBalance', e.target.value)}/>
+              </div>
+            </div>
+            {members.length > 0 && (
+              <div>
+                <label className="form-label">Titulaire(s)</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+                  {members.map(m => (
+                    <button key={m.id} type="button"
+                      onClick={() => toggleMember(m.id)}
+                      style={{
+                        padding: '5px 12px', borderRadius: 20, fontSize: 13, cursor: 'pointer',
+                        border: `1px solid ${form.memberIds.includes(m.id) ? 'var(--primary)' : 'var(--border)'}`,
+                        background: form.memberIds.includes(m.id) ? 'var(--primary-soft)' : 'var(--bg-card)',
+                        color: form.memberIds.includes(m.id) ? 'var(--primary-text)' : 'var(--text-primary)',
+                        fontFamily: 'inherit',
+                      }}>
+                      {m.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="secondary-btn" onClick={onClose}>Annuler</button>
+            <button type="submit" className="primary-btn" disabled={saving || !form.name.trim()}>
+              {saving ? 'Enregistrement…' : 'Créer le compte'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
