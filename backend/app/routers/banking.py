@@ -71,28 +71,36 @@ def _load_private_key() -> str:
 
 def _create_eb_jwt() -> str:
     """Generate a signed RS256 JWT for Enable Banking API authentication."""
-    from jose import jwt as jose_jwt
+    try:
+        from jose import jwt as jose_jwt
 
-    if not settings.ENABLE_BANKING_APP_ID:
-        raise RuntimeError("ENABLE_BANKING_APP_ID env var is not set")
+        if not settings.ENABLE_BANKING_APP_ID:
+            raise RuntimeError("ENABLE_BANKING_APP_ID env var is not set")
 
-    private_key = _load_private_key()
-    now = int(time.time())
+        private_key = _load_private_key()
+        now = int(time.time())
 
-    payload = {
-        "iss": "enablebanking.com",
-        "aud": "api.enablebanking.com",
-        "iat": now,
-        "exp": now + 3600,
-    }
+        payload = {
+            "iss": "enablebanking.com",
+            "aud": "api.enablebanking.com",
+            "iat": now,
+            "exp": now + 3600,
+        }
 
-    token = jose_jwt.encode(
-        payload,
-        private_key,
-        algorithm="RS256",
-        headers={"kid": settings.ENABLE_BANKING_APP_ID},
-    )
-    return token
+        token = jose_jwt.encode(
+            payload,
+            private_key,
+            algorithm="RS256",
+            headers={"kid": settings.ENABLE_BANKING_APP_ID},
+        )
+        return token
+    except RuntimeError:
+        raise
+    except Exception as exc:
+        raise RuntimeError(
+            f"Impossible de générer le JWT Enable Banking : {exc}. "
+            "Vérifiez ENABLE_BANKING_PRIVATE_KEY_B64 dans Railway."
+        ) from exc
 
 
 # ============================================================================
