@@ -1205,36 +1205,36 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
           </div>
 
           <nav className="ws-nav">
-            <div className="ws-nav-group">Pilotage</div>
+            <div className="ws-nav-group">{t('nav.group_pilotage')}</div>
             <button onClick={() => setView('dashboard')} className={view === 'dashboard' ? 'on' : ''}>
-              <Activity size={16}/> <span>Vue d'ensemble</span>
+              <Activity size={16}/> <span>{t('nav.dashboard')}</span>
             </button>
             <button onClick={() => setView('wealth')} className={view === 'wealth' ? 'on' : ''}>
-              <Landmark size={16}/> <span>Patrimoine</span>
+              <Landmark size={16}/> <span>{t('nav.wealth')}</span>
             </button>
             <button onClick={() => setView('transactions')} className={view === 'transactions' ? 'on' : ''}>
-              <BarChart3 size={16}/> <span>Transactions</span>
+              <BarChart3 size={16}/> <span>{t('nav.transactions')}</span>
             </button>
             <button onClick={() => setView('analysis')} className={view === 'analysis' ? 'on' : ''}>
-              <TrendingUp size={16}/> <span>Performance</span>
+              <TrendingUp size={16}/> <span>{t('nav.analysis')}</span>
             </button>
 
-            <div className="ws-nav-group">Gestion</div>
+            <div className="ws-nav-group">{t('nav.group_gestion')}</div>
             <button onClick={() => setView('monthly')} className={view === 'monthly' ? 'on' : ''}>
-              <Calendar size={16}/> <span>Budget mensuel</span>
+              <Calendar size={16}/> <span>{t('nav.monthly')}</span>
               {budgetsOverCount > 0 && <span className="ws-badge">{budgetsOverCount}</span>}
             </button>
             <button onClick={() => setView('budgets')} className={view === 'budgets' ? 'on' : ''}>
-              <Target size={16}/> <span>Objectifs</span>
+              <Target size={16}/> <span>{t('nav.goals')}</span>
             </button>
             <button onClick={() => setView('cashflow')} className={view === 'cashflow' ? 'on' : ''}>
-              <ArrowUpDown size={16}/> <span>Cashflow</span>
+              <ArrowUpDown size={16}/> <span>{t('nav.cashflow')}</span>
             </button>
             <button onClick={() => setView('tax')} className={view === 'tax' ? 'on' : ''}>
-              <Calculator size={16}/> <span>FiscalitÃ©</span>
+              <Calculator size={16}/> <span>{t('nav.tax')}</span>
             </button>
 
-            <div className="ws-nav-group">Comptes</div>
+            <div className="ws-nav-group">{t('nav.group_accounts')}</div>
             {(accounts || []).slice(0, 4).map(a => (
               <button key={a.id} onClick={() => setDrawerAccount(a)} className="ws-account-item">
                 <span className="ws-bank-dot" style={{ background: bankColor(a.bank) }}>
@@ -1244,12 +1244,12 @@ export default function WealthlyApp({ demoMode = false, onExitDemo }) {
               </button>
             ))}
             <button onClick={() => setView('settings')} className="ws-add-btn">
-              <Plus size={14}/> <span>Ajouter</span>
+              <Plus size={14}/> <span>{t('nav.add')}</span>
             </button>
 
-            <div className="ws-nav-group">Configuration</div>
+            <div className="ws-nav-group">{t('nav.group_config')}</div>
             <button onClick={() => setView('settings')} className={view === 'settings' ? 'on' : ''}>
-              <Settings size={16}/> <span>RÃ©glages</span>
+              <Settings size={16}/> <span>{t('nav.settings')}</span>
             </button>
             {currentUser?.is_admin && (
               <button onClick={() => setView('admin')} className={view === 'admin' ? 'on' : ''}>

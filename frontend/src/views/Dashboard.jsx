@@ -13,6 +13,7 @@
 //  onAccountClick)
 // ============================================================================
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Plus, Download, RefreshCw, ArrowUp, ArrowDown,
   TrendingUp, AlertTriangle, Sparkles, MoreHorizontal,
@@ -51,11 +52,12 @@ const relTime = (d = new Date(Date.now() - 4 * 60_000)) => {
   return `il y a ${Math.floor(h / 24)} j`;
 };
 
-const greeting = () => {
+const greeting = (t) => {
   const h = new Date().getHours();
-  if (h < 5) return 'Bonne nuit';
-  if (h < 18) return 'Bonjour';
-  return 'Bonsoir';
+  if (h < 5) return t('dashboard.greetingNight');
+  if (h < 12) return t('dashboard.greetingMorning');
+  if (h < 18) return t('dashboard.greetingAfternoon');
+  return t('dashboard.greetingEvening');
 };
 
 export function Dashboard({
@@ -73,6 +75,7 @@ export function Dashboard({
   baseCurrency = 'EUR', rates = null,
   currentUser = null,
 }) {
+  const { t } = useTranslation();
   const [period, setPeriod] = useState('6m');
   const [txFilter, setTxFilter] = useState('all'); // all | expense | income
   const [hover, setHover] = useState(null); // chart hover point
@@ -118,10 +121,10 @@ export function Dashboard({
   // KPI strip — 4 cellules : Actifs / Passifs / Liquidités / Épargne mois
   const monthSaving = (thisMonthStats?.income || 0) - (thisMonthStats?.expenses || 0);
   const kpis = [
-    { label: 'Actifs',     value: assetsValue,      delta: null },
-    { label: 'Passifs',    value: -Math.abs(liabilitiesValue || 0), delta: null },
-    { label: 'Liquidités', value: liquidWealth,     delta: null },
-    { label: 'Épargne · mois', value: monthSaving, delta: thisMonthStats?.income ? (monthSaving / thisMonthStats.income) * 100 : null },
+    { label: t('dashboard.assets'),       value: assetsValue,                       delta: null },
+    { label: t('dashboard.liabilities'),  value: -Math.abs(liabilitiesValue || 0),  delta: null },
+    { label: t('dashboard.liquidity'),    value: liquidWealth,                       delta: null },
+    { label: t('dashboard.savingsMonth'), value: monthSaving, delta: thisMonthStats?.income ? (monthSaving / thisMonthStats.income) * 100 : null },
   ];
 
   // Transactions filtrées par chip
@@ -198,15 +201,15 @@ export function Dashboard({
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <header className="dash-head">
         <div>
-          <h1 className="dash-h1">{greeting()}{userFirstName ? ` ${userFirstName}` : ''}</h1>
+          <h1 className="dash-h1">{greeting(t)}{userFirstName ? ` ${userFirstName}` : ''}</h1>
           <div className="dash-sub">
             {visibleAccounts?.length || 0}&nbsp;compte{(visibleAccounts?.length || 0) > 1 ? 's' : ''} connecté{(visibleAccounts?.length || 0) > 1 ? 's' : ''}
           </div>
         </div>
         <div className="dash-actions">
-          <button className="ds-btn"><Download size={14}/> Exporter</button>
-          <button className="ds-btn"><RefreshCw size={14}/> Synchroniser</button>
-          <button className="ds-btn primary"><Plus size={14}/> Nouveau compte</button>
+          <button className="ds-btn"><Download size={14}/> {t('dashboard.export')}</button>
+          <button className="ds-btn"><RefreshCw size={14}/> {t('dashboard.sync')}</button>
+          <button className="ds-btn primary"><Plus size={14}/> {t('dashboard.newAccount')}</button>
         </div>
       </header>
 
@@ -214,7 +217,7 @@ export function Dashboard({
       <section className="dash-hero-row">
         <div className="hero-card">
           <div className="hero-top">
-            <span className="ds-caption">Patrimoine net total</span>
+            <span className="ds-caption">{t('dashboard.totalNetWorth')}</span>
             <div className="ds-range-tabs">
               {PERIODS.map(p => (
                 <button key={p.id}
@@ -233,7 +236,7 @@ export function Dashboard({
                 {periodDelta.abs >= 0 ? <ArrowUp size={11}/> : <ArrowDown size={11}/>}
                 <span className="num">{periodDelta.abs >= 0 ? '+' : ''}{formatEUR(periodDelta.abs)} · {periodDelta.pct >= 0 ? '+' : ''}{periodDelta.pct.toFixed(2)}&nbsp;%</span>
               </span>
-              <span style={{ color: 'var(--ink-2)', fontSize: 13 }}>vs. début période</span>
+              <span style={{ color: 'var(--ink-2)', fontSize: 13 }}>{t('dashboard.vsStart')}</span>
             </div>
           </div>
 
@@ -256,8 +259,8 @@ export function Dashboard({
 
         <div className="alloc-card">
           <div className="alloc-head">
-            <span className="ds-panel-title">Allocation patrimoine</span>
-            <button className="link-btn" onClick={() => setView?.('wealth')}>Détail →</button>
+            <span className="ds-panel-title">{t('dashboard.allocation')}</span>
+            <button className="link-btn" onClick={() => setView?.('wealth')}>{t('dashboard.details')}</button>
           </div>
           <div className="alloc-body">
             <Donut
@@ -287,17 +290,17 @@ export function Dashboard({
       <section className="accounts-panel ds-panel">
         <div className="ds-panel-head">
           <div>
-            <div className="ds-panel-title">Mes comptes · {visibleAccounts?.length || 0}</div>
+            <div className="ds-panel-title">{t('dashboard.accounts')} · {visibleAccounts?.length || 0}</div>
           </div>
-          <button className="link-btn" onClick={() => setView?.('settings')}>Tout voir →</button>
+          <button className="link-btn" onClick={() => setView?.('settings')}>{t('dashboard.viewAll')} →</button>
         </div>
 
         <div className="accounts-cols ds-micro">
-          <div>Compte</div>
-          <div style={{ textAlign: 'right' }}>Solde</div>
-          <div style={{ textAlign: 'right' }}>30 jours</div>
-          <div style={{ textAlign: 'right' }}>Type</div>
-          <div style={{ textAlign: 'right' }}>Sync</div>
+          <div>{t('dashboard.colAccount')}</div>
+          <div style={{ textAlign: 'right' }}>{t('dashboard.colBalance')}</div>
+          <div style={{ textAlign: 'right' }}>{t('dashboard.col30d')}</div>
+          <div style={{ textAlign: 'right' }}>{t('dashboard.colType')}</div>
+          <div style={{ textAlign: 'right' }}>{t('dashboard.colSync')}</div>
           <div/>
         </div>
 
@@ -324,7 +327,7 @@ export function Dashboard({
           })}
           {!visibleAccounts?.length && (
             <div style={{ padding: '20px', color: 'var(--ink-3)', fontSize: 13 }}>
-              Aucun compte connecté. <button className="link-btn" onClick={() => setView?.('settings')}>Connecter une banque →</button>
+              {t('dashboard.noAccounts')} <button className="link-btn" onClick={() => setView?.('settings')}>{t('dashboard.connectBank')}</button>
             </div>
           )}
         </div>
@@ -336,11 +339,11 @@ export function Dashboard({
         <div className="ds-panel">
           <div className="ds-panel-head">
             <div>
-              <div className="ds-panel-title">Derniers mouvements</div>
-              <div className="ds-panel-sub">7 derniers jours · tous comptes</div>
+              <div className="ds-panel-title">{t('dashboard.recent')}</div>
+              <div className="ds-panel-sub">{t('dashboard.recentMeta')}</div>
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
-              {[['all', 'Tout'], ['expense', 'Dépenses'], ['income', 'Revenus']].map(([id, label]) => (
+              {[['all', t('dashboard.filterAll')], ['expense', t('dashboard.filterExpenses')], ['income', t('dashboard.filterIncome')]].map(([id, label]) => (
                 <button key={id}
                   className={`ds-chip ${txFilter === id ? 'on' : ''}`}
                   onClick={() => setTxFilter(id)}>
@@ -387,7 +390,7 @@ export function Dashboard({
             ))}
             {!recentTx.length && (
               <div style={{ padding: 20, color: 'var(--ink-3)', fontSize: 13 }}>
-                Aucun mouvement à afficher.
+                {t('dashboard.noTransactions')}
               </div>
             )}
           </div>
@@ -440,7 +443,7 @@ export function Dashboard({
             <div className="ds-panel-head">
               <div>
                 <div className="ds-panel-title">Insights</div>
-                <div className="ds-panel-sub">générés ce matin</div>
+                <div className="ds-panel-sub">{t('dashboard.insightsGenerated')}</div>
               </div>
             </div>
             <div className="insights-list">
