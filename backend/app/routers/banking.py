@@ -124,13 +124,16 @@ async def _eb(method: str, path: str, body: dict = None) -> dict:
             raise ValueError(f"Unknown HTTP method: {method}")
 
     if resp.status_code == 401:
-        raise HTTPException(status_code=502, detail="Enable Banking authentication failed — check APP_ID and private key")
+        raise HTTPException(
+            status_code=502,
+            detail="Authentification Enable Banking échouée — vérifiez ENABLE_BANKING_APP_ID et ENABLE_BANKING_PRIVATE_KEY_B64 dans les variables Railway.",
+        )
     if resp.status_code == 404:
-        raise HTTPException(status_code=404, detail=f"Enable Banking resource not found: {path}")
+        raise HTTPException(status_code=404, detail=f"Ressource Enable Banking introuvable : {path}")
     if resp.status_code >= 400:
         error_text = resp.text[:500]
         logger.error("Enable Banking API error %s: %s", resp.status_code, error_text)
-        raise HTTPException(status_code=502, detail=f"Enable Banking error {resp.status_code}: {error_text}")
+        raise HTTPException(status_code=502, detail=f"Erreur Enable Banking {resp.status_code} : {error_text}")
 
     if resp.status_code == 204 or not resp.content:
         return {}
@@ -161,6 +164,11 @@ async def list_banks(
     current_user: User = Depends(get_current_user),
 ):
     """List banks available for open banking connection in the given country."""
+    if not settings.ENABLE_BANKING_APP_ID:
+        raise HTTPException(
+            status_code=503,
+            detail="Connexion bancaire non configurée. Renseignez ENABLE_BANKING_APP_ID et ENABLE_BANKING_PRIVATE_KEY_B64 dans Railway.",
+        )
     data = await _eb("GET", f"/aspsps?country={country}&psu_type=personal")
     # EB returns {"aspsps": [...]} or just a list
     banks = data.get("aspsps", data) if isinstance(data, dict) else data
@@ -177,6 +185,15 @@ async def connect_bank(
     Initiate a bank connection.
     Returns a redirect_url to send the user to for bank authentication.
     """
+    if not settings.ENABLE_BANKING_APP_ID:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Connexion bancaire non configurée. "
+                "Renseignez ENABLE_BANKING_APP_ID et ENABLE_BANKING_PRIVATE_KEY_B64 "
+                "dans les variables d'environnement Railway."
+            ),
+        )
     state = str(uuid.uuid4())
     valid_until = (datetime.utcnow() + timedelta(days=90)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
 

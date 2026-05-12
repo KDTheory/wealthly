@@ -187,8 +187,9 @@ export function Dashboard({
 
   const userFirstName = currentUser?.full_name?.split(' ')[0]
     || currentUser?.email?.split('@')[0]
-    || members?.find(m => m.id === activeMemberId)?.name
-    || 'Raphaël';
+    || (activeMemberId !== 'all' ? members?.find(m => m.id === activeMemberId)?.name : null)
+    || members?.[0]?.name
+    || '';
 
   return (
     <div className="dash-v3">
@@ -197,10 +198,9 @@ export function Dashboard({
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <header className="dash-head">
         <div>
-          <h1 className="dash-h1">{greeting()} {userFirstName}</h1>
+          <h1 className="dash-h1">{greeting()}{userFirstName ? ` ${userFirstName}` : ''}</h1>
           <div className="dash-sub">
-            <span className="ds-live-dot"/>
-            Synchronisé {relTime()} · {visibleAccounts?.length || 0}&nbsp;compte{(visibleAccounts?.length || 0) > 1 ? 's' : ''}
+            {visibleAccounts?.length || 0}&nbsp;compte{(visibleAccounts?.length || 0) > 1 ? 's' : ''} connecté{(visibleAccounts?.length || 0) > 1 ? 's' : ''}
           </div>
         </div>
         <div className="dash-actions">
